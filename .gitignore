@@ -1,0 +1,11 @@
+node_modules/
+.env
+.DS_Store
+Thumbs.db
+*.log
+
+# Keep large local Bible databases outside the repo unless explicitly needed.
+data/
+*.db
+*.sqlite
+*.sqlite3

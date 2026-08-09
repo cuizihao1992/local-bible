@@ -1,0 +1,296 @@
+:root {
+  --paper: #fbfaf6;
+  --ink: #24211d;
+  --muted: #71695e;
+  --line: #e6dfd4;
+  --accent: #2d6a5f;
+  --accent-2: #8a4f2a;
+  --panel: #ffffff;
+  --soft: #f1ede5;
+  --shadow: 0 14px 40px rgba(45, 38, 28, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+}
+
+.sidebar {
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  padding: 22px 18px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  z-index: 4;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: var(--accent);
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+h1 {
+  font-size: 20px;
+  line-height: 1.2;
+  margin: 0 0 3px;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.field span,
+.panelTitle {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+select {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 12px;
+  font-size: 15px;
+}
+
+.chapterPanel {
+  margin-top: 10px;
+}
+
+.chapterGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.chapterBtn,
+.iconBtn,
+.navBtn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.chapterBtn {
+  height: 36px;
+  font-size: 14px;
+}
+
+.chapterBtn.active {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.reader {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px clamp(16px, 4vw, 42px);
+  background: rgba(251, 250, 246, 0.92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+}
+
+.iconBtn {
+  display: none;
+  width: 42px;
+  height: 42px;
+  font-size: 20px;
+}
+
+.navBtn {
+  height: 42px;
+  padding: 0 16px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.navBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.titleBlock {
+  text-align: center;
+  min-width: 0;
+}
+
+.chapterTitle {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.versionTitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content {
+  width: min(860px, calc(100vw - 360px));
+  margin: 0 auto;
+  padding: 34px 18px 90px;
+}
+
+.verse {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(230, 223, 212, 0.72);
+}
+
+.verseNo {
+  color: var(--accent-2);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 2.1;
+  text-align: right;
+}
+
+.verseText {
+  font-size: 20px;
+  line-height: 2.05;
+  letter-spacing: 0;
+}
+
+.empty,
+.loading,
+.error {
+  margin: 20vh auto 0;
+  padding: 26px;
+  max-width: 520px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.error {
+  color: #8b1f1f;
+}
+
+.overlay {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    transform: translateX(-105%);
+    transition: transform 0.18s ease;
+    width: min(86vw, 330px);
+    box-shadow: var(--shadow);
+  }
+
+  body.sidebarOpen .sidebar {
+    transform: translateX(0);
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    background: rgba(35, 30, 24, 0.36);
+  }
+
+  body.sidebarOpen .overlay {
+    display: block;
+  }
+
+  .iconBtn {
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .topbar {
+    grid-template-columns: auto auto 1fr auto;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .navBtn {
+    padding: 0 10px;
+    font-size: 14px;
+  }
+
+  .chapterTitle {
+    font-size: 18px;
+  }
+
+  .content {
+    width: 100%;
+    padding: 22px 16px 70px;
+  }
+
+  .verse {
+    grid-template-columns: 32px 1fr;
+    gap: 10px;
+  }
+
+  .verseText {
+    font-size: 18px;
+    line-height: 1.95;
+  }
+}

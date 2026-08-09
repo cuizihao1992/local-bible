@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>本地圣经阅读</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">读</div>
+        <div>
+          <h1>本地圣经</h1>
+          <p>D:\bibleDownload</p>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>译本</span>
+        <select id="versionSelect"></select>
+      </label>
+
+      <label class="field">
+        <span>书卷</span>
+        <select id="bookSelect"></select>
+      </label>
+
+      <div class="chapterPanel">
+        <div class="panelTitle">章节</div>
+        <div id="chapterGrid" class="chapterGrid"></div>
+      </div>
+    </aside>
+
+    <main class="reader">
+      <header class="topbar">
+        <button id="menuBtn" class="iconBtn" aria-label="打开选择栏">☰</button>
+        <button id="prevBtn" class="navBtn">上一章</button>
+        <div class="titleBlock">
+          <div id="chapterTitle" class="chapterTitle">加载中</div>
+          <div id="versionTitle" class="versionTitle"></div>
+        </div>
+        <button id="nextBtn" class="navBtn">下一章</button>
+      </header>
+
+      <section id="content" class="content" aria-live="polite"></section>
+    </main>
+
+    <div id="overlay" class="overlay"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>
