@@ -2,12 +2,14 @@ const state = {
   versions: [],
   books: [],
   version: "",
+  compareVersions: [],
   book: 1,
   chapter: 1,
 };
 const STORAGE_KEY = "localBibleReaderState";
 
 const versionSelect = document.querySelector("#versionSelect");
+const compareVersions = document.querySelector("#compareVersions");
 const bookSelect = document.querySelector("#bookSelect");
 const chapterGrid = document.querySelector("#chapterGrid");
 const chapterTitle = document.querySelector("#chapterTitle");
@@ -34,6 +36,11 @@ function currentVersion() {
   return state.versions.find((version) => version.id === state.version);
 }
 
+function versionLabel(versionId) {
+  const version = state.versions.find((item) => item.id === versionId);
+  return version?.shortName || version?.name || versionId;
+}
+
 function setLoading(text = "加载中") {
   content.innerHTML = `<div class="loading">${text}</div>`;
 }
@@ -46,6 +53,9 @@ function restoreState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     if (saved.version) state.version = saved.version;
+    if (Array.isArray(saved.compareVersions)) {
+      state.compareVersions = saved.compareVersions.filter((version) => typeof version === "string").slice(0, 3);
+    }
     if (Number.isInteger(saved.book) && saved.book > 0) state.book = saved.book;
     if (Number.isInteger(saved.chapter) && saved.chapter > 0) state.chapter = saved.chapter;
   } catch {
@@ -58,6 +68,7 @@ function saveState() {
     STORAGE_KEY,
     JSON.stringify({
       version: state.version,
+      compareVersions: state.compareVersions,
       book: state.book,
       chapter: state.chapter,
     }),
@@ -69,6 +80,38 @@ function renderVersions() {
     .map((version) => `<option value="${escapeHtml(version.id)}">${escapeHtml(version.name)}</option>`)
     .join("");
   versionSelect.value = state.version;
+}
+
+function renderCompareVersions() {
+  const selected = new Set(state.compareVersions);
+  const maxReached = state.compareVersions.length >= 3;
+  compareVersions.innerHTML = state.versions
+    .filter((version) => version.id !== state.version)
+    .map((version) => {
+      const checked = selected.has(version.id);
+      const disabled = !checked && maxReached;
+      return `
+        <label class="compareOption${disabled ? " disabled" : ""}">
+          <input type="checkbox" value="${escapeHtml(version.id)}" ${checked ? "checked" : ""} ${
+            disabled ? "disabled" : ""
+          } />
+          <span>${escapeHtml(version.name)}</span>
+        </label>
+      `;
+    })
+    .join("");
+}
+
+function setCompareVersion(versionId, checked) {
+  if (checked) {
+    if (!state.compareVersions.includes(versionId) && state.compareVersions.length < 3) {
+      state.compareVersions = [...state.compareVersions, versionId];
+    }
+  } else {
+    state.compareVersions = state.compareVersions.filter((version) => version !== versionId);
+  }
+  renderCompareVersions();
+  loadChapter();
 }
 
 function renderBooks() {
@@ -92,27 +135,57 @@ function renderChrome() {
   const book = currentBook();
   const version = currentVersion();
   chapterTitle.textContent = book ? `${book.longName} ${state.chapter}` : "本地圣经";
-  versionTitle.textContent = version ? version.name : "";
+  const compareText = state.compareVersions.length ? ` · 对照 ${state.compareVersions.length} 个版本` : "";
+  versionTitle.textContent = version ? `${version.name}${compareText}` : "";
   prevBtn.disabled = state.book === 1 && state.chapter === 1;
   const lastBook = state.books[state.books.length - 1];
   nextBtn.disabled = !!lastBook && state.book === lastBook.id && state.chapter === lastBook.chapterCount;
 }
 
 function renderVerses(data) {
-  if (!data.verses.length) {
+  const mainChapter = data.chapters?.[0] || data;
+  const compareChapters = data.chapters?.slice(1) || [];
+  if (!mainChapter.verses.length) {
     content.innerHTML = `<div class="empty">这个版本没有当前章节的经文。可以换一个译本，或选择别的章节。</div>`;
     return;
   }
-  content.innerHTML = data.verses
+  const compareByVersion = compareChapters.map((chapter) => ({
+    version: chapter.version,
+    name: chapter.shortName || chapter.versionName || versionLabel(chapter.version),
+    verses: new Map(chapter.verses.map((verse) => [verse.verse, verse.text])),
+  }));
+
+  content.innerHTML = mainChapter.verses
     .map(
       (verse) => `
         <article class="verse">
           <div class="verseNo">${verse.verse}</div>
-          <div class="verseText">${escapeHtml(verse.text)}</div>
+          <div>
+            <div class="verseText">${escapeHtml(verse.text)}</div>
+            ${renderCompareList(verse.verse, compareByVersion)}
+          </div>
         </article>
       `,
     )
     .join("");
+}
+
+function renderCompareList(verseNo, compareByVersion) {
+  const items = compareByVersion
+    .map((chapter) => {
+      const text = chapter.verses.get(verseNo);
+      if (!text) return "";
+      return `
+        <div class="compareText">
+          <div class="compareName">${escapeHtml(chapter.name)}</div>
+          <div class="compareVerse">${escapeHtml(text)}</div>
+        </div>
+      `;
+    })
+    .filter(Boolean)
+    .join("");
+
+  return items ? `<div class="compareList">${items}</div>` : "";
 }
 
 async function loadBooks() {
@@ -130,9 +203,9 @@ async function loadChapter() {
   renderChrome();
   renderChapterGrid();
   try {
-    const data = await api(
-      `/api/chapter?version=${encodeURIComponent(state.version)}&book=${state.book}&chapter=${state.chapter}`,
-    );
+    const params = new URLSearchParams({ book: String(state.book), chapter: String(state.chapter) });
+    [state.version, ...state.compareVersions].forEach((version) => params.append("version", version));
+    const data = await api(`/api/chapters?${params.toString()}`);
     renderVerses(data);
     saveState();
   } catch (error) {
@@ -155,7 +228,11 @@ async function init() {
     if (!state.versions.some((version) => version.id === state.version)) {
       state.version = preferred?.id || state.versions[0].id;
     }
+    state.compareVersions = state.compareVersions.filter((version) =>
+      state.versions.some((item) => item.id === version && item.id !== state.version),
+    );
     renderVersions();
+    renderCompareVersions();
     await loadBooks();
     await loadChapter();
   } catch (error) {
@@ -201,9 +278,26 @@ function escapeHtml(value) {
 
 versionSelect.addEventListener("change", async () => {
   state.version = versionSelect.value;
+  state.compareVersions = state.compareVersions.filter((version) => version !== state.version);
   state.chapter = 1;
+  renderCompareVersions();
   await loadBooks();
   await loadChapter();
+});
+
+compareVersions.addEventListener("click", (event) => {
+  const option = event.target.closest(".compareOption");
+  if (!option) return;
+  const checkbox = option.querySelector("input[type='checkbox']");
+  if (!checkbox || checkbox.disabled) return;
+  event.preventDefault();
+  setCompareVersion(checkbox.value, !state.compareVersions.includes(checkbox.value));
+});
+
+compareVersions.addEventListener("change", (event) => {
+  const checkbox = event.target.closest("input[type='checkbox']");
+  if (!checkbox) return;
+  setCompareVersion(checkbox.value, checkbox.checked);
 });
 
 bookSelect.addEventListener("change", () => {

@@ -224,8 +224,11 @@ function getChapter(versionId, book, chapter) {
       .all(book, chapter);
     const books = getBooks(versionId);
     const bookInfo = books.find((item) => item.id === book);
+    const versionInfo = bibleFiles().find((item) => item.id === versionId);
     return {
       version: versionId,
+      versionName: versionInfo?.name || versionId,
+      shortName: versionInfo?.shortName || versionId,
       book,
       bookName: bookInfo?.longName || `第 ${book} 卷`,
       chapter,
@@ -237,6 +240,26 @@ function getChapter(versionId, book, chapter) {
   } finally {
     db.close();
   }
+}
+
+function getChapters(versionIds, book, chapter) {
+  const versions = [...new Set(versionIds.filter(Boolean))].slice(0, 4);
+  if (!versions.length) throw httpError("至少需要一个 version 参数");
+
+  const chapters = [];
+  const errors = [];
+  for (const version of versions) {
+    try {
+      chapters.push(getChapter(version, book, chapter));
+    } catch (error) {
+      errors.push({
+        version,
+        error: error.message || "读取失败",
+      });
+    }
+  }
+
+  return { chapters, errors };
 }
 
 async function sendStatic(req, res, pathname) {
@@ -257,6 +280,7 @@ async function sendStatic(req, res, pathname) {
     res.writeHead(200, {
       "Content-Type": MIME_TYPES.get(ext) || "application/octet-stream",
       "Content-Length": body.length,
+      "Cache-Control": "no-store",
     });
     res.end(body);
   } catch {
@@ -290,6 +314,13 @@ const server = createServer(async (req, res) => {
       const book = parsePositiveInt(url.searchParams.get("book") || 1, "book");
       const chapter = parsePositiveInt(url.searchParams.get("chapter") || 1, "chapter");
       sendJson(res, getChapter(version, book, chapter));
+      return;
+    }
+    if (url.pathname === "/api/chapters") {
+      const versions = url.searchParams.getAll("version");
+      const book = parsePositiveInt(url.searchParams.get("book") || 1, "book");
+      const chapter = parsePositiveInt(url.searchParams.get("chapter") || 1, "chapter");
+      sendJson(res, getChapters(versions, book, chapter));
       return;
     }
     await sendStatic(req, res, url.pathname);

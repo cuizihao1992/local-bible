@@ -39,6 +39,7 @@ npm start
 - `GET /api/versions`：译本列表
 - `GET /api/books?version=和合本.db`：书卷列表
 - `GET /api/chapter?version=和合本.db&book=1&chapter=1`：章节经文
+- `GET /api/chapters?version=和合本.db&version=KJV.db&book=1&chapter=1`：多版本章节经文
 
 ## 开发检查
 
@@ -48,4 +49,4 @@ npm run check
 
 ## 当前状态
 
-当前是 `V0.1` 本地基础阅读版。后续规划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V0.2` 多版本对照版。后续规划见 [ROADMAP.md](./ROADMAP.md)。
