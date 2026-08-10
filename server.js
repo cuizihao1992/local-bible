@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,11 +11,43 @@ const BIBLES_DIR = path.join(ROOT, "bibles");
 const COMMENTARIES_DIR = path.join(ROOT, "cj");
 const ORIG_DB = path.join(ROOT, "orig", "cbol.db");
 const STATIC_DIR = path.join(__dirname, "static");
+const USER_DATA_DIR = path.join(__dirname, "data");
+const USER_DB = path.join(USER_DATA_DIR, "user.sqlite");
 const HOST = process.env.BIBLE_READER_HOST || "127.0.0.1";
 const PORT = Number(process.env.BIBLE_READER_PORT || 8765);
 let versionCache = null;
 let commentaryCache = null;
 const MAX_SEARCH_RESULTS = 80;
+
+function initUserDb() {
+  mkdirSync(USER_DATA_DIR, { recursive: true });
+  const db = new DatabaseSync(USER_DB);
+  try {
+    db.exec(`
+      create table if not exists verse_marks (
+        version text not null,
+        book integer not null,
+        chapter integer not null,
+        verse integer not null,
+        favorite integer not null default 0,
+        highlighted integer not null default 0,
+        note text not null default '',
+        tags text not null default '',
+        updated_at text not null,
+        primary key (version, book, chapter, verse)
+      );
+      create table if not exists reading_history (
+        id integer primary key check (id = 1),
+        version text not null,
+        book integer not null,
+        chapter integer not null,
+        updated_at text not null
+      );
+    `);
+  } finally {
+    db.close();
+  }
+}
 
 const BOOKS_CN = [
   ["创", "创世记", 50],
@@ -103,6 +135,31 @@ function sendJson(res, payload, status = 200) {
     "Content-Length": body.length,
   });
   res.end(body);
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 1024 * 128) {
+        reject(httpError("请求体过大", 413));
+        req.destroy();
+      }
+    });
+    req.on("end", () => {
+      if (!body) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(body));
+      } catch {
+        reject(httpError("JSON 格式无效"));
+      }
+    });
+    req.on("error", reject);
+  });
 }
 
 function httpError(message, status = 400) {
@@ -361,6 +418,93 @@ function lookupStrong(code) {
   }
 }
 
+function getMarks(version, book, chapter) {
+  const db = new DatabaseSync(USER_DB);
+  try {
+    return db
+      .prepare(
+        `select version, book, chapter, verse, favorite, highlighted, note, tags, updated_at updatedAt
+         from verse_marks
+         where version=? and book=? and chapter=?
+         order by verse`,
+      )
+      .all(version, book, chapter)
+      .map((row) => ({
+        ...row,
+        favorite: !!row.favorite,
+        highlighted: !!row.highlighted,
+      }));
+  } finally {
+    db.close();
+  }
+}
+
+function saveMark(payload) {
+  const version = String(payload.version || "");
+  const book = parsePositiveInt(payload.book, "book");
+  const chapter = parsePositiveInt(payload.chapter, "chapter");
+  const verse = parsePositiveInt(payload.verse, "verse");
+  const favorite = payload.favorite ? 1 : 0;
+  const highlighted = payload.highlighted ? 1 : 0;
+  const note = String(payload.note || "").slice(0, 4000);
+  const tags = String(payload.tags || "").slice(0, 500);
+  const updatedAt = new Date().toISOString();
+  biblePath(version);
+
+  const db = new DatabaseSync(USER_DB);
+  try {
+    db.prepare(
+      `insert into verse_marks (version, book, chapter, verse, favorite, highlighted, note, tags, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       on conflict(version, book, chapter, verse)
+       do update set favorite=excluded.favorite, highlighted=excluded.highlighted,
+         note=excluded.note, tags=excluded.tags, updated_at=excluded.updated_at`,
+    ).run(version, book, chapter, verse, favorite, highlighted, note, tags, updatedAt);
+    return {
+      version,
+      book,
+      chapter,
+      verse,
+      favorite: !!favorite,
+      highlighted: !!highlighted,
+      note,
+      tags,
+      updatedAt,
+    };
+  } finally {
+    db.close();
+  }
+}
+
+function saveHistory(payload) {
+  const version = String(payload.version || "");
+  const book = parsePositiveInt(payload.book, "book");
+  const chapter = parsePositiveInt(payload.chapter, "chapter");
+  biblePath(version);
+  const updatedAt = new Date().toISOString();
+  const db = new DatabaseSync(USER_DB);
+  try {
+    db.prepare(
+      `insert into reading_history (id, version, book, chapter, updated_at)
+       values (1, ?, ?, ?, ?)
+       on conflict(id) do update set version=excluded.version, book=excluded.book,
+         chapter=excluded.chapter, updated_at=excluded.updated_at`,
+    ).run(version, book, chapter, updatedAt);
+    return { version, book, chapter, updatedAt };
+  } finally {
+    db.close();
+  }
+}
+
+function getHistory() {
+  const db = new DatabaseSync(USER_DB);
+  try {
+    return db.prepare("select version, book, chapter, updated_at updatedAt from reading_history where id=1").get() || null;
+  } finally {
+    db.close();
+  }
+}
+
 function findStrongOccurrences(type, number, limit = 30) {
   const tagNumber = String(Number(number));
   const candidates = bibleFiles()
@@ -542,6 +686,7 @@ const server = createServer(async (req, res) => {
         biblesDir: BIBLES_DIR,
         commentariesDir: COMMENTARIES_DIR,
         origDb: ORIG_DB,
+        userDb: USER_DB,
         versionCount: bibleFiles().length,
         commentaryCount: commentaryFiles().length,
       });
@@ -593,6 +738,25 @@ const server = createServer(async (req, res) => {
       sendJson(res, lookupStrong(url.searchParams.get("code") || ""));
       return;
     }
+    if (url.pathname === "/api/user/marks") {
+      const version = url.searchParams.get("version") || "";
+      const book = parsePositiveInt(url.searchParams.get("book") || 1, "book");
+      const chapter = parsePositiveInt(url.searchParams.get("chapter") || 1, "chapter");
+      sendJson(res, { marks: getMarks(version, book, chapter) });
+      return;
+    }
+    if (url.pathname === "/api/user/history" && req.method === "GET") {
+      sendJson(res, { history: getHistory() });
+      return;
+    }
+    if (url.pathname === "/api/user/mark" && req.method === "POST") {
+      sendJson(res, { mark: saveMark(await readJsonBody(req)) });
+      return;
+    }
+    if (url.pathname === "/api/user/history" && req.method === "POST") {
+      sendJson(res, { history: saveHistory(await readJsonBody(req)) });
+      return;
+    }
     await sendStatic(req, res, url.pathname);
   } catch (error) {
     sendJson(res, { error: error.message || "服务器错误" }, error.status || 400);
@@ -603,6 +767,8 @@ if (!existsSync(BIBLES_DIR)) {
   console.error(`Bible directory not found: ${BIBLES_DIR}`);
   process.exit(1);
 }
+
+initUserDb();
 
 server.listen(PORT, HOST, () => {
   console.log(`Bible Reader running at http://${HOST}:${PORT}`);

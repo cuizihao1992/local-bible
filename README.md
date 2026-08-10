@@ -44,6 +44,9 @@ npm start
 - `GET /api/commentaries`：注释源列表
 - `GET /api/commentary?source=信望爱注释.db&book=43&chapter=3`：当前章节注释
 - `GET /api/strong?code=H7225`：Strong 原文编号释义
+- `GET /api/user/marks?version=和合本.db&book=1&chapter=1`：章节收藏/高亮/笔记
+- `POST /api/user/mark`：保存经文收藏/高亮/笔记/标签
+- `GET/POST /api/user/history`：最近阅读位置
 
 ## 开发检查
 
@@ -53,4 +56,4 @@ npm run check
 
 ## 当前状态
 
-当前是 `V0.5` 原文与 Strong 编号版。后续规划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V0.6` 笔记、收藏、高亮版。后续规划见 [ROADMAP.md](./ROADMAP.md)。

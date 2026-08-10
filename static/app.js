@@ -2,6 +2,7 @@ const state = {
   versions: [],
   books: [],
   commentaries: [],
+  marks: new Map(),
   version: "",
   compareVersions: [],
   commentary: "",
@@ -78,6 +79,18 @@ function setLoading(text = "加载中") {
 
 function setError(error) {
   content.innerHTML = `<div class="error">${error.message || error}</div>`;
+}
+
+function postJson(path, payload) {
+  return fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(async (response) => {
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "请求失败");
+    return data;
+  });
 }
 
 function restoreState() {
@@ -218,14 +231,68 @@ function renderVerses(data) {
           <div class="verseNo" id="v${verse.verse}">${verse.verse}</div>
           <div class="verseBody" data-verse="${verse.verse}">
             <div class="verseText">${escapeHtml(verse.text)}</div>
+            ${renderVerseTools(verse.verse)}
             ${renderStrongList(verse.strongs || [])}
             ${renderCompareList(verse.verse, compareByVersion)}
+            ${renderNoteEditor(verse.verse)}
           </div>
         </article>
       `,
     )
     .join("");
   focusTargetVerse();
+}
+
+function markForVerse(verse) {
+  return (
+    state.marks.get(Number(verse)) || {
+      version: state.version,
+      book: state.book,
+      chapter: state.chapter,
+      verse: Number(verse),
+      favorite: false,
+      highlighted: false,
+      note: "",
+      tags: "",
+    }
+  );
+}
+
+function renderVerseTools(verse) {
+  const mark = markForVerse(verse);
+  return `
+    <div class="verseTools">
+      <button class="verseTool ${mark.favorite ? "active" : ""}" type="button" data-action="favorite" data-verse="${verse}">
+        ${mark.favorite ? "★ 已收藏" : "☆ 收藏"}
+      </button>
+      <button class="verseTool ${mark.highlighted ? "active" : ""}" type="button" data-action="highlight" data-verse="${verse}">
+        ${mark.highlighted ? "已高亮" : "高亮"}
+      </button>
+      <button class="verseTool ${mark.note || mark.tags ? "active" : ""}" type="button" data-action="note" data-verse="${verse}">
+        笔记
+      </button>
+    </div>
+  `;
+}
+
+function renderNoteEditor(verse) {
+  const mark = markForVerse(verse);
+  const hasContent = mark.note || mark.tags;
+  return `
+    <div class="noteEditor ${hasContent ? "hasContent" : ""}" data-note-editor="${verse}" hidden>
+      <textarea data-note-text="${verse}" placeholder="写下这节经文的笔记">${escapeHtml(mark.note)}</textarea>
+      <input data-note-tags="${verse}" type="text" placeholder="标签，用逗号分隔" value="${escapeHtml(mark.tags)}" />
+      <button class="verseTool active" type="button" data-action="save-note" data-verse="${verse}">保存笔记</button>
+    </div>
+    ${
+      hasContent
+        ? `<div class="notePreview">
+            ${mark.tags ? `<div class="noteTags">${escapeHtml(mark.tags)}</div>` : ""}
+            ${mark.note ? `<div class="noteText">${escapeHtml(mark.note)}</div>` : ""}
+          </div>`
+        : ""
+    }
+  `;
 }
 
 function renderStrongList(strongs) {
@@ -287,13 +354,39 @@ async function loadChapter() {
     const params = new URLSearchParams({ book: String(state.book), chapter: String(state.chapter) });
     [state.version, ...state.compareVersions].forEach((version) => params.append("version", version));
     const data = await api(`/api/chapters?${params.toString()}`);
+    await loadMarks();
     renderVerses(data);
     await loadCommentary();
+    saveReadingHistory();
     saveState();
   } catch (error) {
     setError(error);
   }
   renderChrome();
+}
+
+async function loadMarks() {
+  const params = new URLSearchParams({
+    version: state.version,
+    book: String(state.book),
+    chapter: String(state.chapter),
+  });
+  const data = await api(`/api/user/marks?${params.toString()}`);
+  state.marks = new Map(data.marks.map((mark) => [Number(mark.verse), mark]));
+}
+
+function saveReadingHistory() {
+  postJson("/api/user/history", {
+    version: state.version,
+    book: state.book,
+    chapter: state.chapter,
+  }).catch(() => {});
+}
+
+async function saveVerseMark(mark) {
+  const data = await postJson("/api/user/mark", mark);
+  state.marks.set(Number(data.mark.verse), data.mark);
+  loadChapter();
 }
 
 async function loadCommentary() {
@@ -633,6 +726,25 @@ content.addEventListener("click", (event) => {
   const strong = event.target.closest(".strongBtn");
   if (strong) {
     openStrong(strong.dataset.code).catch(setError);
+    return;
+  }
+  const tool = event.target.closest(".verseTool");
+  if (tool) {
+    const verseNo = Number(tool.dataset.verse);
+    const action = tool.dataset.action;
+    const mark = markForVerse(verseNo);
+    if (action === "favorite") {
+      saveVerseMark({ ...mark, favorite: !mark.favorite }).catch(setError);
+    } else if (action === "highlight") {
+      saveVerseMark({ ...mark, highlighted: !mark.highlighted }).catch(setError);
+    } else if (action === "note") {
+      const editor = content.querySelector(`[data-note-editor="${verseNo}"]`);
+      if (editor) editor.hidden = !editor.hidden;
+    } else if (action === "save-note") {
+      const note = content.querySelector(`[data-note-text="${verseNo}"]`)?.value || "";
+      const tags = content.querySelector(`[data-note-tags="${verseNo}"]`)?.value || "";
+      saveVerseMark({ ...mark, note, tags }).catch(setError);
+    }
     return;
   }
   const verse = event.target.closest(".verse");

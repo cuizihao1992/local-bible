@@ -433,6 +433,88 @@ select {
   padding-right: 8px;
 }
 
+.verse:has(.verseTool.active) {
+  background: rgba(138, 79, 42, 0.04);
+}
+
+.verseTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.verseTool {
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 10px;
+}
+
+.verseTool.active {
+  border-color: rgba(45, 106, 95, 0.35);
+  background: var(--soft);
+  color: var(--accent);
+}
+
+.noteEditor {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.noteEditor[hidden] {
+  display: none;
+}
+
+.noteEditor textarea,
+.noteEditor input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  padding: 9px 10px;
+}
+
+.noteEditor textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.notePreview {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+  padding: 10px 12px;
+  background: #fff;
+  border-left: 3px solid var(--accent-2);
+  border-radius: 0 8px 8px 0;
+}
+
+.noteTags {
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.noteText {
+  color: #49443d;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 .verseNo {
   color: var(--accent-2);
   font-size: 13px;
