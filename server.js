@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.BIBLE_DATA_ROOT || "D:\\bibleDownload";
 const BIBLES_DIR = path.join(ROOT, "bibles");
 const COMMENTARIES_DIR = path.join(ROOT, "cj");
+const DICTIONARIES_DIR = path.join(ROOT, "cd");
 const AUDIO_DIR = path.join(ROOT, "ld");
 const ORIG_DB = path.join(ROOT, "orig", "cbol.db");
 const STATIC_DIR = path.join(__dirname, "static");
@@ -18,6 +19,7 @@ const HOST = process.env.BIBLE_READER_HOST || "127.0.0.1";
 const PORT = Number(process.env.BIBLE_READER_PORT || 8765);
 let versionCache = null;
 let commentaryCache = null;
+let dictionaryCache = null;
 let audioCache = null;
 const MAX_SEARCH_RESULTS = 80;
 
@@ -317,6 +319,37 @@ function commentaryFiles() {
   return commentaryCache;
 }
 
+function dictionaryFiles() {
+  if (dictionaryCache) return dictionaryCache;
+  if (!existsSync(DICTIONARIES_DIR)) return [];
+  dictionaryCache = readdirSync(DICTIONARIES_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".db"))
+    .sort((a, b) => a.name.localeCompare(b.name, "zh-Hans-CN"))
+    .map((entry) => {
+      const filePath = path.join(DICTIONARIES_DIR, entry.name);
+      const metadata = readMetadata(filePath);
+      const db = new DatabaseSync(filePath, { readOnly: true });
+      try {
+        const count = hasTable(db, "Dictionary") ? Number(db.prepare("select count(*) count from Dictionary").get().count) : 0;
+        const imageCount = hasTable(db, "Images") ? Number(db.prepare("select count(*) count from Images").get().count) : 0;
+        const sample = hasTable(db, "Dictionary")
+          ? db.prepare("select Description from Dictionary where Description is not null and Description <> '' limit 1").get()
+          : null;
+        return {
+          id: entry.name,
+          title: metadata.Title || metadata.title || metadata.Description || entry.name.replace(/\.db$/i, ""),
+          fileName: entry.name,
+          count,
+          imageCount,
+          readable: looksReadable(sample?.Description || ""),
+        };
+      } finally {
+        db.close();
+      }
+    });
+  return dictionaryCache;
+}
+
 function audioFiles() {
   if (audioCache) return audioCache;
   if (!existsSync(AUDIO_DIR)) return [];
@@ -363,6 +396,15 @@ function commentaryPath(sourceId) {
   const filePath = path.join(COMMENTARIES_DIR, fileName);
   if (!fileName.toLowerCase().endsWith(".db") || !existsSync(filePath)) {
     throw httpError(`找不到注释：${fileName}`, 404);
+  }
+  return filePath;
+}
+
+function dictionaryPath(sourceId) {
+  const fileName = path.basename(decodeURIComponent(sourceId || ""));
+  const filePath = path.join(DICTIONARIES_DIR, fileName);
+  if (!fileName.toLowerCase().endsWith(".db") || !existsSync(filePath)) {
+    throw httpError(`找不到辞典：${fileName}`, 404);
   }
   return filePath;
 }
@@ -683,6 +725,66 @@ function getCommentary(sourceId, book, chapter) {
   }
 }
 
+function searchDictionary(sourceId, query, limit = 30) {
+  const keyword = String(query || "").trim();
+  if (!keyword) throw httpError("请输入词条关键词");
+  const source = dictionaryFiles().find((item) => item.id === sourceId);
+  const db = new DatabaseSync(dictionaryPath(sourceId), { readOnly: true });
+  try {
+    const columns = db.prepare("pragma table_info(Dictionary)").all().map((column) => column.name);
+    const hasImages = columns.includes("Images");
+    const rows = db
+      .prepare(
+        `select id, Word, Description, ComeFrom${hasImages ? ", Images" : ""}
+         from Dictionary
+         where Word like ?
+         order by length(Word), Word
+         limit ?`,
+      )
+      .all(`%${keyword}%`, clampPositiveInt(limit, 30, 80));
+    return {
+      source: sourceId,
+      title: source?.title || sourceId,
+      readable: source?.readable !== false,
+      query: keyword,
+      results: rows.map((row) => ({
+        id: Number(row.id),
+        word: row.Word,
+        comeFrom: row.ComeFrom || "",
+        text: source?.readable === false ? "" : cleanText(row.Description || ""),
+        images: String(row.Images || "")
+          .split(";")
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .map((name) => ({
+            name,
+            url: `/api/dictionary/image?source=${encodeURIComponent(sourceId)}&name=${encodeURIComponent(name)}`,
+          })),
+      })),
+    };
+  } finally {
+    db.close();
+  }
+}
+
+function sendDictionaryImage(res, sourceId, imageName) {
+  const db = new DatabaseSync(dictionaryPath(sourceId), { readOnly: true });
+  try {
+    if (!hasTable(db, "Images")) throw httpError("这个辞典没有图片表", 404);
+    const row = db.prepare("select FileName, Data from Images where FileName=?").get(imageName);
+    if (!row) throw httpError("找不到图片", 404);
+    const ext = path.extname(row.FileName).toLowerCase();
+    res.writeHead(200, {
+      "Content-Type": ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : "image/png",
+      "Content-Length": row.Data.length,
+      "Cache-Control": "no-store",
+    });
+    res.end(row.Data);
+  } finally {
+    db.close();
+  }
+}
+
 async function sendStatic(req, res, pathname) {
   const safePath = pathname === "/" ? "/index.html" : decodeURIComponent(pathname);
   const filePath = path.resolve(STATIC_DIR, `.${safePath}`);
@@ -735,11 +837,13 @@ const server = createServer(async (req, res) => {
         dataRoot: ROOT,
         biblesDir: BIBLES_DIR,
         commentariesDir: COMMENTARIES_DIR,
+        dictionariesDir: DICTIONARIES_DIR,
         audioDir: AUDIO_DIR,
         origDb: ORIG_DB,
         userDb: USER_DB,
         versionCount: bibleFiles().length,
         commentaryCount: commentaryFiles().length,
+        dictionaryCount: dictionaryFiles().length,
         audioCount: audioFiles().length,
       });
       return;
@@ -820,6 +924,21 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === "/api/audio/file") {
       sendAudio(res, url.searchParams.get("id") || "");
+      return;
+    }
+    if (url.pathname === "/api/dictionaries") {
+      sendJson(res, { dictionaries: dictionaryFiles() });
+      return;
+    }
+    if (url.pathname === "/api/dictionary/search") {
+      const source = url.searchParams.get("source") || "";
+      const query = url.searchParams.get("q") || "";
+      const limit = url.searchParams.get("limit") || 30;
+      sendJson(res, searchDictionary(source, query, limit));
+      return;
+    }
+    if (url.pathname === "/api/dictionary/image") {
+      sendDictionaryImage(res, url.searchParams.get("source") || "", url.searchParams.get("name") || "");
       return;
     }
     await sendStatic(req, res, url.pathname);

@@ -2,6 +2,7 @@ const state = {
   versions: [],
   books: [],
   commentaries: [],
+  dictionaries: [],
   marks: new Map(),
   version: "",
   compareVersions: [],
@@ -42,6 +43,14 @@ const strongContent = document.querySelector("#strongContent");
 const closeStrongBtn = document.querySelector("#closeStrongBtn");
 const audioPanel = document.querySelector("#audioPanel");
 const audioAutoNext = document.querySelector("#audioAutoNext");
+const dictionarySelect = document.querySelector("#dictionarySelect");
+const dictionaryInput = document.querySelector("#dictionaryInput");
+const dictionaryBtn = document.querySelector("#dictionaryBtn");
+const dictionaryHint = document.querySelector("#dictionaryHint");
+const dictionaryPanel = document.querySelector("#dictionaryPanel");
+const dictionarySummary = document.querySelector("#dictionarySummary");
+const dictionaryResults = document.querySelector("#dictionaryResults");
+const closeDictionaryBtn = document.querySelector("#closeDictionaryBtn");
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -175,6 +184,21 @@ function renderCommentaries() {
 function renderStrongToggle() {
   strongToggle.checked = state.showStrong;
   audioAutoNext.checked = state.audioAutoNext;
+}
+
+function renderDictionaries() {
+  dictionarySelect.innerHTML = state.dictionaries
+    .map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.title)}</option>`)
+    .join("");
+  const selected = state.dictionaries.find((item) => item.id === dictionarySelect.value) || state.dictionaries[0];
+  if (selected) {
+    dictionarySelect.value = selected.id;
+    dictionaryHint.textContent = `${selected.count} 个词条 · ${selected.imageCount} 张图${
+      selected.readable ? "" : " · 正文暂不可读"
+    }`;
+  } else {
+    dictionaryHint.textContent = "未找到辞典库";
+  }
 }
 
 function setCompareVersion(versionId, checked) {
@@ -578,6 +602,49 @@ function closeStrong() {
   strongPanel.hidden = true;
 }
 
+function closeDictionary() {
+  dictionaryPanel.hidden = true;
+}
+
+async function searchDictionary() {
+  const source = dictionarySelect.value;
+  const query = dictionaryInput.value.trim();
+  if (!source || !query) return;
+  const params = new URLSearchParams({ source, q: query, limit: "30" });
+  dictionarySummary.textContent = "正在搜索词条";
+  dictionaryResults.innerHTML = "";
+  dictionaryPanel.hidden = false;
+  const data = await api(`/api/dictionary/search?${params.toString()}`);
+  renderDictionaryResults(data);
+}
+
+function renderDictionaryResults(data) {
+  dictionarySummary.textContent = data.results.length ? `${data.title} · ${data.results.length} 条：${data.query}` : `没有找到：${data.query}`;
+  dictionaryResults.innerHTML = data.results.length
+    ? data.results
+        .map(
+          (item) => `
+            <article class="dictionaryResult">
+              <div class="dictionaryWord">${escapeHtml(item.word)}</div>
+              <div class="dictionaryFrom">${escapeHtml(item.comeFrom || data.title)}</div>
+              <div class="dictionaryText">${escapeHtml(item.text || "词条正文疑似加密，暂不可读。")}</div>
+              ${renderDictionaryImages(item.images || [])}
+            </article>
+          `,
+        )
+        .join("")
+    : `<div class="empty">换一个关键词再试。</div>`;
+}
+
+function renderDictionaryImages(images) {
+  if (!images.length) return "";
+  return `
+    <div class="dictionaryImages">
+      ${images.map((image) => `<img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.name)}" loading="lazy" />`).join("")}
+    </div>
+  `;
+}
+
 async function openStrong(code) {
   strongTitle.textContent = `Strong ${code}`;
   strongContent.innerHTML = `<div class="loading">正在读取原文释义</div>`;
@@ -634,8 +701,10 @@ async function init() {
     restoreState();
     const data = await api("/api/versions");
     const commentaryData = await api("/api/commentaries");
+    const dictionaryData = await api("/api/dictionaries");
     state.versions = data.versions;
     state.commentaries = commentaryData.commentaries;
+    state.dictionaries = dictionaryData.dictionaries;
     if (!state.versions.length) {
       content.innerHTML = `<div class="empty">没有在 D:\\bibleDownload\\bibles 找到 .db 译本。</div>`;
       return;
@@ -652,6 +721,7 @@ async function init() {
     if (!state.commentaries.some((source) => source.id === state.commentary)) state.commentary = "";
     renderCommentaries();
     renderStrongToggle();
+    renderDictionaries();
     await loadBooks();
     await loadChapter();
   } catch (error) {
@@ -800,6 +870,13 @@ content.addEventListener("click", (event) => {
   focusCommentaryForVerse(Number(verse.dataset.verse));
 });
 
+content.addEventListener("dblclick", () => {
+  const selected = window.getSelection()?.toString().trim();
+  if (!selected || selected.length > 30) return;
+  dictionaryInput.value = selected;
+  searchDictionary().catch(setError);
+});
+
 strongToggle.addEventListener("change", () => {
   state.showStrong = strongToggle.checked;
   saveState();
@@ -810,6 +887,16 @@ audioAutoNext.addEventListener("change", () => {
   state.audioAutoNext = audioAutoNext.checked;
   saveState();
 });
+
+dictionaryBtn.addEventListener("click", () => searchDictionary().catch(setError));
+dictionaryInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    searchDictionary().catch(setError);
+  }
+});
+dictionarySelect.addEventListener("change", renderDictionaries);
+closeDictionaryBtn.addEventListener("click", closeDictionary);
 
 closeSearchBtn.addEventListener("click", closeSearch);
 closeStrongBtn.addEventListener("click", closeStrong);

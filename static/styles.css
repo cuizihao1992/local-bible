@@ -100,10 +100,34 @@ select {
   margin-top: 10px;
 }
 
-.commentaryPanel {
+.commentaryPanel,
+.dictionaryPanel {
   display: grid;
   gap: 8px;
   margin-top: 18px;
+}
+
+.dictionarySearch {
+  display: grid;
+  grid-template-columns: 1fr 42px;
+  gap: 6px;
+}
+
+.dictionarySearch input,
+.dictionarySearch button {
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  padding: 0 9px;
+}
+
+.dictionarySearch button {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 800;
 }
 
 .toggleField {
@@ -304,6 +328,65 @@ select {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.dictionaryResultsPanel {
+  width: min(860px, calc(100vw - 360px));
+  margin: 18px auto 0;
+  padding: 0 18px;
+}
+
+.dictionaryResults {
+  display: grid;
+  gap: 0;
+  max-height: 520px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.dictionaryResult {
+  display: grid;
+  gap: 7px;
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dictionaryWord {
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.dictionaryFrom {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dictionaryText {
+  color: #403b34;
+  font-size: 15px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.dictionaryImages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.dictionaryImages img {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
 }
 
 .audioHeader {
@@ -766,6 +849,11 @@ select {
   .audioPanel {
     width: calc(100% - 32px);
     padding: 12px;
+  }
+
+  .dictionaryResultsPanel {
+    width: 100%;
+    padding: 0 16px;
   }
 
   .audioHeader {

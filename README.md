@@ -48,6 +48,9 @@ npm start
 - `POST /api/user/mark`：保存经文收藏/高亮/笔记/标签
 - `GET/POST /api/user/history`：最近阅读位置
 - `GET /api/audio?book=1&chapter=2`：当前章节音频列表
+- `GET /api/dictionaries`：辞典/百科库列表
+- `GET /api/dictionary/search?source=证主圣经百科全书.db&q=膏`：搜索词条
+- `GET /api/dictionary/image?source=简明圣经史地图解.db&name=总图一.png`：读取辞典图片
 
 ## 开发检查
 
@@ -57,4 +60,4 @@ npm run check
 
 ## 当前状态
 
-当前是 `V0.7` 音频与朗读版。后续规划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V0.8` 辞典/百科版。后续规划见 [ROADMAP.md](./ROADMAP.md)。

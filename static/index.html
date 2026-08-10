@@ -52,6 +52,16 @@
         <input id="audioAutoNext" type="checkbox" />
         <span>音频结束自动下一章</span>
       </label>
+
+      <div class="dictionaryPanel">
+        <div class="panelTitle">辞典/百科</div>
+        <select id="dictionarySelect"></select>
+        <div class="dictionarySearch">
+          <input id="dictionaryInput" type="search" placeholder="搜索词条" />
+          <button id="dictionaryBtn" type="button">查</button>
+        </div>
+        <div id="dictionaryHint" class="panelHint"></div>
+      </div>
     </aside>
 
     <main class="reader">
@@ -92,6 +102,14 @@
       </section>
 
       <section id="audioPanel" class="audioPanel" hidden></section>
+
+      <section id="dictionaryPanel" class="dictionaryResultsPanel" hidden>
+        <div class="searchHeader">
+          <div id="dictionarySummary"></div>
+          <button id="closeDictionaryBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <div id="dictionaryResults" class="dictionaryResults"></div>
+      </section>
 
       <section id="content" class="content" aria-live="polite"></section>
 
