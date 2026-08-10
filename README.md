@@ -41,6 +41,8 @@ npm start
 - `GET /api/chapter?version=和合本.db&book=1&chapter=1`：章节经文
 - `GET /api/chapters?version=和合本.db&version=KJV.db&book=1&chapter=1`：多版本章节经文
 - `GET /api/search?version=和合本.db&q=永生&scope=all`：当前译本关键词搜索
+- `GET /api/commentaries`：注释源列表
+- `GET /api/commentary?source=信望爱注释.db&book=43&chapter=3`：当前章节注释
 
 ## 开发检查
 
@@ -50,4 +52,4 @@ npm run check
 
 ## 当前状态
 
-当前是 `V0.3` 搜索与快速定位版。后续规划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V0.4` 注释联动版。后续规划见 [ROADMAP.md](./ROADMAP.md)。

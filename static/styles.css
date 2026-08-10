@@ -95,8 +95,15 @@ select {
   font-size: 15px;
 }
 
-.chapterPanel {
+.chapterPanel,
+.commentaryPanel {
   margin-top: 10px;
+}
+
+.commentaryPanel {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
 }
 
 .comparePanel {
@@ -343,6 +350,10 @@ select {
   border-bottom: 1px solid rgba(230, 223, 212, 0.72);
 }
 
+.verse:hover {
+  background: rgba(45, 106, 95, 0.04);
+}
+
 .verse.targetVerse {
   background: rgba(45, 106, 95, 0.08);
   border-radius: 8px;
@@ -388,6 +399,76 @@ select {
   color: #49443d;
   font-size: 16px;
   line-height: 1.8;
+}
+
+.commentaryContent {
+  width: min(860px, calc(100vw - 360px));
+  margin: 0 auto 90px;
+  padding: 0 18px;
+}
+
+.commentaryBlock {
+  margin-top: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.commentaryHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.commentaryTitle {
+  font-weight: 800;
+}
+
+.commentaryMeta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.commentaryEntries {
+  display: grid;
+}
+
+.commentaryEntry {
+  display: grid;
+  gap: 7px;
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.commentaryEntry:last-child {
+  border-bottom: 0;
+}
+
+.commentaryEntry.activeCommentary {
+  background: rgba(45, 106, 95, 0.08);
+}
+
+.commentaryRef {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.commentaryText {
+  color: #403b34;
+  font-size: 15px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.imageNote {
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .empty,
@@ -475,6 +556,11 @@ select {
   .searchPanel {
     width: 100%;
     padding: 0 16px;
+  }
+
+  .commentaryContent {
+    width: 100%;
+    padding: 0 16px 70px;
   }
 
   .verse {

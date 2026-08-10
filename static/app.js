@@ -1,8 +1,10 @@
 const state = {
   versions: [],
   books: [],
+  commentaries: [],
   version: "",
   compareVersions: [],
+  commentary: "",
   book: 1,
   chapter: 1,
   targetVerse: null,
@@ -27,6 +29,9 @@ const searchPanel = document.querySelector("#searchPanel");
 const searchSummary = document.querySelector("#searchSummary");
 const searchResults = document.querySelector("#searchResults");
 const closeSearchBtn = document.querySelector("#closeSearchBtn");
+const commentarySelect = document.querySelector("#commentarySelect");
+const commentaryHint = document.querySelector("#commentaryHint");
+const commentaryContent = document.querySelector("#commentaryContent");
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -76,6 +81,7 @@ function restoreState() {
     if (Array.isArray(saved.compareVersions)) {
       state.compareVersions = saved.compareVersions.filter((version) => typeof version === "string").slice(0, 3);
     }
+    if (saved.commentary) state.commentary = saved.commentary;
     if (Number.isInteger(saved.book) && saved.book > 0) state.book = saved.book;
     if (Number.isInteger(saved.chapter) && saved.chapter > 0) state.chapter = saved.chapter;
   } catch {
@@ -89,6 +95,7 @@ function saveState() {
     JSON.stringify({
       version: state.version,
       compareVersions: state.compareVersions,
+      commentary: state.commentary,
       book: state.book,
       chapter: state.chapter,
     }),
@@ -120,6 +127,23 @@ function renderCompareVersions() {
       `;
     })
     .join("");
+}
+
+function renderCommentaries() {
+  const options = [`<option value="">不显示注释</option>`]
+    .concat(
+      state.commentaries.map((source) => {
+        const label = source.readable ? source.title : `${source.title}（暂不可读）`;
+        return `<option value="${escapeHtml(source.id)}">${escapeHtml(label)}</option>`;
+      }),
+    )
+    .join("");
+  commentarySelect.innerHTML = options;
+  commentarySelect.value = state.commentary;
+  const selected = state.commentaries.find((source) => source.id === state.commentary);
+  commentaryHint.textContent = selected
+    ? `${selected.count} 条 · ${selected.sizeMb} MB${selected.readable ? "" : " · 数据疑似加密"}`
+    : `${state.commentaries.length} 个注释源`;
 }
 
 function setCompareVersion(versionId, checked) {
@@ -178,9 +202,9 @@ function renderVerses(data) {
   content.innerHTML = mainChapter.verses
     .map(
       (verse) => `
-        <article class="verse">
+        <article class="verse" data-verse="${verse.verse}">
           <div class="verseNo" id="v${verse.verse}">${verse.verse}</div>
-          <div>
+          <div class="verseBody" data-verse="${verse.verse}">
             <div class="verseText">${escapeHtml(verse.text)}</div>
             ${renderCompareList(verse.verse, compareByVersion)}
           </div>
@@ -237,11 +261,89 @@ async function loadChapter() {
     [state.version, ...state.compareVersions].forEach((version) => params.append("version", version));
     const data = await api(`/api/chapters?${params.toString()}`);
     renderVerses(data);
+    await loadCommentary();
     saveState();
   } catch (error) {
     setError(error);
   }
   renderChrome();
+}
+
+async function loadCommentary() {
+  if (!state.commentary) {
+    commentaryContent.innerHTML = "";
+    return;
+  }
+  commentaryContent.innerHTML = `<div class="commentaryBlock"><div class="commentaryHeader"><div class="commentaryTitle">正在读取注释</div></div></div>`;
+  try {
+    const params = new URLSearchParams({
+      source: state.commentary,
+      book: String(state.book),
+      chapter: String(state.chapter),
+    });
+    const data = await api(`/api/commentary?${params.toString()}`);
+    renderCommentary(data);
+  } catch (error) {
+    commentaryContent.innerHTML = `<div class="commentaryBlock"><div class="commentaryEntry error">${escapeHtml(
+      error.message || error,
+    )}</div></div>`;
+  }
+}
+
+function renderCommentary(data) {
+  if (!data.readable) {
+    commentaryContent.innerHTML = `
+      <div class="commentaryBlock">
+        <div class="commentaryHeader">
+          <div class="commentaryTitle">${escapeHtml(data.title)}</div>
+          <div class="commentaryMeta">暂不可读</div>
+        </div>
+        <div class="commentaryEntry">
+          <div class="commentaryText">这个注释库的数据疑似加密或压缩，后续版本再处理解码。</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  if (!data.entries.length) {
+    commentaryContent.innerHTML = `
+      <div class="commentaryBlock">
+        <div class="commentaryHeader">
+          <div class="commentaryTitle">${escapeHtml(data.title)}</div>
+          <div class="commentaryMeta">当前章节暂无注释</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  commentaryContent.innerHTML = `
+    <div class="commentaryBlock">
+      <div class="commentaryHeader">
+        <div class="commentaryTitle">${escapeHtml(data.title)}</div>
+        <div class="commentaryMeta">${data.entries.length} 条</div>
+      </div>
+      <div class="commentaryEntries">
+        ${data.entries.map(renderCommentaryEntry).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderCommentaryEntry(entry) {
+  return `
+    <article class="commentaryEntry" data-chapter="${entry.chapter}" data-from="${entry.fromVerse}" data-to="${entry.toVerse}">
+      <div class="commentaryRef">${escapeHtml(formatCommentaryRef(entry))}</div>
+      <div class="commentaryText">${escapeHtml(entry.text || "无文本内容")}</div>
+      ${entry.hasImages ? `<div class="imageNote">包含图片资料，图片显示将在后续版本处理。</div>` : ""}
+    </article>
+  `;
+}
+
+function formatCommentaryRef(entry) {
+  if (entry.chapter === 0) return "书卷导论";
+  if (!entry.fromVerse && !entry.toVerse) return `第 ${entry.chapter} 章`;
+  if (entry.fromVerse === entry.toVerse || !entry.toVerse) return `${entry.chapter}:${entry.fromVerse}`;
+  return `${entry.chapter}:${entry.fromVerse}-${entry.toVerse}`;
 }
 
 function parseReference(input) {
@@ -304,12 +406,32 @@ function closeSearch() {
   searchPanel.hidden = true;
 }
 
+function focusCommentaryForVerse(verseNo) {
+  if (!state.commentary) return;
+  const entries = [...commentaryContent.querySelectorAll(".commentaryEntry")];
+  entries.forEach((entry) => entry.classList.remove("activeCommentary"));
+  const match = entries.find((entry) => {
+    const chapter = Number(entry.dataset.chapter);
+    const from = Number(entry.dataset.from);
+    const to = Number(entry.dataset.to);
+    if (chapter === 0) return false;
+    if (!from && !to) return true;
+    return verseNo >= from && verseNo <= (to || from);
+  });
+  if (match) {
+    match.classList.add("activeCommentary");
+    match.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+}
+
 async function init() {
   setLoading("正在扫描本地译本");
   try {
     restoreState();
     const data = await api("/api/versions");
+    const commentaryData = await api("/api/commentaries");
     state.versions = data.versions;
+    state.commentaries = commentaryData.commentaries;
     if (!state.versions.length) {
       content.innerHTML = `<div class="empty">没有在 D:\\bibleDownload\\bibles 找到 .db 译本。</div>`;
       return;
@@ -323,6 +445,8 @@ async function init() {
     );
     renderVersions();
     renderCompareVersions();
+    if (!state.commentaries.some((source) => source.id === state.commentary)) state.commentary = "";
+    renderCommentaries();
     await loadBooks();
     await loadChapter();
   } catch (error) {
@@ -391,6 +515,13 @@ compareVersions.addEventListener("change", (event) => {
   setCompareVersion(checkbox.value, checkbox.checked);
 });
 
+commentarySelect.addEventListener("change", () => {
+  state.commentary = commentarySelect.value;
+  renderCommentaries();
+  loadCommentary();
+  saveState();
+});
+
 bookSelect.addEventListener("change", () => {
   state.book = Number(bookSelect.value);
   state.chapter = 1;
@@ -432,6 +563,12 @@ searchResults.addEventListener("click", async (event) => {
     chapter: Number(result.dataset.chapter),
     verse: Number(result.dataset.verse),
   });
+});
+
+content.addEventListener("click", (event) => {
+  const verse = event.target.closest(".verse");
+  if (!verse) return;
+  focusCommentaryForVerse(Number(verse.dataset.verse));
 });
 
 closeSearchBtn.addEventListener("click", closeSearch);

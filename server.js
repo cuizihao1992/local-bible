@@ -8,10 +8,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.BIBLE_DATA_ROOT || "D:\\bibleDownload";
 const BIBLES_DIR = path.join(ROOT, "bibles");
+const COMMENTARIES_DIR = path.join(ROOT, "cj");
 const STATIC_DIR = path.join(__dirname, "static");
 const HOST = process.env.BIBLE_READER_HOST || "127.0.0.1";
 const PORT = Number(process.env.BIBLE_READER_PORT || 8765);
 let versionCache = null;
+let commentaryCache = null;
 const MAX_SEARCH_RESULTS = 80;
 
 const BOOKS_CN = [
@@ -124,10 +126,26 @@ function clampPositiveInt(value, fallback, max) {
 
 function cleanText(value = "") {
   return String(value)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/&ldquo;|&rdquo;/g, "\"")
+    .replace(/&lsquo;|&rsquo;/g, "'")
+    .replace(/&quot;/g, "\"")
+    .replace(/&amp;/g, "&")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s+/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function looksReadable(value = "") {
+  const text = String(value).slice(0, 500);
+  if (!text) return true;
+  if (/[<>\u4e00-\u9fff]/.test(text)) return true;
+  const alphaNum = (text.match(/[A-Za-z0-9+/=]/g) || []).length;
+  return alphaNum / text.length < 0.82;
 }
 
 function hasTable(db, tableName) {
@@ -183,11 +201,58 @@ function bibleFiles() {
   return versionCache;
 }
 
+function commentaryFiles() {
+  if (commentaryCache) return commentaryCache;
+  if (!existsSync(COMMENTARIES_DIR)) return [];
+  commentaryCache = readdirSync(COMMENTARIES_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".db"))
+    .sort((a, b) => a.name.localeCompare(b.name, "zh-Hans-CN"))
+    .map((entry) => {
+      const filePath = path.join(COMMENTARIES_DIR, entry.name);
+      const metadata = readMetadata(filePath);
+      let count = 0;
+      let readable = true;
+      try {
+        const db = new DatabaseSync(filePath, { readOnly: true });
+        try {
+          if (hasTable(db, "commentary")) {
+            count = Number(db.prepare("select count(*) count from commentary").get().count);
+            const sample = db.prepare("select Data from commentary where Data is not null and Data <> '' limit 1").get();
+            readable = looksReadable(sample?.Data || "");
+          }
+        } finally {
+          db.close();
+        }
+      } catch {
+        readable = false;
+      }
+      const title = metadata.Title || metadata.title || metadata.Description || entry.name.replace(/\.db$/i, "");
+      return {
+        id: entry.name,
+        title,
+        fileName: entry.name,
+        sizeMb: Number((statSync(filePath).size / 1024 / 1024).toFixed(2)),
+        count,
+        readable,
+      };
+    });
+  return commentaryCache;
+}
+
 function biblePath(versionId) {
   const fileName = path.basename(decodeURIComponent(versionId || ""));
   const filePath = path.join(BIBLES_DIR, fileName);
   if (!fileName.toLowerCase().endsWith(".db") || !existsSync(filePath)) {
     throw httpError(`找不到版本：${fileName}`, 404);
+  }
+  return filePath;
+}
+
+function commentaryPath(sourceId) {
+  const fileName = path.basename(decodeURIComponent(sourceId || ""));
+  const filePath = path.join(COMMENTARIES_DIR, fileName);
+  if (!fileName.toLowerCase().endsWith(".db") || !existsSync(filePath)) {
+    throw httpError(`找不到注释：${fileName}`, 404);
   }
   return filePath;
 }
@@ -321,6 +386,41 @@ function searchBible(versionId, query, options = {}) {
   }
 }
 
+function getCommentary(sourceId, book, chapter) {
+  const source = commentaryFiles().find((item) => item.id === sourceId);
+  const db = new DatabaseSync(commentaryPath(sourceId), { readOnly: true });
+  try {
+    if (!hasTable(db, "commentary")) {
+      throw httpError("这个数据库没有 commentary 表", 400);
+    }
+    const rows = db
+      .prepare(
+        `select Book, Chapter, FromVerse, ToVerse, Data
+         from commentary
+         where Book = ? and (Chapter = ? or Chapter = 0)
+         order by Chapter, FromVerse, ToVerse`,
+      )
+      .all(book, chapter);
+    return {
+      source: sourceId,
+      title: source?.title || sourceId,
+      readable: source?.readable !== false,
+      book,
+      chapter,
+      entries: rows.map((row) => ({
+        book: Number(row.Book),
+        chapter: Number(row.Chapter),
+        fromVerse: Number(row.FromVerse),
+        toVerse: Number(row.ToVerse),
+        text: source?.readable === false ? "" : cleanText(row.Data),
+        hasImages: /\bImages?\b|<img/i.test(String(row.Data || "")),
+      })),
+    };
+  } finally {
+    db.close();
+  }
+}
+
 async function sendStatic(req, res, pathname) {
   const safePath = pathname === "/" ? "/index.html" : decodeURIComponent(pathname);
   const filePath = path.resolve(STATIC_DIR, `.${safePath}`);
@@ -356,7 +456,9 @@ const server = createServer(async (req, res) => {
         ok: true,
         dataRoot: ROOT,
         biblesDir: BIBLES_DIR,
+        commentariesDir: COMMENTARIES_DIR,
         versionCount: bibleFiles().length,
+        commentaryCount: commentaryFiles().length,
       });
       return;
     }
@@ -389,6 +491,17 @@ const server = createServer(async (req, res) => {
       const book = Number(url.searchParams.get("book") || 0);
       const limit = url.searchParams.get("limit") || 40;
       sendJson(res, searchBible(version, query, { scope, book, limit }));
+      return;
+    }
+    if (url.pathname === "/api/commentaries") {
+      sendJson(res, { commentaries: commentaryFiles() });
+      return;
+    }
+    if (url.pathname === "/api/commentary") {
+      const source = url.searchParams.get("source") || "";
+      const book = parsePositiveInt(url.searchParams.get("book") || 1, "book");
+      const chapter = parsePositiveInt(url.searchParams.get("chapter") || 1, "chapter");
+      sendJson(res, getCommentary(source, book, chapter));
       return;
     }
     await sendStatic(req, res, url.pathname);
