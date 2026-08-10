@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
-import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.BIBLE_DATA_ROOT || "D:\\bibleDownload";
 const BIBLES_DIR = path.join(ROOT, "bibles");
 const COMMENTARIES_DIR = path.join(ROOT, "cj");
+const AUDIO_DIR = path.join(ROOT, "ld");
 const ORIG_DB = path.join(ROOT, "orig", "cbol.db");
 const STATIC_DIR = path.join(__dirname, "static");
 const USER_DATA_DIR = path.join(__dirname, "data");
@@ -17,6 +18,7 @@ const HOST = process.env.BIBLE_READER_HOST || "127.0.0.1";
 const PORT = Number(process.env.BIBLE_READER_PORT || 8765);
 let versionCache = null;
 let commentaryCache = null;
+let audioCache = null;
 const MAX_SEARCH_RESULTS = 80;
 
 function initUserDb() {
@@ -313,6 +315,38 @@ function commentaryFiles() {
       };
     });
   return commentaryCache;
+}
+
+function audioFiles() {
+  if (audioCache) return audioCache;
+  if (!existsSync(AUDIO_DIR)) return [];
+  const files = [];
+  function walk(dir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith(".mp3")) {
+        const rel = path.relative(AUDIO_DIR, fullPath);
+        const parts = rel.split(path.sep);
+        const bookMatch = parts.find((part) => /^\d+/.test(part))?.match(/^(\d+)/);
+        const chapterMatch = entry.name.match(/_(\d+)\.mp3$/i);
+        if (bookMatch && chapterMatch) {
+          files.push({
+            id: rel.replaceAll(path.sep, "/"),
+            source: parts[0] || "朗读",
+            fileName: entry.name,
+            book: Number(bookMatch[1]),
+            chapter: Number(chapterMatch[1]),
+            sizeMb: Number((statSync(fullPath).size / 1024 / 1024).toFixed(2)),
+          });
+        }
+      }
+    }
+  }
+  walk(AUDIO_DIR);
+  audioCache = files.sort((a, b) => a.source.localeCompare(b.source, "zh-Hans-CN") || a.chapter - b.chapter);
+  return audioCache;
 }
 
 function biblePath(versionId) {
@@ -676,6 +710,22 @@ async function sendStatic(req, res, pathname) {
   }
 }
 
+function sendAudio(res, audioId) {
+  const safeId = String(audioId || "").replaceAll("/", path.sep);
+  const filePath = path.resolve(AUDIO_DIR, safeId);
+  const relativePath = path.relative(AUDIO_DIR, filePath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath) || !existsSync(filePath)) {
+    throw httpError("找不到音频", 404);
+  }
+  const body = readFileSync(filePath);
+  res.writeHead(200, {
+    "Content-Type": "audio/mpeg",
+    "Content-Length": body.length,
+    "Cache-Control": "no-store",
+  });
+  res.end(body);
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || `${HOST}:${PORT}`}`);
   try {
@@ -685,10 +735,12 @@ const server = createServer(async (req, res) => {
         dataRoot: ROOT,
         biblesDir: BIBLES_DIR,
         commentariesDir: COMMENTARIES_DIR,
+        audioDir: AUDIO_DIR,
         origDb: ORIG_DB,
         userDb: USER_DB,
         versionCount: bibleFiles().length,
         commentaryCount: commentaryFiles().length,
+        audioCount: audioFiles().length,
       });
       return;
     }
@@ -755,6 +807,19 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === "/api/user/history" && req.method === "POST") {
       sendJson(res, { history: saveHistory(await readJsonBody(req)) });
+      return;
+    }
+    if (url.pathname === "/api/audio") {
+      const book = parsePositiveInt(url.searchParams.get("book") || 1, "book");
+      const chapter = parsePositiveInt(url.searchParams.get("chapter") || 1, "chapter");
+      const matches = audioFiles()
+        .filter((audio) => audio.book === book && audio.chapter === chapter)
+        .map((audio) => ({ ...audio, url: `/api/audio/file?id=${encodeURIComponent(audio.id)}` }));
+      sendJson(res, { audio: matches });
+      return;
+    }
+    if (url.pathname === "/api/audio/file") {
+      sendAudio(res, url.searchParams.get("id") || "");
       return;
     }
     await sendStatic(req, res, url.pathname);

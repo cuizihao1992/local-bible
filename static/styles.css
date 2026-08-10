@@ -297,6 +297,37 @@ select {
   padding: 0 18px;
 }
 
+.audioPanel {
+  width: min(860px, calc(100vw - 360px));
+  margin: 18px auto 0;
+  padding: 14px 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.audioHeader {
+  display: grid;
+  grid-template-columns: 1fr minmax(160px, 260px);
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.audioTitle {
+  font-weight: 800;
+}
+
+.audioMeta {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.audioPanel audio {
+  width: 100%;
+}
+
 .searchHeader {
   display: flex;
   align-items: center;
@@ -730,6 +761,15 @@ select {
   .strongPanel {
     width: 100%;
     padding: 0 16px;
+  }
+
+  .audioPanel {
+    width: calc(100% - 32px);
+    padding: 12px;
+  }
+
+  .audioHeader {
+    grid-template-columns: 1fr;
   }
 
   .commentaryContent {

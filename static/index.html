@@ -47,6 +47,11 @@
         <input id="strongToggle" type="checkbox" />
         <span>显示 Strong 编号</span>
       </label>
+
+      <label class="toggleField">
+        <input id="audioAutoNext" type="checkbox" />
+        <span>音频结束自动下一章</span>
+      </label>
     </aside>
 
     <main class="reader">
@@ -85,6 +90,8 @@
         </div>
         <div id="strongContent" class="strongContent"></div>
       </section>
+
+      <section id="audioPanel" class="audioPanel" hidden></section>
 
       <section id="content" class="content" aria-live="polite"></section>
 

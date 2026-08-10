@@ -7,6 +7,7 @@ const state = {
   compareVersions: [],
   commentary: "",
   showStrong: false,
+  audioAutoNext: false,
   book: 1,
   chapter: 1,
   targetVerse: null,
@@ -39,6 +40,8 @@ const strongPanel = document.querySelector("#strongPanel");
 const strongTitle = document.querySelector("#strongTitle");
 const strongContent = document.querySelector("#strongContent");
 const closeStrongBtn = document.querySelector("#closeStrongBtn");
+const audioPanel = document.querySelector("#audioPanel");
+const audioAutoNext = document.querySelector("#audioAutoNext");
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -102,6 +105,7 @@ function restoreState() {
     }
     if (saved.commentary) state.commentary = saved.commentary;
     state.showStrong = !!saved.showStrong;
+    state.audioAutoNext = !!saved.audioAutoNext;
     if (Number.isInteger(saved.book) && saved.book > 0) state.book = saved.book;
     if (Number.isInteger(saved.chapter) && saved.chapter > 0) state.chapter = saved.chapter;
   } catch {
@@ -117,6 +121,7 @@ function saveState() {
       compareVersions: state.compareVersions,
       commentary: state.commentary,
       showStrong: state.showStrong,
+      audioAutoNext: state.audioAutoNext,
       book: state.book,
       chapter: state.chapter,
     }),
@@ -169,6 +174,7 @@ function renderCommentaries() {
 
 function renderStrongToggle() {
   strongToggle.checked = state.showStrong;
+  audioAutoNext.checked = state.audioAutoNext;
 }
 
 function setCompareVersion(versionId, checked) {
@@ -357,12 +363,54 @@ async function loadChapter() {
     await loadMarks();
     renderVerses(data);
     await loadCommentary();
+    await loadAudio();
     saveReadingHistory();
     saveState();
   } catch (error) {
     setError(error);
   }
   renderChrome();
+}
+
+async function loadAudio() {
+  const params = new URLSearchParams({
+    book: String(state.book),
+    chapter: String(state.chapter),
+  });
+  const data = await api(`/api/audio?${params.toString()}`);
+  renderAudio(data.audio || []);
+}
+
+function renderAudio(items) {
+  if (!items.length) {
+    audioPanel.hidden = true;
+    audioPanel.innerHTML = "";
+    return;
+  }
+  audioPanel.hidden = false;
+  audioPanel.innerHTML = `
+    <div class="audioHeader">
+      <div>
+        <div class="audioTitle">朗读音频</div>
+        <div class="audioMeta">${items.length} 个来源</div>
+      </div>
+      <select id="audioSourceSelect">
+        ${items
+          .map((item, index) => `<option value="${index}">${escapeHtml(item.source)} · ${escapeHtml(item.fileName)}</option>`)
+          .join("")}
+      </select>
+    </div>
+    <audio id="chapterAudio" controls src="${escapeHtml(items[0].url)}"></audio>
+  `;
+  const select = audioPanel.querySelector("#audioSourceSelect");
+  const audio = audioPanel.querySelector("#chapterAudio");
+  select.addEventListener("change", () => {
+    audio.src = items[Number(select.value)].url;
+    audio.load();
+  });
+  audio.addEventListener("ended", () => {
+    if (state.audioAutoNext) moveChapter(1);
+  });
 }
 
 async function loadMarks() {
@@ -756,6 +804,11 @@ strongToggle.addEventListener("change", () => {
   state.showStrong = strongToggle.checked;
   saveState();
   loadChapter();
+});
+
+audioAutoNext.addEventListener("change", () => {
+  state.audioAutoNext = audioAutoNext.checked;
+  saveState();
 });
 
 closeSearchBtn.addEventListener("click", closeSearch);
