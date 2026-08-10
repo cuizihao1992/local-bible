@@ -8,6 +8,8 @@
   --panel: #ffffff;
   --soft: #f1ede5;
   --shadow: 0 14px 40px rgba(45, 38, 28, 0.12);
+  --reader-font-size: 20px;
+  --reader-line-height: 2.05;
 }
 
 * {
@@ -22,6 +24,18 @@ body {
   font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
   display: grid;
   grid-template-columns: 320px 1fr;
+}
+
+body.darkTheme {
+  --paper: #171614;
+  --ink: #ede7dc;
+  --muted: #aaa193;
+  --line: #39342e;
+  --accent: #74b8a8;
+  --accent-2: #d6a16f;
+  --panel: #201e1b;
+  --soft: #2a2621;
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
 }
 
 .sidebar {
@@ -71,6 +85,23 @@ p {
   margin-bottom: 16px;
 }
 
+.compactField {
+  margin-bottom: 8px;
+}
+
+.rangeField {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rangeField input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
 .field span,
 .panelTitle {
   color: var(--muted);
@@ -101,7 +132,8 @@ select {
 }
 
 .commentaryPanel,
-.dictionaryPanel {
+.dictionaryPanel,
+.settingsPanel {
   display: grid;
   gap: 8px;
   margin-top: 18px;
@@ -638,8 +670,8 @@ select {
 }
 
 .verseText {
-  font-size: 20px;
-  line-height: 2.05;
+  font-size: var(--reader-font-size);
+  line-height: var(--reader-line-height);
   letter-spacing: 0;
 }
 

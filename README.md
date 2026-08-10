@@ -60,4 +60,4 @@ npm run check
 
 ## 当前状态
 
-当前是 `V0.8` 辞典/百科版。后续规划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V0.9` 设置与体验优化版。后续规划见 [ROADMAP.md](./ROADMAP.md)。

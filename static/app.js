@@ -9,6 +9,10 @@ const state = {
   commentary: "",
   showStrong: false,
   audioAutoNext: false,
+  theme: "light",
+  scriptPreference: "auto",
+  fontSize: 20,
+  lineHeight: 2.05,
   book: 1,
   chapter: 1,
   targetVerse: null,
@@ -51,6 +55,10 @@ const dictionaryPanel = document.querySelector("#dictionaryPanel");
 const dictionarySummary = document.querySelector("#dictionarySummary");
 const dictionaryResults = document.querySelector("#dictionaryResults");
 const closeDictionaryBtn = document.querySelector("#closeDictionaryBtn");
+const themeSelect = document.querySelector("#themeSelect");
+const scriptPreference = document.querySelector("#scriptPreference");
+const fontSizeRange = document.querySelector("#fontSizeRange");
+const lineHeightRange = document.querySelector("#lineHeightRange");
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -115,6 +123,10 @@ function restoreState() {
     if (saved.commentary) state.commentary = saved.commentary;
     state.showStrong = !!saved.showStrong;
     state.audioAutoNext = !!saved.audioAutoNext;
+    if (saved.theme) state.theme = saved.theme;
+    if (saved.scriptPreference) state.scriptPreference = saved.scriptPreference;
+    if (Number.isFinite(saved.fontSize)) state.fontSize = saved.fontSize;
+    if (Number.isFinite(saved.lineHeight)) state.lineHeight = saved.lineHeight;
     if (Number.isInteger(saved.book) && saved.book > 0) state.book = saved.book;
     if (Number.isInteger(saved.chapter) && saved.chapter > 0) state.chapter = saved.chapter;
   } catch {
@@ -131,6 +143,10 @@ function saveState() {
       commentary: state.commentary,
       showStrong: state.showStrong,
       audioAutoNext: state.audioAutoNext,
+      theme: state.theme,
+      scriptPreference: state.scriptPreference,
+      fontSize: state.fontSize,
+      lineHeight: state.lineHeight,
       book: state.book,
       chapter: state.chapter,
     }),
@@ -184,6 +200,16 @@ function renderCommentaries() {
 function renderStrongToggle() {
   strongToggle.checked = state.showStrong;
   audioAutoNext.checked = state.audioAutoNext;
+}
+
+function applySettings() {
+  document.body.classList.toggle("darkTheme", state.theme === "dark");
+  document.documentElement.style.setProperty("--reader-font-size", `${state.fontSize}px`);
+  document.documentElement.style.setProperty("--reader-line-height", String(state.lineHeight));
+  themeSelect.value = state.theme;
+  scriptPreference.value = state.scriptPreference;
+  fontSizeRange.value = String(state.fontSize);
+  lineHeightRange.value = String(state.lineHeight);
 }
 
 function renderDictionaries() {
@@ -301,6 +327,7 @@ function renderVerseTools(verse) {
       <button class="verseTool ${mark.note || mark.tags ? "active" : ""}" type="button" data-action="note" data-verse="${verse}">
         笔记
       </button>
+      <button class="verseTool" type="button" data-action="copy" data-verse="${verse}">复制</button>
     </div>
   `;
 }
@@ -711,7 +738,13 @@ async function init() {
     }
     const preferred = state.versions.find((version) => version.fileName.includes("和合本.db"));
     if (!state.versions.some((version) => version.id === state.version)) {
-      state.version = preferred?.id || state.versions[0].id;
+      const simplified = state.versions.find((version) => version.fileName === "和合本.db");
+      const traditional = state.versions.find((version) => version.fileName === "和合本(繁體).db");
+      state.version =
+        (state.scriptPreference === "simplified" && simplified?.id) ||
+        (state.scriptPreference === "traditional" && traditional?.id) ||
+        preferred?.id ||
+        state.versions[0].id;
     }
     state.compareVersions = state.compareVersions.filter((version) =>
       state.versions.some((item) => item.id === version && item.id !== state.version),
@@ -722,6 +755,7 @@ async function init() {
     renderCommentaries();
     renderStrongToggle();
     renderDictionaries();
+    applySettings();
     await loadBooks();
     await loadChapter();
   } catch (error) {
@@ -862,6 +896,8 @@ content.addEventListener("click", (event) => {
       const note = content.querySelector(`[data-note-text="${verseNo}"]`)?.value || "";
       const tags = content.querySelector(`[data-note-tags="${verseNo}"]`)?.value || "";
       saveVerseMark({ ...mark, note, tags }).catch(setError);
+    } else if (action === "copy") {
+      copyVerse(verseNo).catch(setError);
     }
     return;
   }
@@ -897,6 +933,58 @@ dictionaryInput.addEventListener("keydown", (event) => {
 });
 dictionarySelect.addEventListener("change", renderDictionaries);
 closeDictionaryBtn.addEventListener("click", closeDictionary);
+
+themeSelect.addEventListener("change", () => {
+  state.theme = themeSelect.value;
+  applySettings();
+  saveState();
+});
+
+scriptPreference.addEventListener("change", () => {
+  state.scriptPreference = scriptPreference.value;
+  saveState();
+});
+
+fontSizeRange.addEventListener("input", () => {
+  state.fontSize = Number(fontSizeRange.value);
+  applySettings();
+  saveState();
+});
+
+lineHeightRange.addEventListener("input", () => {
+  state.lineHeight = Number(lineHeightRange.value);
+  applySettings();
+  saveState();
+});
+
+async function copyVerse(verseNo) {
+  const book = currentBook();
+  const verse = content.querySelector(`.verse[data-verse="${verseNo}"] .verseText`)?.textContent || "";
+  const text = `${book.longName} ${state.chapter}:${verseNo} ${verse}`;
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+  } else {
+    const area = document.createElement("textarea");
+    area.value = text;
+    document.body.append(area);
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+  }
+}
+
+document.addEventListener("keydown", (event) => {
+  const tag = event.target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  if (event.key === "/") {
+    event.preventDefault();
+    quickInput.focus();
+  } else if (event.key === "ArrowLeft") {
+    moveChapter(-1);
+  } else if (event.key === "ArrowRight") {
+    moveChapter(1);
+  }
+});
 
 closeSearchBtn.addEventListener("click", closeSearch);
 closeStrongBtn.addEventListener("click", closeStrong);
