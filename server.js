@@ -12,6 +12,7 @@ const STATIC_DIR = path.join(__dirname, "static");
 const HOST = process.env.BIBLE_READER_HOST || "127.0.0.1";
 const PORT = Number(process.env.BIBLE_READER_PORT || 8765);
 let versionCache = null;
+const MAX_SEARCH_RESULTS = 80;
 
 const BOOKS_CN = [
   ["创", "创世记", 50],
@@ -113,6 +114,12 @@ function parsePositiveInt(value, name) {
     throw httpError(`${name} 必须是正整数`);
   }
   return number;
+}
+
+function clampPositiveInt(value, fallback, max) {
+  const number = Number(value || fallback);
+  if (!Number.isInteger(number) || number < 1) return fallback;
+  return Math.min(number, max);
 }
 
 function cleanText(value = "") {
@@ -262,6 +269,58 @@ function getChapters(versionIds, book, chapter) {
   return { chapters, errors };
 }
 
+function searchBible(versionId, query, options = {}) {
+  const keyword = String(query || "").trim();
+  if (keyword.length < 1) throw httpError("请输入搜索关键词");
+
+  const scope = options.scope || "all";
+  const currentBook = Number(options.book || 0);
+  const limit = clampPositiveInt(options.limit, 40, MAX_SEARCH_RESULTS);
+  const params = [`%${keyword}%`];
+  const where = ["Scripture like ?"];
+
+  if (scope === "ot") {
+    where.push("Book between 1 and 39");
+  } else if (scope === "nt") {
+    where.push("Book between 40 and 66");
+  } else if (scope === "book" && currentBook > 0) {
+    where.push("Book = ?");
+    params.push(currentBook);
+  }
+
+  const db = new DatabaseSync(biblePath(versionId), { readOnly: true });
+  try {
+    const rows = db
+      .prepare(
+        `select Book, Chapter, Verse, Scripture
+         from Bible
+         where ${where.join(" and ")}
+         order by Book, Chapter, Verse
+         limit ?`,
+      )
+      .all(...params, limit);
+    const books = getBooks(versionId);
+    return {
+      version: versionId,
+      query: keyword,
+      scope,
+      limit,
+      results: rows.map((row) => {
+        const book = books.find((item) => item.id === Number(row.Book));
+        return {
+          book: Number(row.Book),
+          bookName: book?.longName || `第 ${row.Book} 卷`,
+          chapter: Number(row.Chapter),
+          verse: Number(row.Verse),
+          text: cleanText(row.Scripture),
+        };
+      }),
+    };
+  } finally {
+    db.close();
+  }
+}
+
 async function sendStatic(req, res, pathname) {
   const safePath = pathname === "/" ? "/index.html" : decodeURIComponent(pathname);
   const filePath = path.resolve(STATIC_DIR, `.${safePath}`);
@@ -321,6 +380,15 @@ const server = createServer(async (req, res) => {
       const book = parsePositiveInt(url.searchParams.get("book") || 1, "book");
       const chapter = parsePositiveInt(url.searchParams.get("chapter") || 1, "chapter");
       sendJson(res, getChapters(versions, book, chapter));
+      return;
+    }
+    if (url.pathname === "/api/search") {
+      const version = url.searchParams.get("version") || "";
+      const query = url.searchParams.get("q") || "";
+      const scope = url.searchParams.get("scope") || "all";
+      const book = Number(url.searchParams.get("book") || 0);
+      const limit = url.searchParams.get("limit") || 40;
+      sendJson(res, searchBible(version, query, { scope, book, limit }));
       return;
     }
     await sendStatic(req, res, url.pathname);

@@ -46,8 +46,26 @@
           <div id="chapterTitle" class="chapterTitle">加载中</div>
           <div id="versionTitle" class="versionTitle"></div>
         </div>
+        <form id="quickForm" class="quickForm" role="search">
+          <input id="quickInput" type="search" placeholder="约3:16 或 关键词" autocomplete="off" />
+          <select id="searchScope" aria-label="搜索范围">
+            <option value="all">全本</option>
+            <option value="ot">旧约</option>
+            <option value="nt">新约</option>
+            <option value="book">本卷</option>
+          </select>
+          <button type="submit">查找</button>
+        </form>
         <button id="nextBtn" class="navBtn">下一章</button>
       </header>
+
+      <section id="searchPanel" class="searchPanel" hidden>
+        <div class="searchHeader">
+          <div id="searchSummary"></div>
+          <button id="closeSearchBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <div id="searchResults" class="searchResults"></div>
+      </section>
 
       <section id="content" class="content" aria-live="polite"></section>
     </main>

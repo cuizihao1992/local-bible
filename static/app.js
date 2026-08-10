@@ -5,6 +5,7 @@ const state = {
   compareVersions: [],
   book: 1,
   chapter: 1,
+  targetVerse: null,
 };
 const STORAGE_KEY = "localBibleReaderState";
 
@@ -19,6 +20,13 @@ const prevBtn = document.querySelector("#prevBtn");
 const nextBtn = document.querySelector("#nextBtn");
 const menuBtn = document.querySelector("#menuBtn");
 const overlay = document.querySelector("#overlay");
+const quickForm = document.querySelector("#quickForm");
+const quickInput = document.querySelector("#quickInput");
+const searchScope = document.querySelector("#searchScope");
+const searchPanel = document.querySelector("#searchPanel");
+const searchSummary = document.querySelector("#searchSummary");
+const searchResults = document.querySelector("#searchResults");
+const closeSearchBtn = document.querySelector("#closeSearchBtn");
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -34,6 +42,18 @@ function currentBook() {
 
 function currentVersion() {
   return state.versions.find((version) => version.id === state.version);
+}
+
+function bookAliases() {
+  const aliases = new Map();
+  state.books.forEach((book) => {
+    [book.shortName, book.longName, book.longName?.replace(/记$/, ""), book.longName?.replace(/书$/, "")].forEach(
+      (name) => {
+        if (name) aliases.set(name, book);
+      },
+    );
+  });
+  return [...aliases.entries()].sort((a, b) => b[0].length - a[0].length);
 }
 
 function versionLabel(versionId) {
@@ -159,7 +179,7 @@ function renderVerses(data) {
     .map(
       (verse) => `
         <article class="verse">
-          <div class="verseNo">${verse.verse}</div>
+          <div class="verseNo" id="v${verse.verse}">${verse.verse}</div>
           <div>
             <div class="verseText">${escapeHtml(verse.text)}</div>
             ${renderCompareList(verse.verse, compareByVersion)}
@@ -168,6 +188,16 @@ function renderVerses(data) {
       `,
     )
     .join("");
+  focusTargetVerse();
+}
+
+function focusTargetVerse() {
+  if (!state.targetVerse) return;
+  const marker = document.querySelector(`#v${state.targetVerse}`);
+  const verse = marker?.closest(".verse");
+  if (!verse) return;
+  verse.classList.add("targetVerse");
+  verse.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
 function renderCompareList(verseNo, compareByVersion) {
@@ -212,6 +242,66 @@ async function loadChapter() {
     setError(error);
   }
   renderChrome();
+}
+
+function parseReference(input) {
+  const value = input.trim().replace(/\s+/g, "");
+  const match = value.match(/^(.+?)(\d+)[:：.．,，](\d+)$/);
+  if (!match) return null;
+  const [, rawBook, rawChapter, rawVerse] = match;
+  const found = bookAliases().find(([alias]) => rawBook === alias || rawBook.startsWith(alias));
+  if (!found) return null;
+  return {
+    book: found[1].id,
+    chapter: Number(rawChapter),
+    verse: Number(rawVerse),
+  };
+}
+
+async function jumpToReference(ref) {
+  state.book = ref.book;
+  state.chapter = ref.chapter;
+  state.targetVerse = ref.verse;
+  renderBooks();
+  renderChapterGrid();
+  closeSearch();
+  await loadChapter();
+}
+
+async function runSearch(query) {
+  const params = new URLSearchParams({
+    version: state.version,
+    q: query,
+    scope: searchScope.value,
+    book: String(state.book),
+    limit: "60",
+  });
+  searchSummary.textContent = "正在搜索";
+  searchResults.innerHTML = "";
+  searchPanel.hidden = false;
+  const data = await api(`/api/search?${params.toString()}`);
+  renderSearchResults(data);
+}
+
+function renderSearchResults(data) {
+  const count = data.results.length;
+  searchSummary.textContent = count ? `找到 ${count} 条结果：${data.query}` : `没有找到：${data.query}`;
+  searchResults.innerHTML = count
+    ? data.results
+        .map(
+          (item) => `
+            <button class="searchResult" type="button" data-book="${item.book}" data-chapter="${item.chapter}" data-verse="${item.verse}">
+              <span class="searchRef">${escapeHtml(item.bookName)} ${item.chapter}:${item.verse}</span>
+              <span class="searchText">${escapeHtml(item.text)}</span>
+            </button>
+          `,
+        )
+        .join("")
+    : `<div class="empty">换一个关键词，或调整搜索范围。</div>`;
+}
+
+function closeSearch() {
+  searchPanel.hidden = true;
 }
 
 async function init() {
@@ -280,6 +370,7 @@ versionSelect.addEventListener("change", async () => {
   state.version = versionSelect.value;
   state.compareVersions = state.compareVersions.filter((version) => version !== state.version);
   state.chapter = 1;
+  state.targetVerse = null;
   renderCompareVersions();
   await loadBooks();
   await loadChapter();
@@ -303,6 +394,7 @@ compareVersions.addEventListener("change", (event) => {
 bookSelect.addEventListener("change", () => {
   state.book = Number(bookSelect.value);
   state.chapter = 1;
+  state.targetVerse = null;
   renderChapterGrid();
   loadChapter();
 });
@@ -311,12 +403,46 @@ chapterGrid.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-chapter]");
   if (!button) return;
   state.chapter = Number(button.dataset.chapter);
+  state.targetVerse = null;
   document.body.classList.remove("sidebarOpen");
   loadChapter();
 });
 
-prevBtn.addEventListener("click", () => moveChapter(-1));
-nextBtn.addEventListener("click", () => moveChapter(1));
+quickForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const query = quickInput.value.trim();
+  if (!query) return;
+  try {
+    const ref = parseReference(query);
+    if (ref) {
+      await jumpToReference(ref);
+    } else {
+      await runSearch(query);
+    }
+  } catch (error) {
+    setError(error);
+  }
+});
+
+searchResults.addEventListener("click", async (event) => {
+  const result = event.target.closest(".searchResult");
+  if (!result) return;
+  await jumpToReference({
+    book: Number(result.dataset.book),
+    chapter: Number(result.dataset.chapter),
+    verse: Number(result.dataset.verse),
+  });
+});
+
+closeSearchBtn.addEventListener("click", closeSearch);
+prevBtn.addEventListener("click", () => {
+  state.targetVerse = null;
+  moveChapter(-1);
+});
+nextBtn.addEventListener("click", () => {
+  state.targetVerse = null;
+  moveChapter(1);
+});
 menuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
 overlay.addEventListener("click", () => document.body.classList.remove("sidebarOpen"));
 
