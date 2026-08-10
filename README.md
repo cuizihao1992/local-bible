@@ -51,6 +51,9 @@ npm start
 - `GET /api/dictionaries`：辞典/百科库列表
 - `GET /api/dictionary/search?source=证主圣经百科全书.db&q=膏`：搜索词条
 - `GET /api/dictionary/image?source=简明圣经史地图解.db&name=总图一.png`：读取辞典图片
+- `GET /api/diagnostics`：本地数据兼容性检查
+- `GET /api/user/export`：导出个人收藏、笔记和历史
+- `POST /api/user/import`：导入个人收藏、笔记和历史
 
 ## 开发检查
 
@@ -60,4 +63,27 @@ npm run check
 
 ## 当前状态
 
-当前是 `V0.9` 设置与体验优化版。后续规划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V1.0` 稳定本地版。版本计划见 [ROADMAP.md](./ROADMAP.md)。
+
+## 数据说明
+
+个人数据保存到：
+
+```text
+data\user.sqlite
+```
+
+这个文件不会提交到 Git。可以在页面设置区导出/导入个人数据。
+
+## 已支持
+
+- 多版本圣经阅读
+- 多版本对照
+- 快速定位和关键词搜索
+- 注释联动
+- Strong 编号和原文释义
+- 收藏、高亮、笔记、标签
+- 章节音频播放
+- 辞典/百科搜索和图片显示
+- 夜间模式、字号、行距、复制、快捷键
+- 本地诊断、导入/导出

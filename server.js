@@ -146,7 +146,7 @@ function readJsonBody(req) {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 1024 * 128) {
+      if (body.length > 1024 * 1024 * 5) {
         reject(httpError("请求体过大", 413));
         req.destroy();
       }
@@ -581,6 +581,70 @@ function getHistory() {
   }
 }
 
+function exportUserData() {
+  const db = new DatabaseSync(USER_DB);
+  try {
+    return {
+      exportedAt: new Date().toISOString(),
+      marks: db.prepare("select * from verse_marks order by updated_at desc").all(),
+      history: getHistory(),
+    };
+  } finally {
+    db.close();
+  }
+}
+
+function importUserData(payload) {
+  const marks = Array.isArray(payload.marks) ? payload.marks : [];
+  const db = new DatabaseSync(USER_DB);
+  try {
+    const insert = db.prepare(
+      `insert into verse_marks (version, book, chapter, verse, favorite, highlighted, note, tags, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       on conflict(version, book, chapter, verse)
+       do update set favorite=excluded.favorite, highlighted=excluded.highlighted,
+         note=excluded.note, tags=excluded.tags, updated_at=excluded.updated_at`,
+    );
+    db.exec("begin");
+    for (const item of marks.filter((mark) => mark.version && mark.book && mark.chapter && mark.verse)) {
+      insert.run(
+        String(item.version || ""),
+        Number(item.book),
+        Number(item.chapter),
+        Number(item.verse),
+        item.favorite ? 1 : 0,
+        item.highlighted ? 1 : 0,
+        String(item.note || ""),
+        String(item.tags || ""),
+        String(item.updated_at || item.updatedAt || new Date().toISOString()),
+      );
+    }
+    db.exec("commit");
+    if (payload.history) saveHistory(payload.history);
+    return { imported: marks.length };
+  } finally {
+    db.close();
+  }
+}
+
+function diagnostics() {
+  const checks = [];
+  function add(name, ok, detail = "") {
+    checks.push({ name, ok: !!ok, detail });
+  }
+  add("圣经目录", existsSync(BIBLES_DIR), BIBLES_DIR);
+  add("注释目录", existsSync(COMMENTARIES_DIR), COMMENTARIES_DIR);
+  add("辞典目录", existsSync(DICTIONARIES_DIR), DICTIONARIES_DIR);
+  add("音频目录", existsSync(AUDIO_DIR), AUDIO_DIR);
+  add("原文库", existsSync(ORIG_DB), ORIG_DB);
+  add("用户数据库", existsSync(USER_DB), USER_DB);
+  add("圣经译本", bibleFiles().length > 0, `${bibleFiles().length} 个`);
+  add("注释源", commentaryFiles().length > 0, `${commentaryFiles().length} 个`);
+  add("辞典源", dictionaryFiles().length > 0, `${dictionaryFiles().length} 个`);
+  add("音频文件", audioFiles().length > 0, `${audioFiles().length} 个`);
+  return { ok: checks.every((check) => check.ok), checks };
+}
+
 function findStrongOccurrences(type, number, limit = 30) {
   const tagNumber = String(Number(number));
   const candidates = bibleFiles()
@@ -905,12 +969,20 @@ const server = createServer(async (req, res) => {
       sendJson(res, { history: getHistory() });
       return;
     }
+    if (url.pathname === "/api/user/export") {
+      sendJson(res, exportUserData());
+      return;
+    }
     if (url.pathname === "/api/user/mark" && req.method === "POST") {
       sendJson(res, { mark: saveMark(await readJsonBody(req)) });
       return;
     }
     if (url.pathname === "/api/user/history" && req.method === "POST") {
       sendJson(res, { history: saveHistory(await readJsonBody(req)) });
+      return;
+    }
+    if (url.pathname === "/api/user/import" && req.method === "POST") {
+      sendJson(res, importUserData(await readJsonBody(req)));
       return;
     }
     if (url.pathname === "/api/audio") {
@@ -939,6 +1011,10 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === "/api/dictionary/image") {
       sendDictionaryImage(res, url.searchParams.get("source") || "", url.searchParams.get("name") || "");
+      return;
+    }
+    if (url.pathname === "/api/diagnostics") {
+      sendJson(res, diagnostics());
       return;
     }
     await sendStatic(req, res, url.pathname);

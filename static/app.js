@@ -59,6 +59,11 @@ const themeSelect = document.querySelector("#themeSelect");
 const scriptPreference = document.querySelector("#scriptPreference");
 const fontSizeRange = document.querySelector("#fontSizeRange");
 const lineHeightRange = document.querySelector("#lineHeightRange");
+const exportDataBtn = document.querySelector("#exportDataBtn");
+const importDataBtn = document.querySelector("#importDataBtn");
+const importDataFile = document.querySelector("#importDataFile");
+const userDataHint = document.querySelector("#userDataHint");
+const dashboardPanel = document.querySelector("#dashboardPanel");
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -423,6 +428,31 @@ async function loadChapter() {
   renderChrome();
 }
 
+async function loadDashboard() {
+  const [diagnosticData, exportData] = await Promise.all([api("/api/diagnostics"), api("/api/user/export")]);
+  const favorites = exportData.marks.filter((mark) => mark.favorite).length;
+  const notes = exportData.marks.filter((mark) => mark.note || mark.tags).length;
+  const history = exportData.history;
+  dashboardPanel.innerHTML = `
+    <div class="dashboardItem">
+      <div class="dashboardLabel">最近阅读</div>
+      <button class="dashboardAction" type="button" ${
+        history ? `data-book="${history.book}" data-chapter="${history.chapter}" data-version="${escapeHtml(history.version)}"` : "disabled"
+      }>
+        ${history ? `${escapeHtml(versionLabel(history.version))} · ${history.book}:${history.chapter}` : "暂无记录"}
+      </button>
+    </div>
+    <div class="dashboardItem">
+      <div class="dashboardLabel">个人资料</div>
+      <div class="dashboardValue">${favorites} 收藏 · ${notes} 笔记</div>
+    </div>
+    <div class="dashboardItem">
+      <div class="dashboardLabel">数据状态</div>
+      <div class="dashboardValue">${diagnosticData.ok ? "正常" : "需检查"}</div>
+    </div>
+  `;
+}
+
 async function loadAudio() {
   const params = new URLSearchParams({
     book: String(state.book),
@@ -757,6 +787,7 @@ async function init() {
     renderDictionaries();
     applySettings();
     await loadBooks();
+    await loadDashboard();
     await loadChapter();
   } catch (error) {
     setError(error);
@@ -934,6 +965,20 @@ dictionaryInput.addEventListener("keydown", (event) => {
 dictionarySelect.addEventListener("change", renderDictionaries);
 closeDictionaryBtn.addEventListener("click", closeDictionary);
 
+dashboardPanel.addEventListener("click", async (event) => {
+  const action = event.target.closest(".dashboardAction");
+  if (!action || action.disabled) return;
+  if (action.dataset.version && state.versions.some((version) => version.id === action.dataset.version)) {
+    state.version = action.dataset.version;
+    renderVersions();
+  }
+  state.book = Number(action.dataset.book);
+  state.chapter = Number(action.dataset.chapter);
+  state.targetVerse = null;
+  await loadBooks();
+  await loadChapter();
+});
+
 themeSelect.addEventListener("change", () => {
   state.theme = themeSelect.value;
   applySettings();
@@ -984,6 +1029,29 @@ document.addEventListener("keydown", (event) => {
   } else if (event.key === "ArrowRight") {
     moveChapter(1);
   }
+});
+
+exportDataBtn.addEventListener("click", async () => {
+  const data = await api("/api/user/export");
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `bible-reader-data-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+importDataBtn.addEventListener("click", () => importDataFile.click());
+importDataFile.addEventListener("change", async () => {
+  const file = importDataFile.files?.[0];
+  if (!file) return;
+  const payload = JSON.parse(await file.text());
+  const result = await postJson("/api/user/import", payload);
+  userDataHint.textContent = `已导入 ${result.imported} 条`;
+  await loadMarks();
+  await loadDashboard();
+  await loadChapter();
 });
 
 closeSearchBtn.addEventListener("click", closeSearch);

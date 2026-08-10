@@ -156,6 +156,22 @@ select {
   padding: 0 9px;
 }
 
+.dataButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.dataButtons button {
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 800;
+}
+
 .dictionarySearch button {
   color: var(--accent);
   cursor: pointer;
@@ -366,6 +382,46 @@ select {
   width: min(860px, calc(100vw - 360px));
   margin: 18px auto 0;
   padding: 0 18px;
+}
+
+.dashboardPanel {
+  width: min(860px, calc(100vw - 360px));
+  margin: 18px auto 0;
+  padding: 0 18px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.dashboardItem {
+  min-width: 0;
+  padding: 13px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.dashboardLabel {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.dashboardValue,
+.dashboardAction {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dashboardAction {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
 }
 
 .dictionaryResults {
@@ -885,6 +941,12 @@ select {
 
   .dictionaryResultsPanel {
     width: 100%;
+    padding: 0 16px;
+  }
+
+  .dashboardPanel {
+    width: 100%;
+    grid-template-columns: 1fr;
     padding: 0 16px;
   }
 
