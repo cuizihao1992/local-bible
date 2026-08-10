@@ -42,6 +42,11 @@
         <select id="commentarySelect"></select>
         <div id="commentaryHint" class="panelHint"></div>
       </div>
+
+      <label class="toggleField">
+        <input id="strongToggle" type="checkbox" />
+        <span>显示 Strong 编号</span>
+      </label>
     </aside>
 
     <main class="reader">
@@ -71,6 +76,14 @@
           <button id="closeSearchBtn" class="textBtn" type="button">关闭</button>
         </div>
         <div id="searchResults" class="searchResults"></div>
+      </section>
+
+      <section id="strongPanel" class="strongPanel" hidden>
+        <div class="searchHeader">
+          <div id="strongTitle"></div>
+          <button id="closeStrongBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <div id="strongContent" class="strongContent"></div>
       </section>
 
       <section id="content" class="content" aria-live="polite"></section>

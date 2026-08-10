@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.BIBLE_DATA_ROOT || "D:\\bibleDownload";
 const BIBLES_DIR = path.join(ROOT, "bibles");
 const COMMENTARIES_DIR = path.join(ROOT, "cj");
+const ORIG_DB = path.join(ROOT, "orig", "cbol.db");
 const STATIC_DIR = path.join(__dirname, "static");
 const HOST = process.env.BIBLE_READER_HOST || "127.0.0.1";
 const PORT = Number(process.env.BIBLE_READER_PORT || 8765);
@@ -146,6 +147,24 @@ function looksReadable(value = "") {
   if (/[<>\u4e00-\u9fff]/.test(text)) return true;
   const alphaNum = (text.match(/[A-Za-z0-9+/=]/g) || []).length;
   return alphaNum / text.length < 0.82;
+}
+
+function extractStrongNumbers(value = "") {
+  const matches = [...String(value).matchAll(/<W([HG])0*(\d{1,5})>/gi)];
+  const seen = new Set();
+  return matches
+    .map((match) => {
+      const type = match[1].toUpperCase();
+      const number = match[2].padStart(5, "0");
+      const code = `${type}${Number(match[2])}`;
+      return { code, type, number };
+    })
+    .filter((item) => {
+      const key = `${item.type}${item.number}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function hasTable(db, tableName) {
@@ -307,11 +326,76 @@ function getChapter(versionId, book, chapter) {
       verses: rows.map((row) => ({
         verse: Number(row.Verse),
         text: cleanText(row.Scripture),
+        strongs: extractStrongNumbers(row.Scripture),
       })),
     };
   } finally {
     db.close();
   }
+}
+
+function lookupStrong(code) {
+  const match = String(code || "").trim().toUpperCase().match(/^(?:W)?([HG])0*(\d{1,5})$/);
+  if (!match) throw httpError("Strong 编号格式无效");
+  if (!existsSync(ORIG_DB)) throw httpError("找不到原文库 cbol.db", 404);
+
+  const type = match[1];
+  const number = match[2].padStart(5, "0");
+  const db = new DatabaseSync(ORIG_DB, { readOnly: true });
+  try {
+    const table = type === "H" ? "hfhl" : "gfhl";
+    const numberColumn = type === "H" ? "hsnum" : "gsnum";
+    const row = db.prepare(`select ${numberColumn} number, txt, orig, orig_fhl from ${table} where ${numberColumn}=?`).get(number);
+    if (!row) throw httpError(`找不到 Strong 编号：${type}${Number(number)}`, 404);
+    return {
+      code: `${type}${Number(number)}`,
+      type,
+      number,
+      original: cleanText(row.orig || ""),
+      transliteration: cleanText(row.orig_fhl || ""),
+      definition: cleanText(row.txt || ""),
+      occurrences: findStrongOccurrences(type, number),
+    };
+  } finally {
+    db.close();
+  }
+}
+
+function findStrongOccurrences(type, number, limit = 30) {
+  const tagNumber = String(Number(number));
+  const candidates = bibleFiles()
+    .filter((version) => /KJV|Strong|原文|編碼|编码/i.test(`${version.id} ${version.name}`))
+    .slice(0, 6);
+  const books = fallbackBooks();
+  const occurrences = [];
+  for (const version of candidates) {
+    const db = new DatabaseSync(biblePath(version.id), { readOnly: true });
+    try {
+      const rows = db
+        .prepare(
+          `select Book, Chapter, Verse
+           from Bible
+           where Scripture like ? or Scripture like ?
+           order by Book, Chapter, Verse
+           limit ?`,
+        )
+        .all(`%<W${type}${tagNumber}>%`, `%<W${type}${number}>%`, limit - occurrences.length);
+      for (const row of rows) {
+        const book = books.find((item) => item.id === Number(row.Book));
+        occurrences.push({
+          version: version.shortName || version.name,
+          book: Number(row.Book),
+          bookName: book?.longName || `第 ${row.Book} 卷`,
+          chapter: Number(row.Chapter),
+          verse: Number(row.Verse),
+        });
+      }
+    } finally {
+      db.close();
+    }
+    if (occurrences.length >= limit) break;
+  }
+  return occurrences;
 }
 
 function getChapters(versionIds, book, chapter) {
@@ -457,6 +541,7 @@ const server = createServer(async (req, res) => {
         dataRoot: ROOT,
         biblesDir: BIBLES_DIR,
         commentariesDir: COMMENTARIES_DIR,
+        origDb: ORIG_DB,
         versionCount: bibleFiles().length,
         commentaryCount: commentaryFiles().length,
       });
@@ -502,6 +587,10 @@ const server = createServer(async (req, res) => {
       const book = parsePositiveInt(url.searchParams.get("book") || 1, "book");
       const chapter = parsePositiveInt(url.searchParams.get("chapter") || 1, "chapter");
       sendJson(res, getCommentary(source, book, chapter));
+      return;
+    }
+    if (url.pathname === "/api/strong") {
+      sendJson(res, lookupStrong(url.searchParams.get("code") || ""));
       return;
     }
     await sendStatic(req, res, url.pathname);

@@ -5,6 +5,7 @@ const state = {
   version: "",
   compareVersions: [],
   commentary: "",
+  showStrong: false,
   book: 1,
   chapter: 1,
   targetVerse: null,
@@ -32,6 +33,11 @@ const closeSearchBtn = document.querySelector("#closeSearchBtn");
 const commentarySelect = document.querySelector("#commentarySelect");
 const commentaryHint = document.querySelector("#commentaryHint");
 const commentaryContent = document.querySelector("#commentaryContent");
+const strongToggle = document.querySelector("#strongToggle");
+const strongPanel = document.querySelector("#strongPanel");
+const strongTitle = document.querySelector("#strongTitle");
+const strongContent = document.querySelector("#strongContent");
+const closeStrongBtn = document.querySelector("#closeStrongBtn");
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -82,6 +88,7 @@ function restoreState() {
       state.compareVersions = saved.compareVersions.filter((version) => typeof version === "string").slice(0, 3);
     }
     if (saved.commentary) state.commentary = saved.commentary;
+    state.showStrong = !!saved.showStrong;
     if (Number.isInteger(saved.book) && saved.book > 0) state.book = saved.book;
     if (Number.isInteger(saved.chapter) && saved.chapter > 0) state.chapter = saved.chapter;
   } catch {
@@ -96,6 +103,7 @@ function saveState() {
       version: state.version,
       compareVersions: state.compareVersions,
       commentary: state.commentary,
+      showStrong: state.showStrong,
       book: state.book,
       chapter: state.chapter,
     }),
@@ -144,6 +152,10 @@ function renderCommentaries() {
   commentaryHint.textContent = selected
     ? `${selected.count} 条 · ${selected.sizeMb} MB${selected.readable ? "" : " · 数据疑似加密"}`
     : `${state.commentaries.length} 个注释源`;
+}
+
+function renderStrongToggle() {
+  strongToggle.checked = state.showStrong;
 }
 
 function setCompareVersion(versionId, checked) {
@@ -206,6 +218,7 @@ function renderVerses(data) {
           <div class="verseNo" id="v${verse.verse}">${verse.verse}</div>
           <div class="verseBody" data-verse="${verse.verse}">
             <div class="verseText">${escapeHtml(verse.text)}</div>
+            ${renderStrongList(verse.strongs || [])}
             ${renderCompareList(verse.verse, compareByVersion)}
           </div>
         </article>
@@ -213,6 +226,20 @@ function renderVerses(data) {
     )
     .join("");
   focusTargetVerse();
+}
+
+function renderStrongList(strongs) {
+  if (!state.showStrong || !strongs.length) return "";
+  return `
+    <div class="strongList">
+      ${strongs
+        .map(
+          (strong) =>
+            `<button class="strongBtn" type="button" data-code="${escapeHtml(strong.code)}">${escapeHtml(strong.code)}</button>`,
+        )
+        .join("")}
+    </div>
+  `;
 }
 
 function focusTargetVerse() {
@@ -406,6 +433,42 @@ function closeSearch() {
   searchPanel.hidden = true;
 }
 
+function closeStrong() {
+  strongPanel.hidden = true;
+}
+
+async function openStrong(code) {
+  strongTitle.textContent = `Strong ${code}`;
+  strongContent.innerHTML = `<div class="loading">正在读取原文释义</div>`;
+  strongPanel.hidden = false;
+  const data = await api(`/api/strong?code=${encodeURIComponent(code)}`);
+  strongTitle.textContent = `Strong ${data.code}`;
+  strongContent.innerHTML = `
+    <div class="strongOriginal">${escapeHtml(data.original || data.code)}</div>
+    <div class="strongTranslit">${escapeHtml(data.transliteration || "")}</div>
+    <div class="strongDefinition">${escapeHtml(data.definition)}</div>
+    ${renderStrongOccurrences(data.occurrences || [])}
+  `;
+  strongPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
+function renderStrongOccurrences(occurrences) {
+  if (!occurrences.length) return "";
+  return `
+    <div class="strongOccurrences">
+      <div class="strongOccurrenceTitle">出现位置</div>
+      ${occurrences
+        .map(
+          (item) =>
+            `<button class="strongOccurrence" type="button" data-book="${item.book}" data-chapter="${item.chapter}" data-verse="${item.verse}">
+              ${escapeHtml(item.bookName)} ${item.chapter}:${item.verse}
+            </button>`,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function focusCommentaryForVerse(verseNo) {
   if (!state.commentary) return;
   const entries = [...commentaryContent.querySelectorAll(".commentaryEntry")];
@@ -447,6 +510,7 @@ async function init() {
     renderCompareVersions();
     if (!state.commentaries.some((source) => source.id === state.commentary)) state.commentary = "";
     renderCommentaries();
+    renderStrongToggle();
     await loadBooks();
     await loadChapter();
   } catch (error) {
@@ -566,12 +630,34 @@ searchResults.addEventListener("click", async (event) => {
 });
 
 content.addEventListener("click", (event) => {
+  const strong = event.target.closest(".strongBtn");
+  if (strong) {
+    openStrong(strong.dataset.code).catch(setError);
+    return;
+  }
   const verse = event.target.closest(".verse");
   if (!verse) return;
   focusCommentaryForVerse(Number(verse.dataset.verse));
 });
 
+strongToggle.addEventListener("change", () => {
+  state.showStrong = strongToggle.checked;
+  saveState();
+  loadChapter();
+});
+
 closeSearchBtn.addEventListener("click", closeSearch);
+closeStrongBtn.addEventListener("click", closeStrong);
+
+strongContent.addEventListener("click", async (event) => {
+  const occurrence = event.target.closest(".strongOccurrence");
+  if (!occurrence) return;
+  await jumpToReference({
+    book: Number(occurrence.dataset.book),
+    chapter: Number(occurrence.dataset.chapter),
+    verse: Number(occurrence.dataset.verse),
+  });
+});
 prevBtn.addEventListener("click", () => {
   state.targetVerse = null;
   moveChapter(-1);

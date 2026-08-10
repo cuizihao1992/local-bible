@@ -106,6 +106,22 @@ select {
   margin-top: 18px;
 }
 
+.toggleField {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.toggleField input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
 .comparePanel {
   margin: 8px 0 18px;
   padding: 12px;
@@ -274,7 +290,8 @@ select {
   padding: 34px 18px 90px;
 }
 
-.searchPanel {
+.searchPanel,
+.strongPanel {
   width: min(860px, calc(100vw - 360px));
   margin: 18px auto 0;
   padding: 0 18px;
@@ -342,6 +359,61 @@ select {
   line-height: 1.65;
 }
 
+.strongContent {
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.strongOriginal {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.strongTranslit {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.strongDefinition {
+  color: #403b34;
+  font-size: 15px;
+  line-height: 1.8;
+  margin-top: 12px;
+  white-space: pre-wrap;
+}
+
+.strongOccurrences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.strongOccurrenceTitle {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.strongOccurrence {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+}
+
 .verse {
   display: grid;
   grid-template-columns: 44px 1fr;
@@ -399,6 +471,25 @@ select {
   color: #49443d;
   font-size: 16px;
   line-height: 1.8;
+}
+
+.strongList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.strongBtn {
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 9px;
 }
 
 .commentaryContent {
@@ -553,7 +644,8 @@ select {
     padding: 22px 16px 70px;
   }
 
-  .searchPanel {
+  .searchPanel,
+  .strongPanel {
     width: 100%;
     padding: 0 16px;
   }
