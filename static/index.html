@@ -21,12 +21,6 @@
         <select id="versionSelect"></select>
       </label>
 
-      <div class="comparePanel">
-        <div class="panelTitle">对照版本</div>
-        <div class="panelHint">最多选择 3 个</div>
-        <div id="compareVersions" class="compareVersions"></div>
-      </div>
-
       <label class="field">
         <span>书卷</span>
         <select id="bookSelect"></select>
@@ -37,74 +31,84 @@
         <div id="chapterGrid" class="chapterGrid"></div>
       </div>
 
-      <div class="commentaryPanel">
-        <div class="panelTitle">注释</div>
-        <select id="commentarySelect"></select>
-        <div id="commentaryHint" class="panelHint"></div>
-      </div>
+      <details class="advancedPanel">
+        <summary>高级设置</summary>
 
-      <label class="toggleField">
-        <input id="strongToggle" type="checkbox" />
-        <span>显示 Strong 编号</span>
-      </label>
-
-      <label class="toggleField">
-        <input id="audioAutoNext" type="checkbox" />
-        <span>音频结束自动下一章</span>
-      </label>
-
-      <div class="dictionaryPanel">
-        <div class="panelTitle">辞典/百科</div>
-        <select id="dictionarySelect"></select>
-        <div class="dictionarySearch">
-          <input id="dictionaryInput" type="search" placeholder="搜索词条" />
-          <button id="dictionaryBtn" type="button">查</button>
+        <div class="comparePanel">
+          <div class="panelTitle">对照版本</div>
+          <div class="panelHint">最多选择 3 个</div>
+          <div id="compareVersions" class="compareVersions"></div>
         </div>
-        <div id="dictionaryHint" class="panelHint"></div>
-      </div>
 
-      <div class="settingsPanel">
-        <div class="panelTitle">设置</div>
-        <label class="field compactField">
-          <span>主题</span>
-          <select id="themeSelect">
-            <option value="light">日间</option>
-            <option value="dark">夜间</option>
-          </select>
-        </label>
-        <label class="field compactField">
-          <span>配色</span>
-          <select id="paletteSelect">
-            <option value="classic">经典纸张</option>
-            <option value="jade">清润青绿</option>
-            <option value="blue">安静蓝灰</option>
-            <option value="rose">柔和玫瑰</option>
-            <option value="mono">简洁墨白</option>
-          </select>
-        </label>
-        <label class="field compactField">
-          <span>简繁偏好</span>
-          <select id="scriptPreference">
-            <option value="auto">自动</option>
-            <option value="simplified">简体</option>
-            <option value="traditional">繁体</option>
-          </select>
-        </label>
-        <label class="rangeField">
-          <span>字号</span>
-          <input id="fontSizeRange" type="range" min="16" max="26" step="1" />
-        </label>
-        <label class="rangeField">
-          <span>行距</span>
-          <input id="lineHeightRange" type="range" min="1.6" max="2.4" step="0.1" />
-        </label>
-        <div class="dataButtons">
-          <button id="exportDataBtn" type="button">导出</button>
-          <button id="importDataBtn" type="button">导入</button>
-          <input id="importDataFile" type="file" accept="application/json" hidden />
+        <div class="commentaryPanel">
+          <div class="panelTitle">注释</div>
+          <select id="commentarySelect"></select>
+          <div id="commentaryHint" class="panelHint"></div>
         </div>
-        <div id="userDataHint" class="panelHint"></div>
-      </div>
+
+        <label class="toggleField">
+          <input id="strongToggle" type="checkbox" />
+          <span>显示 Strong 编号</span>
+        </label>
+
+        <label class="toggleField">
+          <input id="audioAutoNext" type="checkbox" />
+          <span>音频结束自动下一章</span>
+        </label>
+
+        <div class="dictionaryPanel">
+          <div class="panelTitle">辞典/百科</div>
+          <select id="dictionarySelect"></select>
+          <div class="dictionarySearch">
+            <input id="dictionaryInput" type="search" placeholder="搜索词条" />
+            <button id="dictionaryBtn" type="button">查</button>
+          </div>
+          <div id="dictionaryHint" class="panelHint"></div>
+        </div>
+
+        <div class="settingsPanel">
+          <div class="panelTitle">设置</div>
+          <label class="field compactField">
+            <span>主题</span>
+            <select id="themeSelect">
+              <option value="light">日间</option>
+              <option value="dark">夜间</option>
+            </select>
+          </label>
+          <label class="field compactField">
+            <span>配色</span>
+            <select id="paletteSelect">
+              <option value="classic">经典纸张</option>
+              <option value="jade">清润青绿</option>
+              <option value="blue">安静蓝灰</option>
+              <option value="rose">柔和玫瑰</option>
+              <option value="mono">简洁墨白</option>
+            </select>
+          </label>
+          <label class="field compactField">
+            <span>简繁偏好</span>
+            <select id="scriptPreference">
+              <option value="auto">自动</option>
+              <option value="simplified">简体</option>
+              <option value="traditional">繁体</option>
+            </select>
+          </label>
+          <label class="rangeField">
+            <span>字号</span>
+            <input id="fontSizeRange" type="range" min="16" max="26" step="1" />
+          </label>
+          <label class="rangeField">
+            <span>行距</span>
+            <input id="lineHeightRange" type="range" min="1.6" max="2.4" step="0.1" />
+          </label>
+          <div class="dataButtons">
+            <button id="exportDataBtn" type="button">导出</button>
+            <button id="importDataBtn" type="button">导入</button>
+            <input id="importDataFile" type="file" accept="application/json" hidden />
+          </div>
+          <div id="userDataHint" class="panelHint"></div>
+        </div>
+      </details>
     </aside>
 
     <main class="reader">

@@ -250,6 +250,47 @@ select {
   margin-top: 10px;
 }
 
+.advancedPanel {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.advancedPanel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.advancedPanel summary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedPanel summary::after {
+  content: "展开";
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.advancedPanel[open] summary::after {
+  content: "收起";
+}
+
+.advancedPanel[open] summary {
+  margin-bottom: 14px;
+}
+
 .commentaryPanel,
 .dictionaryPanel,
 .settingsPanel {
