@@ -72,6 +72,9 @@ const userDataHint = document.querySelector("#userDataHint");
 const dashboardPanel = document.querySelector("#dashboardPanel");
 const verseMenu = document.querySelector("#verseMenu");
 const verseMenuTitle = document.querySelector("#verseMenuTitle");
+const selectionBar = document.querySelector("#selectionBar");
+const selectionSummary = document.querySelector("#selectionSummary");
+const copySelectionBtn = document.querySelector("#copySelectionBtn");
 const mobilePrevBtn = document.querySelector("#mobilePrevBtn");
 const mobileMenuBtn = document.querySelector("#mobileMenuBtn");
 const mobileSearchBtn = document.querySelector("#mobileSearchBtn");
@@ -82,6 +85,7 @@ const myResults = document.querySelector("#myResults");
 const myTagFilter = document.querySelector("#myTagFilter");
 const closeMyPanelBtn = document.querySelector("#closeMyPanelBtn");
 let longPressTimer = null;
+let selectedVerseNumbers = [];
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -393,6 +397,92 @@ function openVerseMenu(verseNo, x, y) {
 
 function closeVerseMenu() {
   verseMenu.hidden = true;
+}
+
+function closeSelectionBar() {
+  selectionBar.hidden = true;
+  selectedVerseNumbers = [];
+}
+
+function verseTextForNumber(verseNo) {
+  return content.querySelector(`.verse[data-verse="${verseNo}"] .verseText`)?.textContent.trim() || "";
+}
+
+function formatVerseLines(verseNumbers) {
+  const book = currentBook();
+  return verseNumbers
+    .map((verseNo) => {
+      const verse = verseTextForNumber(verseNo);
+      return verse ? `${book.longName} ${state.chapter}:${verseNo} ${verse}` : "";
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function writeClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.left = "-9999px";
+  document.body.append(area);
+  area.select();
+  document.execCommand("copy");
+  area.remove();
+}
+
+function selectedVersesFromRange(range) {
+  return [...content.querySelectorAll(".verse")]
+    .filter((verse) => {
+      try {
+        return range.intersectsNode(verse);
+      } catch {
+        return false;
+      }
+    })
+    .map((verse) => Number(verse.dataset.verse))
+    .filter(Number.isFinite);
+}
+
+function updateSelectionBar() {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !selection.rangeCount) {
+    closeSelectionBar();
+    return;
+  }
+  const range = selection.getRangeAt(0);
+  const common = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+    ? range.commonAncestorContainer
+    : range.commonAncestorContainer.parentElement;
+  if (!common || !content.contains(common)) {
+    closeSelectionBar();
+    return;
+  }
+  selectedVerseNumbers = selectedVersesFromRange(range);
+  if (!selectedVerseNumbers.length) {
+    closeSelectionBar();
+    return;
+  }
+  const first = selectedVerseNumbers[0];
+  const last = selectedVerseNumbers[selectedVerseNumbers.length - 1];
+  selectionSummary.textContent =
+    selectedVerseNumbers.length === 1
+      ? `${currentBook().longName} ${state.chapter}:${first}`
+      : `${currentBook().longName} ${state.chapter}:${first}-${last} · ${selectedVerseNumbers.length} 节`;
+  copySelectionBtn.textContent = "复制所选";
+  selectionBar.hidden = false;
+}
+
+async function copySelectedVerses() {
+  if (!selectedVerseNumbers.length) updateSelectionBar();
+  if (!selectedVerseNumbers.length) return;
+  await writeClipboard(formatVerseLines(selectedVerseNumbers));
+  copySelectionBtn.textContent = "已复制";
+  window.setTimeout(closeSelectionBar, 900);
 }
 
 async function runVerseAction(action, verseNo = state.activeVerse) {
@@ -1106,10 +1196,15 @@ content.addEventListener("pointerdown", (event) => {
 
 content.addEventListener("pointerup", () => {
   clearTimeout(longPressTimer);
+  window.setTimeout(updateSelectionBar, 0);
 });
 
 content.addEventListener("pointercancel", () => {
   clearTimeout(longPressTimer);
+});
+
+document.addEventListener("selectionchange", () => {
+  window.requestAnimationFrame(updateSelectionBar);
 });
 
 content.addEventListener("dblclick", () => {
@@ -1232,18 +1327,9 @@ markReadBtn.addEventListener("click", () => {
 
 async function copyVerse(verseNo) {
   const book = currentBook();
-  const verse = content.querySelector(`.verse[data-verse="${verseNo}"] .verseText`)?.textContent || "";
+  const verse = verseTextForNumber(verseNo);
   const text = `${book.longName} ${state.chapter}:${verseNo} ${verse}`;
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-  } else {
-    const area = document.createElement("textarea");
-    area.value = text;
-    document.body.append(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
-  }
+  await writeClipboard(text);
 }
 
 document.addEventListener("keydown", (event) => {
@@ -1291,6 +1377,14 @@ verseMenu.addEventListener("click", (event) => {
   if (!button) return;
   runVerseAction(button.dataset.menuAction).catch(setError);
   closeVerseMenu();
+});
+
+copySelectionBtn.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+});
+
+copySelectionBtn.addEventListener("click", () => {
+  copySelectedVerses().catch(setError);
 });
 
 document.addEventListener("click", (event) => {

@@ -942,6 +942,51 @@ mark {
   outline: none;
 }
 
+.selectionBar {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(620px, calc(100vw - 28px));
+  padding: 9px 10px 9px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  transform: translateX(-50%);
+}
+
+.selectionBar[hidden] {
+  display: none;
+}
+
+.selectionBar span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectionBar button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
 .mobileNav {
   display: none;
 }
@@ -1340,6 +1385,14 @@ mark {
     font-size: 15px;
   }
 
+  .selectionBar {
+    left: 10px;
+    right: 10px;
+    bottom: calc(var(--mobile-nav-height) + 12px + env(safe-area-inset-bottom));
+    max-width: none;
+    transform: none;
+  }
+
   .mobileNav {
     position: fixed;
     left: 10px;
@@ -1369,6 +1422,10 @@ mark {
     font-weight: 800;
     padding: 0 2px;
     white-space: nowrap;
+  }
+
+  .selectionBar button {
+    min-height: 38px;
   }
 
   .compareVerse {
@@ -1435,5 +1492,17 @@ mark {
 
   .mobileNav button {
     font-size: 11px;
+  }
+
+  .selectionBar {
+    left: 6px;
+    right: 6px;
+    gap: 8px;
+    padding: 8px 8px 8px 10px;
+    font-size: 12px;
+  }
+
+  .selectionBar button {
+    padding: 0 9px;
   }
 }
