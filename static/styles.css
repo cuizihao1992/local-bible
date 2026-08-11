@@ -13,6 +13,7 @@
   --shadow: 0 14px 40px rgba(45, 38, 28, 0.12);
   --reader-font-size: 20px;
   --reader-line-height: 2.05;
+  --mobile-nav-height: 72px;
 }
 
 * {
@@ -1150,16 +1151,25 @@ mark {
 }
 
 @media (max-width: 860px) {
+  html {
+    min-width: 320px;
+  }
+
   body {
     grid-template-columns: 1fr;
+    min-height: 100dvh;
   }
 
   .sidebar {
     position: fixed;
+    top: 0;
+    bottom: 0;
     transform: translateX(-105%);
     transition: transform 0.18s ease;
     width: min(100vw, 380px);
     max-width: 100vw;
+    height: 100dvh;
+    padding: 18px 16px calc(24px + env(safe-area-inset-bottom));
     box-shadow: var(--shadow);
   }
 
@@ -1178,23 +1188,45 @@ mark {
     display: block;
   }
 
+  body.sidebarOpen .mobileNav {
+    display: none;
+  }
+
   .iconBtn {
     display: inline-grid;
     place-items: center;
   }
 
   .topbar {
-    grid-template-columns: auto auto 1fr auto;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
     gap: 8px;
     padding: 10px 12px;
     padding-bottom: 8px;
+    min-height: 0;
+  }
+
+  .topbar > .navBtn {
+    display: none;
+  }
+
+  .titleBlock {
+    text-align: left;
   }
 
   .quickForm {
     grid-column: 1 / -1;
     grid-row: 2;
-    grid-template-columns: minmax(100px, 1fr) 76px 58px;
+    grid-template-columns: minmax(0, 1fr) 76px 56px;
     width: 100%;
+    gap: 6px;
+  }
+
+  .quickForm input,
+  .quickForm select,
+  .quickForm button {
+    height: 36px;
+    min-width: 0;
+    font-size: 13px;
   }
 
   .navBtn {
@@ -1204,12 +1236,15 @@ mark {
 
   .chapterTitle {
     font-size: 18px;
+    line-height: 1.25;
   }
 
   .progressInline {
+    justify-content: flex-start;
     gap: 6px;
     margin-top: 6px;
     font-size: 11px;
+    flex-wrap: wrap;
   }
 
   .progressInline button {
@@ -1219,7 +1254,7 @@ mark {
 
   .content {
     width: 100%;
-    padding: 22px 16px 108px;
+    padding: 18px 16px calc(var(--mobile-nav-height) + 42px + env(safe-area-inset-bottom));
   }
 
   .searchPanel,
@@ -1231,6 +1266,11 @@ mark {
   .audioPanel {
     width: calc(100% - 32px);
     padding: 12px;
+  }
+
+  .audioPanel select,
+  .audioPanel audio {
+    min-width: 0;
   }
 
   .dictionaryResultsPanel {
@@ -1245,6 +1285,7 @@ mark {
 
   .myFilters {
     grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
   }
 
   .myFilters input {
@@ -1255,6 +1296,7 @@ mark {
     width: 100%;
     grid-template-columns: 1fr;
     padding: 0 16px;
+    margin-top: 12px;
   }
 
   .audioHeader {
@@ -1263,12 +1305,13 @@ mark {
 
   .commentaryContent {
     width: 100%;
-    padding: 0 16px 108px;
+    padding: 0 16px calc(var(--mobile-nav-height) + 42px + env(safe-area-inset-bottom));
   }
 
   .verse {
     grid-template-columns: 32px 1fr;
     gap: 10px;
+    padding: 11px 0;
   }
 
   .verseText {
@@ -1288,7 +1331,7 @@ mark {
     left: 12px !important;
     right: 12px;
     top: auto !important;
-    bottom: 74px;
+    bottom: calc(var(--mobile-nav-height) + 12px + env(safe-area-inset-bottom));
     width: auto;
   }
 
@@ -1301,11 +1344,12 @@ mark {
     position: fixed;
     left: 10px;
     right: 10px;
-    bottom: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
     z-index: 10;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    gap: 5px;
+    min-height: var(--mobile-nav-height);
     padding: 8px;
     background: var(--mobilebar);
     border: 1px solid var(--line);
@@ -1323,9 +1367,73 @@ mark {
     font: inherit;
     font-size: 12px;
     font-weight: 800;
+    padding: 0 2px;
+    white-space: nowrap;
   }
 
   .compareVerse {
     font-size: 15px;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar {
+    padding: 8px 10px;
+  }
+
+  .versionTitle {
+    display: none;
+  }
+
+  .quickForm {
+    grid-template-columns: minmax(0, 1fr) 66px 50px;
+  }
+
+  .quickForm input {
+    padding: 0 9px;
+  }
+
+  .quickForm select {
+    padding: 0 5px;
+  }
+
+  .content,
+  .searchPanel,
+  .strongPanel,
+  .dictionaryResultsPanel,
+  .myPanel,
+  .dashboardPanel,
+  .commentaryContent {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .audioPanel {
+    width: calc(100% - 24px);
+  }
+
+  .verse {
+    grid-template-columns: 26px 1fr;
+    gap: 8px;
+  }
+
+  .verseNo {
+    font-size: 12px;
+  }
+
+  .verseText {
+    font-size: 17px;
+    line-height: 1.9;
+  }
+
+  .mobileNav {
+    left: 6px;
+    right: 6px;
+    gap: 4px;
+    padding: 7px;
+  }
+
+  .mobileNav button {
+    font-size: 11px;
   }
 }
