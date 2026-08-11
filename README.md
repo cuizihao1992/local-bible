@@ -14,6 +14,28 @@ npm start
 http://127.0.0.1:8765
 ```
 
+## 桌面版 exe
+
+打包 Windows 便携版：
+
+```powershell
+npm run dist:win
+```
+
+生成文件：
+
+```text
+dist\本地圣经 1.6.0.exe
+```
+
+桌面版仍默认读取：
+
+```text
+D:\bibleDownload
+```
+
+桌面版个人数据保存到 Windows 用户数据目录，避免便携版临时目录导致收藏和笔记丢失。
+
 ## 配置
 
 默认数据目录是：
@@ -65,7 +87,7 @@ npm test
 
 ## 当前状态
 
-当前是 `V1.5.3` 简洁侧栏优化版。版本计划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V1.6.0` Windows exe 桌面版。版本计划见 [ROADMAP.md](./ROADMAP.md)。
 
 ## 数据说明
 
@@ -93,6 +115,7 @@ data\user.sqlite
 - 经文正文不再常驻显示每节操作按钮
 - 鼠标多选跨节经文后可一键复制规范格式
 - 左侧面板默认只展示译本、书卷、章节，高级功能折叠显示
+- Electron Windows 便携版 exe
 - 移动端底部导航
 - 手机端顶部栏、侧栏、底部安全区适配
 - 收藏与笔记管理面板

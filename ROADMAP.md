@@ -225,3 +225,19 @@
 - 高级设置默认折叠
 - 使用原生 `details/summary`，不增加额外脚本
 - 补充折叠按钮样式，让入口更清晰
+
+## V1.6.0 Windows exe 桌面版
+
+目标：把本地网页应用打包成可双击运行的 Windows `.exe`。
+
+已完成：
+
+- 新增 Electron 桌面入口
+- 桌面版启动时自动寻找空闲端口
+- 桌面版自动启动本地 Node 后台
+- 窗口加载内部本地服务地址
+- 关闭桌面窗口时自动结束后台进程
+- 桌面版用户数据保存到 Windows AppData
+- 新增 `npm run desktop`
+- 新增 `npm run dist:win`
+- 已生成 Windows 便携版 exe
