@@ -1,13 +1,13 @@
 {
   "name": "local-bible-reader",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "本地圣经阅读器桌面版",
   "author": "Local",
   "private": true,
   "type": "module",
   "main": "desktop/electron-main.cjs",
   "scripts": {
-    "check": "node --check server.js && node --check static/app.js",
+    "check": "node --check server.js && node --check static/app.js && node --check desktop/electron-main.cjs",
     "desktop": "electron .",
     "dist:win": "electron-builder --win portable",
     "start": "node --no-warnings server.js",

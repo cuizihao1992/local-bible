@@ -10,6 +10,17 @@ let serverUrl = "";
 
 app.setName("本地圣经");
 
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  });
+}
+
 function findFreePort() {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
@@ -124,7 +135,9 @@ function stopLocalServer() {
   serverProcess = null;
 }
 
-app.whenReady().then(createWindow);
+if (gotLock) {
+  app.whenReady().then(createWindow);
+}
 
 app.on("window-all-closed", () => {
   stopLocalServer();

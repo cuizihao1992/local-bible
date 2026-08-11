@@ -87,7 +87,7 @@ npm test
 
 ## 当前状态
 
-当前是 `V1.6.0` Windows exe 桌面版。版本计划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V1.6.1` 稳定性优化版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
 
 ## 数据说明
 
@@ -116,6 +116,7 @@ data\user.sqlite
 - 鼠标多选跨节经文后可一键复制规范格式
 - 左侧面板默认只展示译本、书卷、章节，高级功能折叠显示
 - Electron Windows 便携版 exe
+- 前端错误处理、选区性能、桌面单实例等稳定性优化
 - 移动端底部导航
 - 手机端顶部栏、侧栏、底部安全区适配
 - 收藏与笔记管理面板

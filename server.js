@@ -716,6 +716,7 @@ function importUserData(payload) {
   const marks = Array.isArray(payload.marks) ? payload.marks : [];
   const progress = Array.isArray(payload.progress) ? payload.progress : [];
   const db = new DatabaseSync(USER_DB);
+  let committed = false;
   try {
     const insert = db.prepare(
       `insert into verse_marks (version, book, chapter, verse, favorite, highlighted, note, tags, updated_at)
@@ -752,11 +753,17 @@ function importUserData(payload) {
       );
     }
     db.exec("commit");
-    if (payload.history) saveHistory(payload.history);
-    return { imported: marks.length, progressImported: progress.length };
+    committed = true;
   } finally {
+    if (!committed) {
+      try {
+        db.exec("rollback");
+      } catch {}
+    }
     db.close();
   }
+  if (payload.history) saveHistory(payload.history);
+  return { imported: marks.length, progressImported: progress.length };
 }
 
 function diagnostics() {

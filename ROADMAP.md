@@ -241,3 +241,17 @@
 - 新增 `npm run desktop`
 - 新增 `npm run dist:win`
 - 已生成 Windows 便携版 exe
+
+## V1.6.1 稳定性与维护性优化
+
+目标：检查现有实现中的风险点，先收一批高收益优化。
+
+已完成：
+
+- 前端 API 响应解析支持纯文本错误，提示更稳定
+- 多选复制选区监听增加帧级节流
+- 清理未使用的每节工具条渲染函数
+- 导入个人数据时优化 SQLite 事务和回滚
+- 桌面版增加单实例保护
+- `npm run check` 覆盖 Electron 桌面入口
+- 新增 [OPTIMIZATION.md](./OPTIMIZATION.md) 记录体检结果和后续优化清单

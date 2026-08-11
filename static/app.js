@@ -86,13 +86,27 @@ const myTagFilter = document.querySelector("#myTagFilter");
 const closeMyPanelBtn = document.querySelector("#closeMyPanelBtn");
 let longPressTimer = null;
 let selectedVerseNumbers = [];
+let selectionFrame = 0;
 
-function api(path) {
-  return fetch(path).then(async (response) => {
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "请求失败");
-    return data;
-  });
+async function readResponse(response) {
+  const text = await response.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { error: text };
+    }
+  }
+  if (!response.ok) {
+    throw new Error(data?.error || `请求失败：${response.status}`);
+  }
+  return data || {};
+}
+
+async function api(path) {
+  const response = await fetch(path);
+  return readResponse(response);
 }
 
 function currentBook() {
@@ -133,11 +147,7 @@ function postJson(path, payload) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  }).then(async (response) => {
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "请求失败");
-    return data;
-  });
+  }).then(readResponse);
 }
 
 function restoreState() {
@@ -361,24 +371,6 @@ function markForVerse(verse) {
       tags: "",
     }
   );
-}
-
-function renderVerseTools(verse) {
-  const mark = markForVerse(verse);
-  return `
-    <div class="verseTools">
-      <button class="verseTool ${mark.favorite ? "active" : ""}" type="button" data-action="favorite" data-verse="${verse}">
-        ${mark.favorite ? "★ 已收藏" : "☆ 收藏"}
-      </button>
-      <button class="verseTool ${mark.highlighted ? "active" : ""}" type="button" data-action="highlight" data-verse="${verse}">
-        ${mark.highlighted ? "已高亮" : "高亮"}
-      </button>
-      <button class="verseTool ${mark.note || mark.tags ? "active" : ""}" type="button" data-action="note" data-verse="${verse}">
-        笔记
-      </button>
-      <button class="verseTool" type="button" data-action="copy" data-verse="${verse}">复制</button>
-    </div>
-  `;
 }
 
 function openVerseMenu(verseNo, x, y) {
@@ -1204,7 +1196,11 @@ content.addEventListener("pointercancel", () => {
 });
 
 document.addEventListener("selectionchange", () => {
-  window.requestAnimationFrame(updateSelectionBar);
+  if (selectionFrame) return;
+  selectionFrame = window.requestAnimationFrame(() => {
+    selectionFrame = 0;
+    updateSelectionBar();
+  });
 });
 
 content.addEventListener("dblclick", () => {
