@@ -151,6 +151,23 @@
       <section id="commentaryContent" class="commentaryContent"></section>
     </main>
 
+    <div id="verseMenu" class="verseMenu" hidden>
+      <div id="verseMenuTitle" class="verseMenuTitle"></div>
+      <button type="button" data-menu-action="favorite">收藏</button>
+      <button type="button" data-menu-action="highlight">高亮</button>
+      <button type="button" data-menu-action="note">笔记</button>
+      <button type="button" data-menu-action="copy">复制</button>
+      <button type="button" data-menu-action="dictionary">查词</button>
+      <button type="button" data-menu-action="commentary">注释</button>
+    </div>
+
+    <nav class="mobileNav" aria-label="移动端导航">
+      <button id="mobilePrevBtn" type="button">上一章</button>
+      <button id="mobileMenuBtn" type="button">目录</button>
+      <button id="mobileSearchBtn" type="button">搜索</button>
+      <button id="mobileNextBtn" type="button">下一章</button>
+    </nav>
+
     <div id="overlay" class="overlay"></div>
     <script src="/app.js"></script>
   </body>

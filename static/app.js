@@ -16,6 +16,7 @@ const state = {
   book: 1,
   chapter: 1,
   targetVerse: null,
+  activeVerse: null,
 };
 const STORAGE_KEY = "localBibleReaderState";
 
@@ -64,6 +65,13 @@ const importDataBtn = document.querySelector("#importDataBtn");
 const importDataFile = document.querySelector("#importDataFile");
 const userDataHint = document.querySelector("#userDataHint");
 const dashboardPanel = document.querySelector("#dashboardPanel");
+const verseMenu = document.querySelector("#verseMenu");
+const verseMenuTitle = document.querySelector("#verseMenuTitle");
+const mobilePrevBtn = document.querySelector("#mobilePrevBtn");
+const mobileMenuBtn = document.querySelector("#mobileMenuBtn");
+const mobileSearchBtn = document.querySelector("#mobileSearchBtn");
+const mobileNextBtn = document.querySelector("#mobileNextBtn");
+let longPressTimer = null;
 
 function api(path) {
   return fetch(path).then(async (response) => {
@@ -335,6 +343,45 @@ function renderVerseTools(verse) {
       <button class="verseTool" type="button" data-action="copy" data-verse="${verse}">复制</button>
     </div>
   `;
+}
+
+function openVerseMenu(verseNo, x, y) {
+  const mark = markForVerse(verseNo);
+  state.activeVerse = Number(verseNo);
+  verseMenuTitle.textContent = `${currentBook().longName} ${state.chapter}:${verseNo}`;
+  verseMenu.querySelector('[data-menu-action="favorite"]').textContent = mark.favorite ? "取消收藏" : "收藏";
+  verseMenu.querySelector('[data-menu-action="highlight"]').textContent = mark.highlighted ? "取消高亮" : "高亮";
+  verseMenu.hidden = false;
+  const rect = verseMenu.getBoundingClientRect();
+  const maxX = window.innerWidth - rect.width - 10;
+  const maxY = window.innerHeight - rect.height - 10;
+  verseMenu.style.left = `${Math.max(10, Math.min(x, maxX))}px`;
+  verseMenu.style.top = `${Math.max(10, Math.min(y, maxY))}px`;
+}
+
+function closeVerseMenu() {
+  verseMenu.hidden = true;
+}
+
+async function runVerseAction(action, verseNo = state.activeVerse) {
+  if (!verseNo) return;
+  const mark = markForVerse(verseNo);
+  if (action === "favorite") {
+    await saveVerseMark({ ...mark, favorite: !mark.favorite });
+  } else if (action === "highlight") {
+    await saveVerseMark({ ...mark, highlighted: !mark.highlighted });
+  } else if (action === "note") {
+    const editor = content.querySelector(`[data-note-editor="${verseNo}"]`);
+    if (editor) editor.hidden = !editor.hidden;
+  } else if (action === "copy") {
+    await copyVerse(verseNo);
+  } else if (action === "dictionary") {
+    const text = content.querySelector(`.verse[data-verse="${verseNo}"] .verseText`)?.textContent || "";
+    dictionaryInput.value = text.match(/[\u4e00-\u9fff]{2,6}/)?.[0] || text.split(/\s+/).find(Boolean) || "";
+    await searchDictionary();
+  } else if (action === "commentary") {
+    focusCommentaryForVerse(Number(verseNo));
+  }
 }
 
 function renderNoteEditor(verse) {
@@ -915,26 +962,42 @@ content.addEventListener("click", (event) => {
   if (tool) {
     const verseNo = Number(tool.dataset.verse);
     const action = tool.dataset.action;
-    const mark = markForVerse(verseNo);
-    if (action === "favorite") {
-      saveVerseMark({ ...mark, favorite: !mark.favorite }).catch(setError);
-    } else if (action === "highlight") {
-      saveVerseMark({ ...mark, highlighted: !mark.highlighted }).catch(setError);
-    } else if (action === "note") {
-      const editor = content.querySelector(`[data-note-editor="${verseNo}"]`);
-      if (editor) editor.hidden = !editor.hidden;
-    } else if (action === "save-note") {
+    if (action === "save-note") {
+      const mark = markForVerse(verseNo);
       const note = content.querySelector(`[data-note-text="${verseNo}"]`)?.value || "";
       const tags = content.querySelector(`[data-note-tags="${verseNo}"]`)?.value || "";
       saveVerseMark({ ...mark, note, tags }).catch(setError);
-    } else if (action === "copy") {
-      copyVerse(verseNo).catch(setError);
+    } else {
+      runVerseAction(action, verseNo).catch(setError);
     }
     return;
   }
   const verse = event.target.closest(".verse");
   if (!verse) return;
   focusCommentaryForVerse(Number(verse.dataset.verse));
+});
+
+content.addEventListener("contextmenu", (event) => {
+  const verse = event.target.closest(".verse");
+  if (!verse) return;
+  event.preventDefault();
+  openVerseMenu(Number(verse.dataset.verse), event.clientX, event.clientY);
+});
+
+content.addEventListener("pointerdown", (event) => {
+  const verse = event.target.closest(".verse");
+  if (!verse || event.pointerType === "mouse") return;
+  longPressTimer = window.setTimeout(() => {
+    openVerseMenu(Number(verse.dataset.verse), event.clientX, event.clientY);
+  }, 520);
+});
+
+content.addEventListener("pointerup", () => {
+  clearTimeout(longPressTimer);
+});
+
+content.addEventListener("pointercancel", () => {
+  clearTimeout(longPressTimer);
 });
 
 content.addEventListener("dblclick", () => {
@@ -1057,6 +1120,18 @@ importDataFile.addEventListener("change", async () => {
 closeSearchBtn.addEventListener("click", closeSearch);
 closeStrongBtn.addEventListener("click", closeStrong);
 
+verseMenu.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-menu-action]");
+  if (!button) return;
+  runVerseAction(button.dataset.menuAction).catch(setError);
+  closeVerseMenu();
+});
+
+document.addEventListener("click", (event) => {
+  if (verseMenu.hidden || verseMenu.contains(event.target)) return;
+  closeVerseMenu();
+});
+
 strongContent.addEventListener("click", async (event) => {
   const occurrence = event.target.closest(".strongOccurrence");
   if (!occurrence) return;
@@ -1076,5 +1151,9 @@ nextBtn.addEventListener("click", () => {
 });
 menuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
 overlay.addEventListener("click", () => document.body.classList.remove("sidebarOpen"));
+mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
+mobileNextBtn.addEventListener("click", () => moveChapter(1));
+mobileMenuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
+mobileSearchBtn.addEventListener("click", () => quickInput.focus());
 
 init();

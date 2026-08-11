@@ -664,6 +664,49 @@ select {
   color: var(--accent);
 }
 
+.verseMenu {
+  position: fixed;
+  z-index: 20;
+  min-width: 168px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.verseMenuTitle {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 8px 8px;
+}
+
+.verseMenu button {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  padding: 0 9px;
+}
+
+.verseMenu button:hover,
+.verseMenu button:focus-visible {
+  background: var(--soft);
+  outline: none;
+}
+
+.mobileNav {
+  display: none;
+}
+
 .noteEditor {
   display: grid;
   gap: 8px;
@@ -877,7 +920,8 @@ select {
     position: fixed;
     transform: translateX(-105%);
     transition: transform 0.18s ease;
-    width: min(86vw, 330px);
+    width: min(100vw, 380px);
+    max-width: 100vw;
     box-shadow: var(--shadow);
   }
 
@@ -905,6 +949,7 @@ select {
     grid-template-columns: auto auto 1fr auto;
     gap: 8px;
     padding: 10px 12px;
+    padding-bottom: 8px;
   }
 
   .quickForm {
@@ -925,7 +970,7 @@ select {
 
   .content {
     width: 100%;
-    padding: 22px 16px 70px;
+    padding: 22px 16px 108px;
   }
 
   .searchPanel,
@@ -956,7 +1001,7 @@ select {
 
   .commentaryContent {
     width: 100%;
-    padding: 0 16px 70px;
+    padding: 0 16px 108px;
   }
 
   .verse {
@@ -967,6 +1012,59 @@ select {
   .verseText {
     font-size: 18px;
     line-height: 1.95;
+  }
+
+  .verseTools {
+    display: none;
+  }
+
+  .notePreview {
+    margin-top: 8px;
+  }
+
+  .verseMenu {
+    left: 12px !important;
+    right: 12px;
+    top: auto !important;
+    bottom: 74px;
+    width: auto;
+  }
+
+  .verseMenu button {
+    min-height: 42px;
+    font-size: 15px;
+  }
+
+  .mobileNav {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 8px;
+    background: rgba(251, 250, 246, 0.94);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
+  }
+
+  body.darkTheme .mobileNav {
+    background: rgba(32, 30, 27, 0.94);
+  }
+
+  .mobileNav button {
+    min-height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--accent);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
   }
 
   .compareVerse {
