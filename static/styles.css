@@ -384,6 +384,81 @@ select {
   padding: 0 18px;
 }
 
+.myPanel {
+  width: min(860px, calc(100vw - 360px));
+  margin: 18px auto 0;
+  padding: 0 18px;
+}
+
+.myFilters {
+  display: grid;
+  grid-template-columns: repeat(3, auto) 1fr;
+  gap: 8px;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 0;
+}
+
+.myFilters button,
+.myFilters input {
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  padding: 0 10px;
+}
+
+.myFilters button {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.myResults {
+  display: grid;
+  max-height: 460px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.myResult {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.myRef {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.myBadges {
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.myNote {
+  color: #49443d;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
 .dashboardPanel {
   width: min(860px, calc(100vw - 360px));
   margin: 18px auto 0;
@@ -559,6 +634,13 @@ select {
   color: #49443d;
   font-size: 15px;
   line-height: 1.65;
+}
+
+mark {
+  background: rgba(214, 161, 111, 0.35);
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 2px;
 }
 
 .strongContent {
@@ -989,6 +1071,19 @@ select {
     padding: 0 16px;
   }
 
+  .myPanel {
+    width: 100%;
+    padding: 0 16px;
+  }
+
+  .myFilters {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .myFilters input {
+    grid-column: 1 / -1;
+  }
+
   .dashboardPanel {
     width: 100%;
     grid-template-columns: 1fr;
@@ -1042,7 +1137,7 @@ select {
     bottom: 10px;
     z-index: 10;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 6px;
     padding: 8px;
     background: rgba(251, 250, 246, 0.94);
@@ -1063,7 +1158,7 @@ select {
     background: var(--panel);
     color: var(--accent);
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
   }
 

@@ -70,7 +70,12 @@ const verseMenuTitle = document.querySelector("#verseMenuTitle");
 const mobilePrevBtn = document.querySelector("#mobilePrevBtn");
 const mobileMenuBtn = document.querySelector("#mobileMenuBtn");
 const mobileSearchBtn = document.querySelector("#mobileSearchBtn");
+const mobileMyBtn = document.querySelector("#mobileMyBtn");
 const mobileNextBtn = document.querySelector("#mobileNextBtn");
+const myPanel = document.querySelector("#myPanel");
+const myResults = document.querySelector("#myResults");
+const myTagFilter = document.querySelector("#myTagFilter");
+const closeMyPanelBtn = document.querySelector("#closeMyPanelBtn");
 let longPressTimer = null;
 
 function api(path) {
@@ -491,7 +496,7 @@ async function loadDashboard() {
     </div>
     <div class="dashboardItem">
       <div class="dashboardLabel">个人资料</div>
-      <div class="dashboardValue">${favorites} 收藏 · ${notes} 笔记</div>
+      <button class="dashboardAction" type="button" data-open-my="all">${favorites} 收藏 · ${notes} 笔记</button>
     </div>
     <div class="dashboardItem">
       <div class="dashboardLabel">数据状态</div>
@@ -690,12 +695,20 @@ function renderSearchResults(data) {
           (item) => `
             <button class="searchResult" type="button" data-book="${item.book}" data-chapter="${item.chapter}" data-verse="${item.verse}">
               <span class="searchRef">${escapeHtml(item.bookName)} ${item.chapter}:${item.verse}</span>
-              <span class="searchText">${escapeHtml(item.text)}</span>
+              <span class="searchText">${highlightText(item.text, data.query)}</span>
             </button>
           `,
         )
         .join("")
     : `<div class="empty">换一个关键词，或调整搜索范围。</div>`;
+}
+
+function highlightText(text, query) {
+  const safe = escapeHtml(text);
+  const keyword = String(query || "").trim();
+  if (!keyword) return safe;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return safe.replace(new RegExp(escaped, "gi"), (match) => `<mark>${match}</mark>`);
 }
 
 function closeSearch() {
@@ -708,6 +721,34 @@ function closeStrong() {
 
 function closeDictionary() {
   dictionaryPanel.hidden = true;
+}
+
+function closeMyPanel() {
+  myPanel.hidden = true;
+}
+
+async function openMyPanel(kind = "all") {
+  const params = new URLSearchParams({ kind, tag: myTagFilter.value.trim(), limit: "300" });
+  const data = await api(`/api/user/marks/all?${params.toString()}`);
+  myPanel.hidden = false;
+  renderMyResults(data.marks);
+  myPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
+function renderMyResults(marks) {
+  myResults.innerHTML = marks.length
+    ? marks
+        .map(
+          (mark) => `
+            <button class="myResult" type="button" data-version="${escapeHtml(mark.version)}" data-book="${mark.book}" data-chapter="${mark.chapter}" data-verse="${mark.verse}">
+              <span class="myRef">${escapeHtml(mark.bookName)} ${mark.chapter}:${mark.verse}</span>
+              <span class="myBadges">${mark.favorite ? "收藏" : ""}${mark.highlighted ? " 高亮" : ""}${mark.tags ? ` #${escapeHtml(mark.tags)}` : ""}</span>
+              ${mark.note ? `<span class="myNote">${escapeHtml(mark.note)}</span>` : ""}
+            </button>
+          `,
+        )
+        .join("")
+    : `<div class="empty">还没有匹配的收藏或笔记。</div>`;
 }
 
 async function searchDictionary() {
@@ -1027,8 +1068,41 @@ dictionaryInput.addEventListener("keydown", (event) => {
 });
 dictionarySelect.addEventListener("change", renderDictionaries);
 closeDictionaryBtn.addEventListener("click", closeDictionary);
+closeMyPanelBtn.addEventListener("click", closeMyPanel);
+
+myPanel.addEventListener("click", async (event) => {
+  const filter = event.target.closest("[data-my-filter]");
+  if (filter) {
+    await openMyPanel(filter.dataset.myFilter);
+    return;
+  }
+  const result = event.target.closest(".myResult");
+  if (!result) return;
+  if (result.dataset.version && state.versions.some((version) => version.id === result.dataset.version)) {
+    state.version = result.dataset.version;
+    renderVersions();
+    await loadBooks();
+  }
+  await jumpToReference({
+    book: Number(result.dataset.book),
+    chapter: Number(result.dataset.chapter),
+    verse: Number(result.dataset.verse),
+  });
+});
+
+myTagFilter.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    openMyPanel("all").catch(setError);
+  }
+});
 
 dashboardPanel.addEventListener("click", async (event) => {
+  const openMy = event.target.closest("[data-open-my]");
+  if (openMy) {
+    await openMyPanel(openMy.dataset.openMy);
+    return;
+  }
   const action = event.target.closest(".dashboardAction");
   if (!action || action.disabled) return;
   if (action.dataset.version && state.versions.some((version) => version.id === action.dataset.version)) {
@@ -1155,5 +1229,6 @@ mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
 mobileNextBtn.addEventListener("click", () => moveChapter(1));
 mobileMenuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
 mobileSearchBtn.addEventListener("click", () => quickInput.focus());
+mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
 
 init();

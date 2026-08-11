@@ -146,6 +146,20 @@
 
       <section id="dashboardPanel" class="dashboardPanel"></section>
 
+      <section id="myPanel" class="myPanel" hidden>
+        <div class="searchHeader">
+          <div>我的收藏与笔记</div>
+          <button id="closeMyPanelBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <div class="myFilters">
+          <button type="button" data-my-filter="all">全部</button>
+          <button type="button" data-my-filter="favorite">收藏</button>
+          <button type="button" data-my-filter="note">笔记</button>
+          <input id="myTagFilter" type="search" placeholder="标签筛选" />
+        </div>
+        <div id="myResults" class="myResults"></div>
+      </section>
+
       <section id="content" class="content" aria-live="polite"></section>
 
       <section id="commentaryContent" class="commentaryContent"></section>
@@ -165,6 +179,7 @@
       <button id="mobilePrevBtn" type="button">上一章</button>
       <button id="mobileMenuBtn" type="button">目录</button>
       <button id="mobileSearchBtn" type="button">搜索</button>
+      <button id="mobileMyBtn" type="button">我的</button>
       <button id="mobileNextBtn" type="button">下一章</button>
     </nav>
 

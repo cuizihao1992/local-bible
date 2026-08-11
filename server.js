@@ -515,6 +515,41 @@ function getMarks(version, book, chapter) {
   }
 }
 
+function getAllMarks(filter = {}) {
+  const db = new DatabaseSync(USER_DB);
+  try {
+    const where = [];
+    const params = [];
+    if (filter.kind === "favorite") where.push("favorite = 1");
+    if (filter.kind === "note") where.push("(note <> '' or tags <> '')");
+    if (filter.tag) {
+      where.push("tags like ?");
+      params.push(`%${filter.tag}%`);
+    }
+    const rows = db
+      .prepare(
+        `select version, book, chapter, verse, favorite, highlighted, note, tags, updated_at updatedAt
+         from verse_marks
+         ${where.length ? `where ${where.join(" and ")}` : ""}
+         order by updated_at desc
+         limit ?`,
+      )
+      .all(...params, clampPositiveInt(filter.limit, 200, 1000));
+    const books = fallbackBooks();
+    return rows.map((row) => {
+      const book = books.find((item) => item.id === Number(row.book));
+      return {
+        ...row,
+        bookName: book?.longName || `第 ${row.book} 卷`,
+        favorite: !!row.favorite,
+        highlighted: !!row.highlighted,
+      };
+    });
+  } finally {
+    db.close();
+  }
+}
+
 function saveMark(payload) {
   const version = String(payload.version || "");
   const book = parsePositiveInt(payload.book, "book");
@@ -963,6 +998,16 @@ const server = createServer(async (req, res) => {
       const book = parsePositiveInt(url.searchParams.get("book") || 1, "book");
       const chapter = parsePositiveInt(url.searchParams.get("chapter") || 1, "chapter");
       sendJson(res, { marks: getMarks(version, book, chapter) });
+      return;
+    }
+    if (url.pathname === "/api/user/marks/all") {
+      sendJson(res, {
+        marks: getAllMarks({
+          kind: url.searchParams.get("kind") || "",
+          tag: url.searchParams.get("tag") || "",
+          limit: url.searchParams.get("limit") || 200,
+        }),
+      });
       return;
     }
     if (url.pathname === "/api/user/history" && req.method === "GET") {
