@@ -11,6 +11,7 @@ const state = {
   showStrong: false,
   audioAutoNext: false,
   theme: "light",
+  palette: "classic",
   scriptPreference: "auto",
   fontSize: 20,
   lineHeight: 2.05,
@@ -60,6 +61,7 @@ const dictionarySummary = document.querySelector("#dictionarySummary");
 const dictionaryResults = document.querySelector("#dictionaryResults");
 const closeDictionaryBtn = document.querySelector("#closeDictionaryBtn");
 const themeSelect = document.querySelector("#themeSelect");
+const paletteSelect = document.querySelector("#paletteSelect");
 const scriptPreference = document.querySelector("#scriptPreference");
 const fontSizeRange = document.querySelector("#fontSizeRange");
 const lineHeightRange = document.querySelector("#lineHeightRange");
@@ -145,6 +147,7 @@ function restoreState() {
     state.showStrong = !!saved.showStrong;
     state.audioAutoNext = !!saved.audioAutoNext;
     if (saved.theme) state.theme = saved.theme;
+    if (saved.palette) state.palette = saved.palette;
     if (saved.scriptPreference) state.scriptPreference = saved.scriptPreference;
     if (Number.isFinite(saved.fontSize)) state.fontSize = saved.fontSize;
     if (Number.isFinite(saved.lineHeight)) state.lineHeight = saved.lineHeight;
@@ -165,6 +168,7 @@ function saveState() {
       showStrong: state.showStrong,
       audioAutoNext: state.audioAutoNext,
       theme: state.theme,
+      palette: state.palette,
       scriptPreference: state.scriptPreference,
       fontSize: state.fontSize,
       lineHeight: state.lineHeight,
@@ -225,9 +229,11 @@ function renderStrongToggle() {
 
 function applySettings() {
   document.body.classList.toggle("darkTheme", state.theme === "dark");
+  document.body.dataset.palette = state.palette;
   document.documentElement.style.setProperty("--reader-font-size", `${state.fontSize}px`);
   document.documentElement.style.setProperty("--reader-line-height", String(state.lineHeight));
   themeSelect.value = state.theme;
+  paletteSelect.value = state.palette;
   scriptPreference.value = state.scriptPreference;
   fontSizeRange.value = String(state.fontSize);
   lineHeightRange.value = String(state.lineHeight);
@@ -327,7 +333,6 @@ function renderVerses(data) {
           <div class="verseNo" id="v${verse.verse}">${verse.verse}</div>
           <div class="verseBody" data-verse="${verse.verse}">
             <div class="verseText">${escapeHtml(verse.text)}</div>
-            ${renderVerseTools(verse.verse)}
             ${renderStrongList(verse.strongs || [])}
             ${renderCompareList(verse.verse, compareByVersion)}
             ${renderNoteEditor(verse.verse)}
@@ -1194,6 +1199,12 @@ dashboardPanel.addEventListener("click", async (event) => {
 
 themeSelect.addEventListener("change", () => {
   state.theme = themeSelect.value;
+  applySettings();
+  saveState();
+});
+
+paletteSelect.addEventListener("change", () => {
+  state.palette = paletteSelect.value;
   applySettings();
   saveState();
 });
