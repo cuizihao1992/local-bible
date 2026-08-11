@@ -59,6 +59,7 @@ npm start
 
 ```powershell
 npm run check
+npm test
 ```
 
 ## 当前状态
@@ -91,3 +92,4 @@ data\user.sqlite
 - 移动端底部导航
 - 收藏与笔记管理面板
 - 搜索结果关键词高亮
+- API smoke test

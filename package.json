@@ -1,10 +1,11 @@
 {
   "name": "local-bible-reader",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "check": "node --check server.js && node --check static/app.js",
-    "start": "node --no-warnings server.js"
+    "start": "node --no-warnings server.js",
+    "test": "node --no-warnings scripts/smoke-test.js"
   }
 }
