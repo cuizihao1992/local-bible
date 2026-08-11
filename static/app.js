@@ -4,6 +4,7 @@ const state = {
   commentaries: [],
   dictionaries: [],
   marks: new Map(),
+  progress: null,
   version: "",
   compareVersions: [],
   commentary: "",
@@ -26,6 +27,8 @@ const bookSelect = document.querySelector("#bookSelect");
 const chapterGrid = document.querySelector("#chapterGrid");
 const chapterTitle = document.querySelector("#chapterTitle");
 const versionTitle = document.querySelector("#versionTitle");
+const markReadBtn = document.querySelector("#markReadBtn");
+const progressSummary = document.querySelector("#progressSummary");
 const content = document.querySelector("#content");
 const prevBtn = document.querySelector("#prevBtn");
 const nextBtn = document.querySelector("#nextBtn");
@@ -267,10 +270,12 @@ function renderBooks() {
 function renderChapterGrid() {
   const book = currentBook();
   const count = book?.chapterCount || 1;
+  const readSet = new Set((state.progress?.readChapters || []).map((item) => `${item.book}:${item.chapter}`));
   chapterGrid.innerHTML = Array.from({ length: count }, (_, index) => {
     const chapter = index + 1;
     const active = chapter === state.chapter ? " active" : "";
-    return `<button class="chapterBtn${active}" data-chapter="${chapter}">${chapter}</button>`;
+    const read = readSet.has(`${state.book}:${chapter}`) ? " read" : "";
+    return `<button class="chapterBtn${active}${read}" data-chapter="${chapter}" title="${read ? "已读" : "未读"}">${chapter}</button>`;
   }).join("");
 }
 
@@ -283,6 +288,23 @@ function renderChrome() {
   prevBtn.disabled = state.book === 1 && state.chapter === 1;
   const lastBook = state.books[state.books.length - 1];
   nextBtn.disabled = !!lastBook && state.book === lastBook.id && state.chapter === lastBook.chapterCount;
+  renderProgressChrome();
+}
+
+function isCurrentChapterRead() {
+  return !!state.progress?.readChapters?.some((item) => item.book === state.book && item.chapter === state.chapter);
+}
+
+function renderProgressChrome() {
+  const read = isCurrentChapterRead();
+  if (markReadBtn) {
+    markReadBtn.textContent = read ? "已读" : "标记已读";
+    markReadBtn.classList.toggle("active", read);
+    markReadBtn.disabled = !state.version;
+  }
+  if (progressSummary) {
+    progressSummary.textContent = state.progress ? `${state.progress.read}/${state.progress.total} 章 · ${state.progress.percent}%` : "";
+  }
 }
 
 function renderVerses(data) {
@@ -468,7 +490,7 @@ async function loadChapter() {
     const params = new URLSearchParams({ book: String(state.book), chapter: String(state.chapter) });
     [state.version, ...state.compareVersions].forEach((version) => params.append("version", version));
     const data = await api(`/api/chapters?${params.toString()}`);
-    await loadMarks();
+    await Promise.all([loadMarks(), loadProgress()]);
     renderVerses(data);
     await loadCommentary();
     await loadAudio();
@@ -481,7 +503,12 @@ async function loadChapter() {
 }
 
 async function loadDashboard() {
-  const [diagnosticData, exportData] = await Promise.all([api("/api/diagnostics"), api("/api/user/export")]);
+  const [diagnosticData, exportData, progressData] = await Promise.all([
+    api("/api/diagnostics"),
+    api("/api/user/export"),
+    state.version ? api(`/api/user/progress?version=${encodeURIComponent(state.version)}`) : Promise.resolve(null),
+  ]);
+  if (progressData) state.progress = progressData;
   const favorites = exportData.marks.filter((mark) => mark.favorite).length;
   const notes = exportData.marks.filter((mark) => mark.note || mark.tags).length;
   const history = exportData.history;
@@ -499,10 +526,26 @@ async function loadDashboard() {
       <button class="dashboardAction" type="button" data-open-my="all">${favorites} 收藏 · ${notes} 笔记</button>
     </div>
     <div class="dashboardItem">
+      <div class="dashboardLabel">阅读进度</div>
+      <button class="dashboardAction" type="button" data-continue-unread>
+        ${progressData ? `${progressData.read}/${progressData.total} 章 · ${progressData.percent}%` : "暂无进度"}
+      </button>
+    </div>
+    <div class="dashboardItem">
       <div class="dashboardLabel">数据状态</div>
       <div class="dashboardValue">${diagnosticData.ok ? "正常" : "需检查"}</div>
     </div>
   `;
+}
+
+function findNextUnreadChapter() {
+  const readSet = new Set((state.progress?.readChapters || []).map((item) => `${item.book}:${item.chapter}`));
+  const chapters = state.books.flatMap((book) =>
+    Array.from({ length: book.chapterCount }, (_, index) => ({ book: book.id, chapter: index + 1 })),
+  );
+  const currentIndex = chapters.findIndex((item) => item.book === state.book && item.chapter === state.chapter);
+  const ordered = [...chapters.slice(Math.max(0, currentIndex + 1)), ...chapters.slice(0, Math.max(0, currentIndex + 1))];
+  return ordered.find((item) => !readSet.has(`${item.book}:${item.chapter}`)) || null;
 }
 
 async function loadAudio() {
@@ -554,6 +597,26 @@ async function loadMarks() {
   });
   const data = await api(`/api/user/marks?${params.toString()}`);
   state.marks = new Map(data.marks.map((mark) => [Number(mark.verse), mark]));
+}
+
+async function loadProgress() {
+  if (!state.version) return;
+  state.progress = await api(`/api/user/progress?version=${encodeURIComponent(state.version)}`);
+  renderProgressChrome();
+  renderChapterGrid();
+}
+
+async function setCurrentChapterRead(read) {
+  const data = await postJson("/api/user/progress", {
+    version: state.version,
+    book: state.book,
+    chapter: state.chapter,
+    read,
+  });
+  state.progress = data.progress;
+  renderProgressChrome();
+  renderChapterGrid();
+  await loadDashboard();
 }
 
 function saveReadingHistory() {
@@ -875,6 +938,7 @@ async function init() {
     renderDictionaries();
     applySettings();
     await loadBooks();
+    await loadProgress();
     await loadDashboard();
     await loadChapter();
   } catch (error) {
@@ -925,6 +989,8 @@ versionSelect.addEventListener("change", async () => {
   state.targetVerse = null;
   renderCompareVersions();
   await loadBooks();
+  await loadProgress();
+  await loadDashboard();
   await loadChapter();
 });
 
@@ -1103,6 +1169,16 @@ dashboardPanel.addEventListener("click", async (event) => {
     await openMyPanel(openMy.dataset.openMy);
     return;
   }
+  if (event.target.closest("[data-continue-unread]")) {
+    const nextUnread = findNextUnreadChapter();
+    if (!nextUnread) return;
+    state.book = nextUnread.book;
+    state.chapter = nextUnread.chapter;
+    state.targetVerse = null;
+    renderBooks();
+    await loadChapter();
+    return;
+  }
   const action = event.target.closest(".dashboardAction");
   if (!action || action.disabled) return;
   if (action.dataset.version && state.versions.some((version) => version.id === action.dataset.version)) {
@@ -1137,6 +1213,10 @@ lineHeightRange.addEventListener("input", () => {
   state.lineHeight = Number(lineHeightRange.value);
   applySettings();
   saveState();
+});
+
+markReadBtn.addEventListener("click", () => {
+  setCurrentChapterRead(!isCurrentChapterRead()).catch(setError);
 });
 
 async function copyVerse(verseNo) {
@@ -1185,8 +1265,9 @@ importDataFile.addEventListener("change", async () => {
   if (!file) return;
   const payload = JSON.parse(await file.text());
   const result = await postJson("/api/user/import", payload);
-  userDataHint.textContent = `已导入 ${result.imported} 条`;
+  userDataHint.textContent = `已导入 ${result.imported} 条，阅读进度 ${result.progressImported || 0} 章`;
   await loadMarks();
+  await loadProgress();
   await loadDashboard();
   await loadChapter();
 });

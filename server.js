@@ -47,6 +47,13 @@ function initUserDb() {
         chapter integer not null,
         updated_at text not null
       );
+      create table if not exists reading_progress (
+        version text not null,
+        book integer not null,
+        chapter integer not null,
+        read_at text not null,
+        primary key (version, book, chapter)
+      );
     `);
   } finally {
     db.close();
@@ -616,6 +623,81 @@ function getHistory() {
   }
 }
 
+function totalChapterCount() {
+  return fallbackBooks().reduce((sum, book) => sum + Number(book.chapterCount || 0), 0);
+}
+
+function getReadingProgress(version) {
+  const safeVersion = String(version || "");
+  biblePath(safeVersion);
+  const db = new DatabaseSync(USER_DB);
+  try {
+    const readChapters = db
+      .prepare(
+        `select version, book, chapter, read_at readAt
+         from reading_progress
+         where version=?
+         order by book, chapter`,
+      )
+      .all(safeVersion);
+    const readSet = new Set(readChapters.map((item) => `${item.book}:${item.chapter}`));
+    const books = fallbackBooks().map((book) => {
+      const read = Array.from({ length: book.chapterCount }, (_, index) => index + 1).filter((chapter) =>
+        readSet.has(`${book.id}:${chapter}`),
+      ).length;
+      return {
+        id: book.id,
+        shortName: book.shortName,
+        longName: book.longName,
+        chapterCount: book.chapterCount,
+        read,
+        unread: book.chapterCount - read,
+      };
+    });
+    return {
+      version: safeVersion,
+      total: totalChapterCount(),
+      read: readChapters.length,
+      percent: Math.round((readChapters.length / totalChapterCount()) * 1000) / 10,
+      readChapters,
+      books,
+    };
+  } finally {
+    db.close();
+  }
+}
+
+function setChapterRead(payload) {
+  const version = String(payload.version || "");
+  const book = parsePositiveInt(payload.book, "book");
+  const chapter = parsePositiveInt(payload.chapter, "chapter");
+  const read = payload.read !== false;
+  biblePath(version);
+  const updatedAt = new Date().toISOString();
+  const db = new DatabaseSync(USER_DB);
+  try {
+    if (read) {
+      db.prepare(
+        `insert into reading_progress (version, book, chapter, read_at)
+         values (?, ?, ?, ?)
+         on conflict(version, book, chapter) do update set read_at=excluded.read_at`,
+      ).run(version, book, chapter, updatedAt);
+    } else {
+      db.prepare("delete from reading_progress where version=? and book=? and chapter=?").run(version, book, chapter);
+    }
+  } finally {
+    db.close();
+  }
+  return {
+    version,
+    book,
+    chapter,
+    read,
+    readAt: read ? updatedAt : null,
+    progress: getReadingProgress(version),
+  };
+}
+
 function exportUserData() {
   const db = new DatabaseSync(USER_DB);
   try {
@@ -623,6 +705,7 @@ function exportUserData() {
       exportedAt: new Date().toISOString(),
       marks: db.prepare("select * from verse_marks order by updated_at desc").all(),
       history: getHistory(),
+      progress: db.prepare("select * from reading_progress order by read_at desc").all(),
     };
   } finally {
     db.close();
@@ -631,6 +714,7 @@ function exportUserData() {
 
 function importUserData(payload) {
   const marks = Array.isArray(payload.marks) ? payload.marks : [];
+  const progress = Array.isArray(payload.progress) ? payload.progress : [];
   const db = new DatabaseSync(USER_DB);
   try {
     const insert = db.prepare(
@@ -639,6 +723,11 @@ function importUserData(payload) {
        on conflict(version, book, chapter, verse)
        do update set favorite=excluded.favorite, highlighted=excluded.highlighted,
          note=excluded.note, tags=excluded.tags, updated_at=excluded.updated_at`,
+    );
+    const insertProgress = db.prepare(
+      `insert into reading_progress (version, book, chapter, read_at)
+       values (?, ?, ?, ?)
+       on conflict(version, book, chapter) do update set read_at=excluded.read_at`,
     );
     db.exec("begin");
     for (const item of marks.filter((mark) => mark.version && mark.book && mark.chapter && mark.verse)) {
@@ -654,9 +743,17 @@ function importUserData(payload) {
         String(item.updated_at || item.updatedAt || new Date().toISOString()),
       );
     }
+    for (const item of progress.filter((chapter) => chapter.version && chapter.book && chapter.chapter)) {
+      insertProgress.run(
+        String(item.version || ""),
+        Number(item.book),
+        Number(item.chapter),
+        String(item.read_at || item.readAt || new Date().toISOString()),
+      );
+    }
     db.exec("commit");
     if (payload.history) saveHistory(payload.history);
-    return { imported: marks.length };
+    return { imported: marks.length, progressImported: progress.length };
   } finally {
     db.close();
   }
@@ -1014,6 +1111,10 @@ const server = createServer(async (req, res) => {
       sendJson(res, { history: getHistory() });
       return;
     }
+    if (url.pathname === "/api/user/progress" && req.method === "GET") {
+      sendJson(res, getReadingProgress(url.searchParams.get("version") || ""));
+      return;
+    }
     if (url.pathname === "/api/user/export") {
       sendJson(res, exportUserData());
       return;
@@ -1024,6 +1125,10 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === "/api/user/history" && req.method === "POST") {
       sendJson(res, { history: saveHistory(await readJsonBody(req)) });
+      return;
+    }
+    if (url.pathname === "/api/user/progress" && req.method === "POST") {
+      sendJson(res, setChapterRead(await readJsonBody(req)));
       return;
     }
     if (url.pathname === "/api/user/import" && req.method === "POST") {

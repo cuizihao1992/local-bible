@@ -261,6 +261,13 @@ select {
   background: var(--accent);
 }
 
+.chapterBtn.read:not(.active) {
+  border-color: rgba(45, 106, 95, 0.32);
+  background: rgba(45, 106, 95, 0.08);
+  color: var(--accent);
+  font-weight: 800;
+}
+
 .reader {
   min-width: 0;
   display: grid;
@@ -354,6 +361,37 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.progressInline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.progressInline button {
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 9px;
+}
+
+.progressInline button.active {
+  border-color: rgba(45, 106, 95, 0.35);
+  background: var(--accent);
+  color: #fff;
 }
 
 .content {
@@ -464,7 +502,7 @@ select {
   margin: 18px auto 0;
   padding: 0 18px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
@@ -1048,6 +1086,17 @@ mark {
 
   .chapterTitle {
     font-size: 18px;
+  }
+
+  .progressInline {
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 11px;
+  }
+
+  .progressInline button {
+    min-height: 26px;
+    padding: 0 7px;
   }
 
   .content {

@@ -47,13 +47,14 @@ npm start
 - `GET /api/user/marks?version=和合本.db&book=1&chapter=1`：章节收藏/高亮/笔记
 - `POST /api/user/mark`：保存经文收藏/高亮/笔记/标签
 - `GET/POST /api/user/history`：最近阅读位置
+- `GET/POST /api/user/progress`：章节阅读进度
 - `GET /api/audio?book=1&chapter=2`：当前章节音频列表
 - `GET /api/dictionaries`：辞典/百科库列表
 - `GET /api/dictionary/search?source=证主圣经百科全书.db&q=膏`：搜索词条
 - `GET /api/dictionary/image?source=简明圣经史地图解.db&name=总图一.png`：读取辞典图片
 - `GET /api/diagnostics`：本地数据兼容性检查
-- `GET /api/user/export`：导出个人收藏、笔记和历史
-- `POST /api/user/import`：导入个人收藏、笔记和历史
+- `GET /api/user/export`：导出个人收藏、笔记、历史和阅读进度
+- `POST /api/user/import`：导入个人收藏、笔记、历史和阅读进度
 
 ## 开发检查
 
@@ -64,7 +65,7 @@ npm test
 
 ## 当前状态
 
-当前是 `V1.0` 稳定本地版。版本计划见 [ROADMAP.md](./ROADMAP.md)。
+当前是 `V1.4` 阅读进度版。版本计划见 [ROADMAP.md](./ROADMAP.md)。
 
 ## 数据说明
 
@@ -92,4 +93,5 @@ data\user.sqlite
 - 移动端底部导航
 - 收藏与笔记管理面板
 - 搜索结果关键词高亮
+- 阅读进度、已读章节和继续未读章节
 - API smoke test

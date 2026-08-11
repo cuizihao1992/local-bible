@@ -29,6 +29,10 @@ assert(diagnostics.ok, "Diagnostics failed");
 const marks = await getJson("/api/user/marks/all?limit=5");
 assert(Array.isArray(marks.marks), "Marks endpoint shape invalid");
 
+const progress = await getJson("/api/user/progress?version=KJV.db");
+assert(Number.isInteger(progress.total) && progress.total > 1000, "Progress total chapter count invalid");
+assert(Array.isArray(progress.readChapters), "Progress endpoint shape invalid");
+
 console.log(
   JSON.stringify(
     {
@@ -38,6 +42,7 @@ console.log(
       dictionaries: health.dictionaryCount,
       audio: health.audioCount,
       sampleSearchResults: search.results.length,
+      progress: `${progress.read}/${progress.total}`,
     },
     null,
     2,
