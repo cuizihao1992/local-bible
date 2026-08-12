@@ -42,8 +42,12 @@ const bookGrid = document.querySelector("#bookGrid");
 const chapterGrid = document.querySelector("#chapterGrid");
 const chapterPanelTitle = document.querySelector("#chapterPanelTitle");
 const chapterPanelMeta = document.querySelector("#chapterPanelMeta");
+const chapterTitleBtn = document.querySelector("#chapterTitleBtn");
 const chapterTitle = document.querySelector("#chapterTitle");
 const versionTitle = document.querySelector("#versionTitle");
+const bookPickerPanel = document.querySelector("#bookPickerPanel");
+const bookPickerCurrent = document.querySelector("#bookPickerCurrent");
+const closeBookPickerBtn = document.querySelector("#closeBookPickerBtn");
 const progressSummary = document.querySelector("#progressSummary");
 const content = document.querySelector("#content");
 const prevBtn = document.querySelector("#prevBtn");
@@ -139,10 +143,10 @@ let selectionFrame = 0;
 let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
-const APP_VERSION = "1.9.4";
+const APP_VERSION = "1.9.5";
 const RELEASE_NOTES = [
   {
-    version: "1.9.4",
+    version: "1.9.5",
     date: "2026-08-12",
     items: ["菜单打开时 Android 系统返回手势只关闭菜单", "增加检查更新、下载更新和版本更新说明", "阅读设置迁移到右上角按钮，菜单关闭按钮固定显示"],
   },
@@ -295,7 +299,19 @@ function closeSidebar() {
   document.body.classList.remove("sidebarOpen");
 }
 
+function toggleBookPicker(show = bookPickerPanel.hidden) {
+  bookPickerPanel.hidden = !show;
+  chapterTitleBtn.setAttribute("aria-expanded", show ? "true" : "false");
+  if (show) {
+    closeSidebar();
+    toggleReaderSettings(false);
+    renderBooks();
+    renderChapterGrid();
+  }
+}
+
 function closeTopPanels() {
+  toggleBookPicker(false);
   toggleReaderSettings(false);
   closeSearch();
   closeStrong();
@@ -312,6 +328,10 @@ function handleBackIntent() {
   }
   if (!readerSettingsPanel.hidden) {
     toggleReaderSettings(false);
+    return true;
+  }
+  if (!bookPickerPanel.hidden) {
+    toggleBookPicker(false);
     return true;
   }
   if (!releaseNotesPanel.hidden) {
@@ -803,6 +823,7 @@ function renderChapterGrid() {
   const readSet = new Set((state.progress?.readChapters || []).map((item) => `${item.book}:${item.chapter}`));
   if (chapterPanelTitle) chapterPanelTitle.textContent = book ? `${book.longName || book.shortName} 章节` : "章节";
   if (chapterPanelMeta) chapterPanelMeta.textContent = book ? `${count} 章 · 当前第 ${state.chapter} 章` : "";
+  if (bookPickerCurrent) bookPickerCurrent.textContent = book ? `${book.longName || book.shortName} ${state.chapter}` : "";
   chapterGrid.innerHTML = Array.from({ length: count }, (_, index) => {
     const chapter = index + 1;
     const active = chapter === state.chapter ? " active" : "";
@@ -1772,6 +1793,9 @@ bookSelect.addEventListener("change", () => {
   loadChapter();
 });
 
+chapterTitleBtn.addEventListener("click", () => toggleBookPicker());
+closeBookPickerBtn.addEventListener("click", () => toggleBookPicker(false));
+
 bookSearchInput.addEventListener("input", renderBookGrid);
 
 bookFilterTabs.addEventListener("click", (event) => {
@@ -1799,6 +1823,7 @@ chapterGrid.addEventListener("click", (event) => {
   state.chapter = Number(button.dataset.chapter);
   state.targetVerse = null;
   document.body.classList.remove("sidebarOpen");
+  toggleBookPicker(false);
   loadChapter();
 });
 
@@ -2113,6 +2138,7 @@ nextBtn.addEventListener("click", () => {
   moveChapter(1);
 });
 menuBtn.addEventListener("click", () => {
+  toggleBookPicker(false);
   toggleReaderSettings(false);
   document.body.classList.add("sidebarOpen");
 });
@@ -2121,11 +2147,13 @@ readerSettingsBtn.addEventListener("click", () => toggleReaderSettings());
 closeReaderSettingsBtn.addEventListener("click", () => toggleReaderSettings(false));
 overlay.addEventListener("click", () => {
   document.body.classList.remove("sidebarOpen");
+  toggleBookPicker(false);
   toggleReaderSettings(false);
 });
 mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
 mobileNextBtn.addEventListener("click", () => moveChapter(1));
 mobileMenuBtn.addEventListener("click", () => {
+  toggleBookPicker(false);
   toggleReaderSettings(false);
   document.body.classList.add("sidebarOpen");
 });

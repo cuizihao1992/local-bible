@@ -21,31 +21,6 @@
         <select id="versionSelect"></select>
       </label>
 
-      <label class="field">
-        <span>书卷</span>
-        <select id="bookSelect"></select>
-      </label>
-
-      <div class="bookPicker">
-        <div class="bookPickerTop">
-          <input id="bookSearchInput" type="search" placeholder="搜索书卷" autocomplete="off" />
-          <div id="bookFilterTabs" class="bookFilterTabs" role="tablist" aria-label="书卷范围">
-            <button type="button" data-book-filter="all" class="active">全部</button>
-            <button type="button" data-book-filter="ot">旧约</button>
-            <button type="button" data-book-filter="nt">新约</button>
-          </div>
-        </div>
-        <div id="bookGrid" class="bookGrid"></div>
-      </div>
-
-      <div class="chapterPanel">
-        <div class="chapterPanelHeader">
-          <div id="chapterPanelTitle" class="panelTitle">章节</div>
-          <div id="chapterPanelMeta" class="panelHint"></div>
-        </div>
-        <div id="chapterGrid" class="chapterGrid"></div>
-      </div>
-
       <details class="advancedPanel">
         <summary>高级设置</summary>
 
@@ -194,10 +169,10 @@
       <header class="topbar">
         <button id="menuBtn" class="iconBtn" aria-label="打开选择栏">☰</button>
         <button id="prevBtn" class="navBtn">上一章</button>
-        <div class="titleBlock">
+        <button id="chapterTitleBtn" class="titleBlock" type="button" aria-haspopup="dialog" aria-expanded="false">
           <div id="chapterTitle" class="chapterTitle">加载中</div>
           <div id="versionTitle" class="versionTitle"></div>
-        </div>
+        </button>
         <form id="quickForm" class="quickForm" role="search">
           <input id="quickInput" type="search" placeholder="约3:16 或 关键词" autocomplete="off" />
           <select id="searchScope" aria-label="搜索范围">
@@ -251,6 +226,35 @@
             <span>行距 <b id="lineHeightValue">2.05</b></span>
             <input id="lineHeightRange" type="range" min="1.6" max="2.4" step="0.1" />
           </label>
+        </div>
+      </section>
+
+      <section id="bookPickerPanel" class="bookPickerPanel" hidden>
+        <div class="bookPickerHeader">
+          <div>
+            <div class="panelTitle">选择书卷与章节</div>
+            <div id="bookPickerCurrent" class="panelHint"></div>
+          </div>
+          <button id="closeBookPickerBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <select id="bookSelect" class="bookSelectFallback" aria-label="书卷"></select>
+        <div class="bookPicker">
+          <div class="bookPickerTop">
+            <input id="bookSearchInput" type="search" placeholder="搜索书卷" autocomplete="off" />
+            <div id="bookFilterTabs" class="bookFilterTabs" role="tablist" aria-label="书卷范围">
+              <button type="button" data-book-filter="all" class="active">全部</button>
+              <button type="button" data-book-filter="ot">旧约</button>
+              <button type="button" data-book-filter="nt">新约</button>
+            </div>
+          </div>
+          <div id="bookGrid" class="bookGrid"></div>
+        </div>
+        <div class="chapterPanel">
+          <div class="chapterPanelHeader">
+            <div id="chapterPanelTitle" class="panelTitle">章节</div>
+            <div id="chapterPanelMeta" class="panelHint"></div>
+          </div>
+          <div id="chapterGrid" class="chapterGrid"></div>
         </div>
       </section>
 
