@@ -90,6 +90,11 @@ const importDataFile = document.querySelector("#importDataFile");
 const userDataHint = document.querySelector("#userDataHint");
 const packageList = document.querySelector("#packageList");
 const packageHint = document.querySelector("#packageHint");
+const downloadProgress = document.querySelector("#downloadProgress");
+const downloadProgressText = document.querySelector("#downloadProgressText");
+const downloadProgressValue = document.querySelector("#downloadProgressValue");
+const downloadProgressBar = document.querySelector("#downloadProgressBar");
+const clearDownloadCacheBtn = document.querySelector("#clearDownloadCacheBtn");
 const updateStatus = document.querySelector("#updateStatus");
 const checkUpdateBtn = document.querySelector("#checkUpdateBtn");
 const showReleaseNotesBtn = document.querySelector("#showReleaseNotesBtn");
@@ -128,10 +133,11 @@ let selectedVerseNumbers = [];
 let selectionFrame = 0;
 let lastUpdateInfo = null;
 let bookFilter = "all";
-const APP_VERSION = "1.9.2";
+let downloadProgressTimer = null;
+const APP_VERSION = "1.9.3";
 const RELEASE_NOTES = [
   {
-    version: "1.9.2",
+    version: "1.9.3",
     date: "2026-08-12",
     items: ["菜单打开时 Android 系统返回手势只关闭菜单", "增加检查更新、下载更新和版本更新说明", "阅读设置迁移到右上角按钮，菜单关闭按钮固定显示"],
   },
@@ -535,6 +541,72 @@ function renderPackages() {
   if (packageHint) packageHint.textContent = state.packages.length ? "下载后会保存到本机，之后可离线使用。" : "";
 }
 
+function formatBytes(bytes) {
+  const value = Number(bytes || 0);
+  if (value >= 1024 * 1024) return `${(value / 1024 / 1024).toFixed(1)} MB`;
+  if (value >= 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${value} B`;
+}
+
+function renderDownloadProgress(status = {}) {
+  if (!downloadProgress) return;
+  const percent = Math.max(0, Math.min(100, Number(status.percent || 0)));
+  downloadProgress.hidden = false;
+  downloadProgressText.textContent = status.message || "正在下载";
+  downloadProgressValue.textContent = status.total
+    ? `${percent}% · ${formatBytes(status.downloaded)} / ${formatBytes(status.total)}`
+    : `${percent}%`;
+  downloadProgressBar.style.width = `${percent}%`;
+  downloadProgress.classList.toggle("error", status.state === "error");
+  downloadProgress.classList.toggle("done", status.state === "done" || status.state === "cleared");
+}
+
+function stopDownloadProgressPolling() {
+  if (downloadProgressTimer) window.clearInterval(downloadProgressTimer);
+  downloadProgressTimer = null;
+}
+
+function pollDownloadProgress(kind = "package", onDone = null) {
+  stopDownloadProgressPolling();
+  const getStatus = () => {
+    if (kind === "update") return window.AndroidUpdateApi?.downloadStatus ? JSON.parse(window.AndroidUpdateApi.downloadStatus()) : {};
+    return window.AndroidBibleApi?.downloadStatus ? JSON.parse(window.AndroidBibleApi.downloadStatus()) : {};
+  };
+  renderDownloadProgress({ message: "准备下载", percent: 0 });
+  downloadProgressTimer = window.setInterval(() => {
+    try {
+      const status = getStatus();
+      if (status.error) throw new Error(status.error);
+      renderDownloadProgress(status);
+      if (status.state === "done") {
+        stopDownloadProgressPolling();
+        if (onDone) onDone(status);
+      } else if (["error", "cleared"].includes(status.state)) {
+        stopDownloadProgressPolling();
+      }
+    } catch (error) {
+      renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
+      stopDownloadProgressPolling();
+    }
+  }, 500);
+}
+
+function clearDownloadCache() {
+  try {
+    const androidResult = window.AndroidBibleApi?.clearDownloadCache
+      ? JSON.parse(window.AndroidBibleApi.clearDownloadCache())
+      : { bytes: 0, message: "当前环境没有可清理的 Android 下载缓存。" };
+    const updateResult = window.AndroidUpdateApi?.clearDownloadCache
+      ? JSON.parse(window.AndroidUpdateApi.clearDownloadCache())
+      : { bytes: 0 };
+    const bytes = Number(androidResult.bytes || 0) + Number(updateResult.bytes || 0);
+    renderDownloadProgress({ state: "cleared", message: `已清理 ${formatBytes(bytes)} 下载缓存`, percent: 100 });
+    if (packageHint) packageHint.textContent = androidResult.message || "已清理下载缓存。";
+  } catch (error) {
+    renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
+  }
+}
+
 async function loadPackages() {
   if (!isAndroidOffline()) {
     renderPackages();
@@ -572,24 +644,35 @@ async function installPackage(packageId) {
     button.disabled = true;
     button.textContent = "下载中";
   }
+  pollDownloadProgress("package", async () => {
+    await loadPackages();
+    await refreshResourceLists();
+    await loadBooks();
+    await loadChapter();
+    if (packageHint) packageHint.textContent = "资源包安装完成。";
+  });
   if (packageHint) packageHint.textContent = "正在从 GitHub 下载资源包，请保持网络连接。";
   try {
     const data = window.AndroidBibleApi?.installPackage
       ? JSON.parse(window.AndroidBibleApi.installPackage(packageId))
       : await postJson("/api/package/install", { id: packageId });
     if (data.error) throw new Error(data.error);
-    state.packages = data.packages || state.packages;
-    await refreshResourceLists();
-    renderPackages();
-    await loadBooks();
-    await loadChapter();
-    if (packageHint) packageHint.textContent = `已安装 ${data.installed || 0} 个资源文件。`;
+    if (!data.started) {
+      state.packages = data.packages || state.packages;
+      await refreshResourceLists();
+      renderPackages();
+      await loadBooks();
+      await loadChapter();
+      if (packageHint) packageHint.textContent = `已安装 ${data.installed || 0} 个资源文件。`;
+      stopDownloadProgressPolling();
+    }
   } catch (error) {
     if (button) {
       button.disabled = false;
       button.textContent = "重试";
     }
     if (packageHint) packageHint.textContent = error.message || String(error);
+    renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
   }
 }
 
@@ -1343,6 +1426,7 @@ async function checkForUpdates() {
   }
   checkUpdateBtn.disabled = true;
   setUpdateStatus("正在检查 GitHub Release...");
+  let startedDownload = false;
   try {
     const info = JSON.parse(window.AndroidUpdateApi.checkLatest());
     if (info.error) throw new Error(info.error);
@@ -1359,13 +1443,20 @@ async function checkForUpdates() {
       return;
     }
     setUpdateStatus(`发现新版本 ${latestVersion}，正在下载 APK...`);
+    pollDownloadProgress("update", () => {
+      setUpdateStatus("APK 已下载，请在系统安装界面确认更新。");
+      checkUpdateBtn.disabled = false;
+    });
     const result = JSON.parse(window.AndroidUpdateApi.downloadAndInstall(asset.url, asset.name));
     if (result.error) throw new Error(result.error);
-    setUpdateStatus(result.message || "APK 已下载，请在系统安装界面确认更新。");
+    startedDownload = !!result.started;
+    if (!startedDownload) setUpdateStatus(result.message || "APK 已下载，请在系统安装界面确认更新。");
   } catch (error) {
     setUpdateStatus(error.message || String(error));
-  } finally {
+    renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
     checkUpdateBtn.disabled = false;
+  } finally {
+    if (!startedDownload) stopDownloadProgressPolling();
   }
 }
 
@@ -1751,6 +1842,7 @@ packageList?.addEventListener("click", (event) => {
   if (!button) return;
   installPackage(button.dataset.packageId).catch(setError);
 });
+clearDownloadCacheBtn?.addEventListener("click", clearDownloadCache);
 closeDictionaryBtn.addEventListener("click", closeDictionary);
 closeMyPanelBtn.addEventListener("click", closeMyPanel);
 

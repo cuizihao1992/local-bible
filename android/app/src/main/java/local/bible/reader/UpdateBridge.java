@@ -18,8 +18,9 @@ import java.net.URL;
 
 public class UpdateBridge {
     private static final String LATEST_RELEASE_URL = "https://api.github.com/repos/cuizihao1992/local-bible/releases/latest";
-    private static final String CURRENT_VERSION = "1.9.2";
+    private static final String CURRENT_VERSION = "1.9.3";
     private final Activity activity;
+    private volatile JSONObject downloadStatus = new JSONObject();
 
     public UpdateBridge(Activity activity) {
         this.activity = activity;
@@ -63,15 +64,35 @@ public class UpdateBridge {
             File target = new File(activity.getExternalFilesDir("updates"), safeName);
             File parent = target.getParentFile();
             if (parent != null) parent.mkdirs();
-            downloadTo(downloadUrl, target);
-            openInstaller(target);
-            return new JSONObject()
-                    .put("ok", true)
-                    .put("file", target.getAbsolutePath())
-                    .put("message", "APK 已下载，请在系统安装界面确认更新。")
-                    .toString();
+            new Thread(() -> {
+                try {
+                    downloadTo(downloadUrl, target);
+                    openInstaller(target);
+                } catch (Throwable error) {
+                    setDownloadStatus("apk", "error", 0, 0, error.getMessage());
+                }
+            }).start();
+            return new JSONObject().put("started", true).put("file", target.getAbsolutePath()).toString();
         } catch (Throwable error) {
+            setDownloadStatus("apk", "error", 0, 0, error.getMessage());
             return errorJson(error);
+        }
+    }
+
+    @JavascriptInterface
+    public String downloadStatus() {
+        return downloadStatus.toString();
+    }
+
+    @JavascriptInterface
+    public String clearDownloadCache() {
+        long bytes = 0;
+        bytes += deleteChildren(activity.getExternalFilesDir("updates"));
+        setDownloadStatus("apk", "cleared", 0, 0, "已清理更新缓存");
+        try {
+            return new JSONObject().put("ok", true).put("bytes", bytes).put("message", "已清理更新缓存").toString();
+        } catch (Exception error) {
+            return "{\"ok\":true,\"bytes\":" + bytes + "}";
         }
     }
 
@@ -99,13 +120,47 @@ public class UpdateBridge {
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
         connection.setRequestProperty("User-Agent", "LocalBibleReader/" + CURRENT_VERSION);
+        long total = connection.getContentLengthLong();
+        long downloaded = 0;
+        setDownloadStatus("apk", "downloading", 0, total, "正在下载 APK");
         try (InputStream in = connection.getInputStream(); FileOutputStream out = new FileOutputStream(target)) {
             byte[] buffer = new byte[1024 * 64];
             int read;
-            while ((read = in.read(buffer)) > 0) out.write(buffer, 0, read);
+            while ((read = in.read(buffer)) > 0) {
+                out.write(buffer, 0, read);
+                downloaded += read;
+                setDownloadStatus("apk", "downloading", downloaded, total, "正在下载 APK");
+            }
+            setDownloadStatus("apk", "done", downloaded, total, "APK 下载完成");
         } finally {
             connection.disconnect();
         }
+    }
+
+    private void setDownloadStatus(String id, String state, long downloaded, long total, String message) {
+        try {
+            int percent = total > 0 ? (int) Math.min(100, Math.round(downloaded * 100.0 / total)) : 0;
+            downloadStatus = new JSONObject()
+                    .put("id", id)
+                    .put("state", state)
+                    .put("downloaded", downloaded)
+                    .put("total", total)
+                    .put("percent", percent)
+                    .put("message", message == null ? "" : message);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private long deleteChildren(File dir) {
+        if (dir == null || !dir.exists()) return 0;
+        long bytes = 0;
+        File[] files = dir.listFiles();
+        if (files == null) return 0;
+        for (File file : files) {
+            bytes += file.isFile() ? file.length() : deleteChildren(file);
+            if (!file.delete()) file.deleteOnExit();
+        }
+        return bytes;
     }
 
     private void openInstaller(File apk) {

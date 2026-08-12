@@ -94,6 +94,14 @@
         <div class="packagePanel">
           <div class="panelTitle">离线资源</div>
           <div id="packageList" class="packageList"></div>
+          <div id="downloadProgress" class="downloadProgress" hidden>
+            <div class="downloadProgressTop">
+              <span id="downloadProgressText">准备下载</span>
+              <b id="downloadProgressValue">0%</b>
+            </div>
+            <div class="downloadProgressTrack"><span id="downloadProgressBar"></span></div>
+            <button id="clearDownloadCacheBtn" type="button">清理下载缓存</button>
+          </div>
           <div id="packageHint" class="panelHint"></div>
         </div>
 

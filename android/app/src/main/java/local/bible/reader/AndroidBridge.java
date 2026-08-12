@@ -33,7 +33,27 @@ public class AndroidBridge {
     @JavascriptInterface
     public String installPackage(String packageId) {
         try {
-            return offlineApi.installPackage(packageId == null ? "" : packageId);
+            String safePackageId = packageId == null ? "" : packageId;
+            new Thread(() -> offlineApi.installPackage(safePackageId)).start();
+            return "{\"started\":true}";
+        } catch (Throwable error) {
+            return errorJson(error);
+        }
+    }
+
+    @JavascriptInterface
+    public String downloadStatus() {
+        try {
+            return offlineApi.downloadStatus();
+        } catch (Throwable error) {
+            return errorJson(error);
+        }
+    }
+
+    @JavascriptInterface
+    public String clearDownloadCache() {
+        try {
+            return offlineApi.clearDownloadCache();
         } catch (Throwable error) {
             return errorJson(error);
         }

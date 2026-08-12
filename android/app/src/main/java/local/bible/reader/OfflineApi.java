@@ -27,7 +27,8 @@ public class OfflineApi {
     private final File bibleDir;
     private final File commentaryDir;
     private final SQLiteDatabase userDb;
-    private static final String RELEASE_BASE = "https://github.com/cuizihao1992/local-bible/releases/download/v1.9.2/";
+    private volatile JSONObject downloadStatus = new JSONObject();
+    private static final String RELEASE_BASE = "https://github.com/cuizihao1992/local-bible/releases/download/v1.9.3/";
 
     private static final Object[][] BOOKS = new Object[][]{
             {"创", "创世记", 50}, {"出", "出埃及记", 40}, {"利", "利未记", 27}, {"民", "民数记", 36},
@@ -104,7 +105,24 @@ public class OfflineApi {
         try {
             return installDataPackage(packageId).toString();
         } catch (Exception error) {
+            setDownloadStatus("package", "error", 0, 0, error.getMessage());
             return "{\"error\":\"" + escapeJson(error.getMessage()) + "\"}";
+        }
+    }
+
+    public String downloadStatus() {
+        return downloadStatus.toString();
+    }
+
+    public String clearDownloadCache() {
+        long bytes = 0;
+        bytes += deleteChildren(new File(context.getCacheDir(), "downloads"));
+        bytes += deleteChildren(new File(context.getExternalFilesDir(null), "updates"));
+        setDownloadStatus("cache", "cleared", 0, 0, "已清理下载缓存");
+        try {
+            return new JSONObject().put("ok", true).put("bytes", bytes).put("message", "已清理下载缓存").toString();
+        } catch (Exception error) {
+            return "{\"ok\":true,\"bytes\":" + bytes + "}";
         }
     }
 
@@ -135,8 +153,8 @@ public class OfflineApi {
 
     private JSONArray packages() throws Exception {
         JSONArray array = new JSONArray();
-        array.put(packageInfo("extra-bibles", "更多译本", "下载 22 个补充经文译本", "bibles-extra-v1.9.2.zip", bibleDir, 26));
-        array.put(packageInfo("commentaries", "注释库", "下载 18 个注释数据库", "commentaries-v1.9.2.zip", commentaryDir, 18));
+        array.put(packageInfo("extra-bibles", "更多译本", "下载 22 个补充经文译本", "bibles-extra-v1.9.3.zip", bibleDir, 26));
+        array.put(packageInfo("commentaries", "注释库", "下载 18 个注释数据库", "commentaries-v1.9.3.zip", commentaryDir, 18));
         return array;
     }
 
@@ -158,26 +176,45 @@ public class OfflineApi {
         String fileName;
         File targetDir;
         if ("extra-bibles".equals(packageId)) {
-            fileName = "bibles-extra-v1.9.2.zip";
+            fileName = "bibles-extra-v1.9.3.zip";
             targetDir = bibleDir;
         } else if ("commentaries".equals(packageId)) {
-            fileName = "commentaries-v1.9.2.zip";
+            fileName = "commentaries-v1.9.3.zip";
             targetDir = commentaryDir;
         } else {
             throw new Exception("未知资源包：" + packageId);
         }
 
         targetDir.mkdirs();
+        File downloadDir = new File(context.getCacheDir(), "downloads");
+        downloadDir.mkdirs();
+        File temp = new File(downloadDir, fileName + ".part");
         URL url = new URL(RELEASE_BASE + fileName);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(20000);
         connection.setReadTimeout(120000);
-        connection.setRequestProperty("User-Agent", "LocalBibleReader/1.9.2");
+        connection.setRequestProperty("User-Agent", "LocalBibleReader/1.9.3");
         int status = connection.getResponseCode();
         if (status < 200 || status >= 300) throw new Exception("下载失败：" + status);
+        long total = connection.getContentLengthLong();
+        long downloaded = 0;
+        setDownloadStatus(packageId, "downloading", 0, total, "正在下载资源包");
+
+        try (InputStream in = connection.getInputStream(); FileOutputStream out = new FileOutputStream(temp)) {
+            byte[] buffer = new byte[1024 * 64];
+            int read;
+            while ((read = in.read(buffer)) > 0) {
+                out.write(buffer, 0, read);
+                downloaded += read;
+                setDownloadStatus(packageId, "downloading", downloaded, total, "正在下载资源包");
+            }
+        } finally {
+            connection.disconnect();
+        }
+        setDownloadStatus(packageId, "installing", downloaded, total, "正在安装资源包");
 
         int installed = 0;
-        try (ZipInputStream zip = new ZipInputStream(connection.getInputStream())) {
+        try (ZipInputStream zip = new ZipInputStream(new java.io.FileInputStream(temp))) {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
                 if (entry.isDirectory() || !entry.getName().toLowerCase().endsWith(".db")) continue;
@@ -192,9 +229,43 @@ public class OfflineApi {
                 installed++;
             }
         } finally {
-            connection.disconnect();
+            if (!temp.delete()) temp.deleteOnExit();
         }
+        setDownloadStatus(packageId, "done", downloaded, total, "资源包安装完成");
         return new JSONObject().put("id", packageId).put("installed", installed).put("packages", packages());
+    }
+
+    private void setDownloadStatus(String id, String state, long downloaded, long total, String message) {
+        try {
+            int percent = total > 0 ? (int) Math.min(100, Math.round(downloaded * 100.0 / total)) : 0;
+            downloadStatus = new JSONObject()
+                    .put("id", id)
+                    .put("state", state)
+                    .put("downloaded", downloaded)
+                    .put("total", total)
+                    .put("percent", percent)
+                    .put("message", message == null ? "" : message);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private long deleteChildren(File dir) {
+        if (dir == null || !dir.exists()) return 0;
+        long bytes = 0;
+        File[] files = dir.listFiles();
+        if (files == null) return 0;
+        for (File file : files) {
+            bytes += deleteRecursively(file);
+        }
+        return bytes;
+    }
+
+    private long deleteRecursively(File file) {
+        if (file == null || !file.exists()) return 0;
+        long bytes = file.isFile() ? file.length() : 0;
+        if (file.isDirectory()) bytes += deleteChildren(file);
+        if (!file.delete()) file.deleteOnExit();
+        return bytes;
     }
 
     private int countDbFiles(File dir) {

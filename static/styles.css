@@ -518,6 +518,71 @@ select {
   opacity: 0.72;
 }
 
+.downloadProgress {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.downloadProgress[hidden] {
+  display: none;
+}
+
+.downloadProgressTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.downloadProgressTop b {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.downloadProgressTrack {
+  height: 8px;
+  overflow: hidden;
+  background: var(--soft);
+  border-radius: 999px;
+}
+
+.downloadProgressTrack span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 0.18s ease;
+}
+
+.downloadProgress.error .downloadProgressTrack span {
+  background: #b14b4b;
+}
+
+.downloadProgress.done .downloadProgressTrack span {
+  background: #2d7a55;
+}
+
+.downloadProgress button {
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .dictionarySearch button {
   color: var(--accent);
   cursor: pointer;
@@ -1848,6 +1913,26 @@ mark {
     border-color: var(--accent);
     background: var(--accent);
     color: #fff;
+  }
+
+  .mobileNav #voiceBtn {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 28%, transparent);
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+
+  .mobileNav #voiceBtn::before {
+    content: "●";
+    margin-right: 3px;
+    font-size: 10px;
+  }
+
+  .mobileNav #voiceBtn.active {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
   }
 
   .selectionBar button {
