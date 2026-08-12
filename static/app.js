@@ -352,8 +352,10 @@ function renderVerses(data) {
 
   content.innerHTML = mainChapter.verses
     .map(
-      (verse) => `
-        <article class="verse" data-verse="${verse.verse}">
+      (verse) => {
+        const mark = markForVerse(verse.verse);
+        return `
+        <article class="verse ${verseMarkClasses(mark)}" data-verse="${verse.verse}">
           <div class="verseNo" id="v${verse.verse}">${verse.verse}</div>
           <div class="verseBody" data-verse="${verse.verse}">
             <div class="verseText">${escapeHtml(verse.text)}</div>
@@ -362,7 +364,8 @@ function renderVerses(data) {
             ${renderNoteEditor(verse.verse)}
           </div>
         </article>
-      `,
+      `;
+      },
     )
     .join("");
   focusTargetVerse();
@@ -381,6 +384,31 @@ function markForVerse(verse) {
       tags: "",
     }
   );
+}
+
+function verseMarkClasses(mark) {
+  return [
+    mark.favorite ? "favoriteVerse" : "",
+    mark.highlighted ? "highlightedVerse" : "",
+    mark.note || mark.tags ? "notedVerse" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function updateVerseMarkDom(mark) {
+  const verse = content.querySelector(`.verse[data-verse="${mark.verse}"]`);
+  if (!verse) return;
+  verse.classList.toggle("favoriteVerse", !!mark.favorite);
+  verse.classList.toggle("highlightedVerse", !!mark.highlighted);
+  verse.classList.toggle("notedVerse", !!(mark.note || mark.tags));
+  const editor = verse.querySelector(`[data-note-editor="${mark.verse}"]`);
+  if (editor) {
+    const wasHidden = editor.hidden;
+    editor.outerHTML = renderNoteEditor(mark.verse);
+    const nextEditor = verse.querySelector(`[data-note-editor="${mark.verse}"]`);
+    if (nextEditor) nextEditor.hidden = wasHidden;
+  }
 }
 
 function openVerseMenu(verseNo, x, y) {
@@ -727,7 +755,9 @@ function saveReadingHistory() {
 async function saveVerseMark(mark) {
   const data = await postJson("/api/user/mark", mark);
   state.marks.set(Number(data.mark.verse), data.mark);
-  loadChapter();
+  updateVerseMarkDom(data.mark);
+  renderChrome();
+  loadDashboard().catch(() => {});
 }
 
 async function loadCommentary() {

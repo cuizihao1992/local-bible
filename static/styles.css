@@ -902,6 +902,7 @@ mark {
   gap: 14px;
   padding: 13px 0;
   border-bottom: 1px solid rgba(230, 223, 212, 0.72);
+  position: relative;
 }
 
 .verse:hover {
@@ -915,8 +916,53 @@ mark {
   padding-right: 8px;
 }
 
-.verse:has(.verseTool.active) {
-  background: color-mix(in srgb, var(--accent-2) 7%, transparent);
+.verse.highlightedVerse {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent-2) 20%, transparent),
+    color-mix(in srgb, var(--accent-2) 8%, transparent) 42%,
+    transparent
+  );
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.verse.highlightedVerse::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 11px;
+  bottom: 11px;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--accent-2);
+}
+
+.verse.highlightedVerse .verseText {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent-2) 58%, transparent);
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.18em;
+  text-decoration-skip-ink: none;
+}
+
+.verse.favoriteVerse .verseNo::after,
+.verse.notedVerse .verseNo::after {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.verse.favoriteVerse .verseNo::after {
+  content: "★";
+  color: var(--accent-2);
+}
+
+.verse.notedVerse:not(.favoriteVerse) .verseNo::after {
+  content: "●";
+  color: var(--accent);
 }
 
 .verseTools {
