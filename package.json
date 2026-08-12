@@ -18,6 +18,9 @@
     "verify:android": "powershell -ExecutionPolicy Bypass -File scripts/verify-android-apk.ps1"
   },
   "devDependencies": {
+    "@babel/cli": "^8.0.4",
+    "@babel/core": "^8.0.1",
+    "@babel/preset-env": "^8.0.2",
     "electron": "^39.0.0",
     "electron-builder": "^26.0.12"
   },

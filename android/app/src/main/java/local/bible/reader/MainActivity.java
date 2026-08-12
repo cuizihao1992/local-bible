@@ -34,6 +34,8 @@ public class MainActivity extends Activity {
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
         webView.addJavascriptInterface(new AndroidBridge(offlineApi), "AndroidBibleApi");
 
         webView.setWebViewClient(new WebViewClient() {

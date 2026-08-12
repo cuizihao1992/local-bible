@@ -46,6 +46,7 @@ android {
 
 def dataRoot = providers.gradleProperty("bibleDataRoot").orElse("D:/bibleDownload")
 def webSource = rootProject.projectDir.parentFile.toPath().resolve("static").toFile()
+def projectRoot = rootProject.projectDir.parentFile
 def bibleSource = dataRoot.map { new File(it, "bibles") }
 def bundledBibleFiles = [
         "和合本.db",
@@ -71,6 +72,14 @@ tasks.register("syncOfflineAssets") {
         copy {
             from(webSource)
             into("$buildDir/generated/offlineAssets/static")
+        }
+        exec {
+            workingDir projectRoot
+            if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+                commandLine "cmd", "/c", "npx", "babel", "$buildDir/generated/offlineAssets/static/app.js", "--out-file", "$buildDir/generated/offlineAssets/static/app.js", "--config-file", "./babel.android.json"
+            } else {
+                commandLine "npx", "babel", "$buildDir/generated/offlineAssets/static/app.js", "--out-file", "$buildDir/generated/offlineAssets/static/app.js", "--config-file", "./babel.android.json"
+            }
         }
         copy {
             from(sourceDir)

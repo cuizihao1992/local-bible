@@ -342,7 +342,9 @@ async function refreshResourceLists() {
 
 async function installPackage(packageId) {
   if (!isAndroidOffline()) return;
-  const button = packageList?.querySelector(`[data-package-id="${CSS.escape(packageId)}"]`);
+  const button = [...(packageList?.querySelectorAll("[data-package-id]") || [])].find(
+    (item) => item.dataset.packageId === packageId,
+  );
   if (button) {
     button.disabled = true;
     button.textContent = "下载中";

@@ -66,7 +66,7 @@ try {
   if ($index -notmatch 'src="app\.js"') {
     throw "APK index does not load app.js relatively"
   }
-  if ($app -notmatch "AndroidBibleApi\?\.getJson") {
+  if ($app -notmatch "AndroidBibleApi" -or $app -notmatch "getJson") {
     throw "APK frontend is not using the Android offline GET bridge"
   }
   if ($app -match "D:\\\\bibleDownload") {

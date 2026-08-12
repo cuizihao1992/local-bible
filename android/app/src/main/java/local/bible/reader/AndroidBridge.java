@@ -12,17 +12,35 @@ public class AndroidBridge {
 
     @JavascriptInterface
     public String getJson(String path) {
-        String url = path.startsWith("/") ? "https://offline.local" + path : "https://offline.local/" + path;
-        return offlineApi.handle("GET", Uri.parse(url));
+        try {
+            String safePath = path == null ? "/" : path;
+            String url = safePath.startsWith("/") ? "https://offline.local" + safePath : "https://offline.local/" + safePath;
+            return offlineApi.handle("GET", Uri.parse(url));
+        } catch (Throwable error) {
+            return errorJson(error);
+        }
     }
 
     @JavascriptInterface
     public String postJson(String path, String payload) {
-        return offlineApi.handlePost(path, payload);
+        try {
+            return offlineApi.handlePost(path == null ? "" : path, payload == null ? "{}" : payload);
+        } catch (Throwable error) {
+            return errorJson(error);
+        }
     }
 
     @JavascriptInterface
     public String installPackage(String packageId) {
-        return offlineApi.installPackage(packageId);
+        try {
+            return offlineApi.installPackage(packageId == null ? "" : packageId);
+        } catch (Throwable error) {
+            return errorJson(error);
+        }
+    }
+
+    private String errorJson(Throwable error) {
+        String message = error == null || error.getMessage() == null ? "Android bridge error" : error.getMessage();
+        return "{\"error\":\"" + message.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "") + "\"}";
     }
 }
