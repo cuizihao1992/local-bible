@@ -25,7 +25,7 @@ const state = {
   deepseekModel: "deepseek-v4-flash",
   deepseekThinking: false,
   mimoKey: "",
-  mimoBaseUrl: "https://api.xiaomimimo.com/v1/chat/completions",
+  mimoBaseUrl: "https://api.xiaomimimo.com/v1",
   mimoModel: "mimo-v2.5",
   speechProvider: "system",
   openaiKey: "",
@@ -152,8 +152,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.10";
+const APP_VERSION = "1.9.11";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.11",
+    date: "2026-08-13",
+    items: ["MiMo Base URL 改为支持 /v1 基础地址", "自动拼接 /chat/completions", "更适配 Token Plan/CodePlan 专属 Base URL"],
+  },
   {
     version: "1.9.10",
     date: "2026-08-13",
@@ -598,7 +603,7 @@ function saveAiConfig() {
   state.deepseekModel = deepseekModelSelect.value;
   state.deepseekThinking = deepseekThinkingToggle.checked;
   state.mimoKey = mimoKeyInput.value.trim();
-  state.mimoBaseUrl = mimoBaseUrlInput.value.trim() || "https://api.xiaomimimo.com/v1/chat/completions";
+  state.mimoBaseUrl = mimoBaseUrlInput.value.trim() || "https://api.xiaomimimo.com/v1";
   state.mimoModel = mimoModelSelect.value;
   state.speechProvider = speechProviderSelect.value;
   state.openaiKey = openaiKeyInput.value.trim();
@@ -614,11 +619,18 @@ function showAiUses() {
     "AI 可做：语音跳转通过底部“语音”按钮触发；经文解释、上下文问答、笔记整理可从经文长按/右键菜单触发；主题查经和搜索意图解析可从顶部搜索框触发。当前已支持 AI 配置检查，云端录音上传和经文菜单 AI 动作会继续接入。";
 }
 
+function normalizeMimoChatUrl(value = state.mimoBaseUrl) {
+  const raw = String(value || "").trim() || "https://api.xiaomimimo.com/v1";
+  const base = raw.replace(/\/+$/, "");
+  if (/\/chat\/completions$/i.test(base)) return base;
+  return `${base}/chat/completions`;
+}
+
 function currentAiConfig() {
   if (state.aiProvider === "mimo") {
     return {
       provider: "小米 MiMo",
-      url: state.mimoBaseUrl,
+      url: normalizeMimoChatUrl(),
       key: state.mimoKey,
       model: state.mimoModel,
     };
@@ -2401,7 +2413,7 @@ function startVoiceInput(event) {
     voiceBtn.classList.add("active");
     voiceBtn.textContent = "录音";
     quickInput.value = "正在录音，松开后上传 MiMo 识别...";
-    window.AndroidVoiceApi.startCloud("mimo", state.mimoKey, "mimo-v2.5-asr", state.mimoBaseUrl);
+    window.AndroidVoiceApi.startCloud("mimo", state.mimoKey, "mimo-v2.5-asr", normalizeMimoChatUrl());
     return;
   }
   if (state.speechProvider === "openai") {

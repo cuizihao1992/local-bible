@@ -438,6 +438,15 @@
 - MiMo 请求同时发送 `Authorization: Bearer ...` 和 `api-key`
 - MiMo 401 错误提示补充 Key、空格和 Token Plan 专属 Base URL 排查方向
 
+## V1.9.11 MiMo Token Plan 地址兼容
+
+目标：适配小米 MiMo Token Plan / CodePlan 后台显示的 `/v1` Base URL，避免用户必须填写完整接口路径。
+已完成：
+
+- `小米 MiMo Base URL` 支持填写 `https://.../v1`
+- 检查 AI 与语音上传会自动拼接 `/chat/completions`
+- 如果已填写完整 `/chat/completions` 地址则保持原样
+
 ## V1.9.5 顶部书卷选择入口
 
 目标：书卷/章节选择不再放在侧栏菜单里，改为点击顶部当前书卷名打开，贴近常见圣经阅读 App 的操作习惯。

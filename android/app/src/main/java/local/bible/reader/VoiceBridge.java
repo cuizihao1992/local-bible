@@ -115,7 +115,7 @@ public class VoiceBridge {
                 cloudProvider = provider;
                 cloudKey = key.trim();
                 cloudModel = model == null || model.trim().isEmpty() ? "mimo-v2.5-asr" : model.trim();
-                cloudBaseUrl = baseUrl == null || baseUrl.trim().isEmpty() ? "https://api.xiaomimimo.com/v1/chat/completions" : baseUrl.trim();
+                cloudBaseUrl = baseUrl == null || baseUrl.trim().isEmpty() ? "https://api.xiaomimimo.com/v1" : baseUrl.trim();
                 cloudAudioFile = new File(activity.getCacheDir(), "mimo-voice-" + System.currentTimeMillis() + ".m4a");
                 cloudRecorder = new MediaRecorder();
                 cloudRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -260,7 +260,7 @@ public class VoiceBridge {
                 .put("model", model == null || model.isEmpty() ? "mimo-v2.5-asr" : model)
                 .put("messages", new JSONArray().put(message))
                 .put("asr_options", new JSONObject().put("language", "auto"));
-        String endpoint = baseUrl == null || baseUrl.trim().isEmpty() ? "https://api.xiaomimimo.com/v1/chat/completions" : baseUrl.trim();
+        String endpoint = normalizeChatUrl(baseUrl);
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
         connection.setConnectTimeout(20000);
         connection.setReadTimeout(60000);
@@ -295,6 +295,13 @@ public class VoiceBridge {
         int read;
         while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
         return output.toByteArray();
+    }
+
+    private String normalizeChatUrl(String value) {
+        String raw = value == null || value.trim().isEmpty() ? "https://api.xiaomimimo.com/v1" : value.trim();
+        while (raw.endsWith("/")) raw = raw.substring(0, raw.length() - 1);
+        if (raw.endsWith("/chat/completions")) return raw;
+        return raw + "/chat/completions";
     }
 
     private String message(Throwable error) {
