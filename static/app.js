@@ -154,8 +154,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.12";
+const APP_VERSION = "1.9.13";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.13",
+    date: "2026-08-13",
+    items: ["APK 更新下载增加重试", "支持 Range 续传已下载部分", "下载失败提示复制链接用浏览器下载"],
+  },
   {
     version: "1.9.12",
     date: "2026-08-13",
@@ -1786,10 +1791,12 @@ async function downloadLatestApk() {
       downloadLatestApkBtn.disabled = false;
     }
   } catch (error) {
-    setUpdateStatus(error.message || String(error));
-    renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
+    const message = `${error.message || String(error)}。如果进度停在 0%，请点“复制 APK 链接”后用浏览器下载。`;
+    setUpdateStatus(message);
+    renderDownloadProgress({ state: "error", message, percent: 0 });
     stopDownloadProgressPolling();
     downloadLatestApkBtn.disabled = false;
+    copyApkLinkBtn.disabled = false;
   }
 }
 

@@ -18,7 +18,7 @@ import java.net.URL;
 
 public class UpdateBridge {
     private static final String LATEST_RELEASE_URL = "https://api.github.com/repos/cuizihao1992/local-bible/releases/latest";
-    private static final String CURRENT_VERSION = "1.9.12";
+    private static final String CURRENT_VERSION = "1.9.13";
     private final Activity activity;
     private volatile JSONObject downloadStatus = new JSONObject();
 
@@ -66,15 +66,15 @@ public class UpdateBridge {
             if (parent != null) parent.mkdirs();
             new Thread(() -> {
                 try {
-                    downloadTo(downloadUrl, target);
+                    downloadWithRetry(downloadUrl, target, 3);
                     openInstaller(target);
                 } catch (Throwable error) {
-                    setDownloadStatus("apk", "error", 0, 0, error.getMessage());
+                    setDownloadStatus("apk", "error", target.exists() ? target.length() : 0, 0, friendlyDownloadError(error));
                 }
             }).start();
             return new JSONObject().put("started", true).put("file", target.getAbsolutePath()).toString();
         } catch (Throwable error) {
-            setDownloadStatus("apk", "error", 0, 0, error.getMessage());
+            setDownloadStatus("apk", "error", 0, 0, friendlyDownloadError(error));
             return errorJson(error);
         }
     }
@@ -115,26 +115,53 @@ public class UpdateBridge {
         }
     }
 
-    private void downloadTo(String urlText, File target) throws Exception {
+    private void downloadWithRetry(String urlText, File target, int maxAttempts) throws Exception {
+        Exception lastError = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            try {
+                downloadTo(urlText, target, attempt);
+                return;
+            } catch (Exception error) {
+                lastError = error;
+                setDownloadStatus("apk", "retrying", target.exists() ? target.length() : 0, 0, "????????? " + attempt + "/" + maxAttempts);
+                Thread.sleep(1200L * attempt);
+            }
+        }
+        throw lastError == null ? new RuntimeException("APK ????") : lastError;
+    }
+
+    private void downloadTo(String urlText, File target, int attempt) throws Exception {
+        long existing = target.exists() ? target.length() : 0;
         HttpURLConnection connection = (HttpURLConnection) new URL(urlText).openConnection();
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
         connection.setRequestProperty("User-Agent", "LocalBibleReader/" + CURRENT_VERSION);
-        long total = connection.getContentLengthLong();
-        long downloaded = 0;
-        setDownloadStatus("apk", "downloading", 0, total, "正在下载 APK");
-        try (InputStream in = connection.getInputStream(); FileOutputStream out = new FileOutputStream(target)) {
+        if (existing > 0) connection.setRequestProperty("Range", "bytes=" + existing + "-");
+        int code = connection.getResponseCode();
+        boolean append = existing > 0 && code == HttpURLConnection.HTTP_PARTIAL;
+        if (existing > 0 && !append) existing = 0;
+        long contentLength = connection.getContentLengthLong();
+        long total = append && contentLength > 0 ? existing + contentLength : contentLength;
+        long downloaded = existing;
+        setDownloadStatus("apk", "downloading", downloaded, total, "???? APK" + (attempt > 1 ? "?? " + attempt + " ???" : ""));
+        try (InputStream in = connection.getInputStream(); FileOutputStream out = new FileOutputStream(target, append)) {
             byte[] buffer = new byte[1024 * 64];
             int read;
             while ((read = in.read(buffer)) > 0) {
                 out.write(buffer, 0, read);
                 downloaded += read;
-                setDownloadStatus("apk", "downloading", downloaded, total, "正在下载 APK");
+                setDownloadStatus("apk", "downloading", downloaded, total, "???? APK");
             }
-            setDownloadStatus("apk", "done", downloaded, total, "APK 下载完成");
+            if (total > 0 && downloaded < total) throw new java.io.EOFException("APK ??????" + downloaded + "/" + total);
+            setDownloadStatus("apk", "done", downloaded, total, "APK ????");
         } finally {
             connection.disconnect();
         }
+    }
+
+    private String friendlyDownloadError(Throwable error) {
+        String message = error == null || error.getMessage() == null ? "APK ????" : error.getMessage();
+        return message + "?????? APK ???????????????";
     }
 
     private void setDownloadStatus(String id, String state, long downloaded, long total, String message) {
