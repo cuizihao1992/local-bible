@@ -35,6 +35,9 @@ const prevBtn = document.querySelector("#prevBtn");
 const nextBtn = document.querySelector("#nextBtn");
 const menuBtn = document.querySelector("#menuBtn");
 const closeSidebarBtn = document.querySelector("#closeSidebarBtn");
+const readerSettingsBtn = document.querySelector("#readerSettingsBtn");
+const readerSettingsPanel = document.querySelector("#readerSettingsPanel");
+const closeReaderSettingsBtn = document.querySelector("#closeReaderSettingsBtn");
 const overlay = document.querySelector("#overlay");
 const quickForm = document.querySelector("#quickForm");
 const quickInput = document.querySelector("#quickInput");
@@ -572,6 +575,10 @@ function closeVerseMenu() {
 function closeSelectionBar() {
   selectionBar.hidden = true;
   selectedVerseNumbers = [];
+}
+
+function toggleReaderSettings(show = readerSettingsPanel.hidden) {
+  readerSettingsPanel.hidden = !show;
 }
 
 function verseTextForNumber(verseNo) {
@@ -1626,12 +1633,23 @@ nextBtn.addEventListener("click", () => {
   state.targetVerse = null;
   moveChapter(1);
 });
-menuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
+menuBtn.addEventListener("click", () => {
+  toggleReaderSettings(false);
+  document.body.classList.add("sidebarOpen");
+});
 closeSidebarBtn.addEventListener("click", () => document.body.classList.remove("sidebarOpen"));
-overlay.addEventListener("click", () => document.body.classList.remove("sidebarOpen"));
+readerSettingsBtn.addEventListener("click", () => toggleReaderSettings());
+closeReaderSettingsBtn.addEventListener("click", () => toggleReaderSettings(false));
+overlay.addEventListener("click", () => {
+  document.body.classList.remove("sidebarOpen");
+  toggleReaderSettings(false);
+});
 mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
 mobileNextBtn.addEventListener("click", () => moveChapter(1));
-mobileMenuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
+mobileMenuBtn.addEventListener("click", () => {
+  toggleReaderSettings(false);
+  document.body.classList.add("sidebarOpen");
+});
 mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
 
 function startVoiceInput(event) {

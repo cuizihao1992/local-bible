@@ -68,40 +68,7 @@
         </div>
 
         <div class="settingsPanel">
-          <div class="panelTitle">设置</div>
-          <label class="field compactField">
-            <span>主题</span>
-            <select id="themeSelect">
-              <option value="light">日间</option>
-              <option value="dark">夜间</option>
-            </select>
-          </label>
-          <label class="field compactField">
-            <span>配色</span>
-            <select id="paletteSelect">
-              <option value="classic">经典纸张</option>
-              <option value="jade">清润青绿</option>
-              <option value="blue">安静蓝灰</option>
-              <option value="rose">柔和玫瑰</option>
-              <option value="mono">简洁墨白</option>
-            </select>
-          </label>
-          <label class="field compactField">
-            <span>简繁偏好</span>
-            <select id="scriptPreference">
-              <option value="auto">自动</option>
-              <option value="simplified">简体</option>
-              <option value="traditional">繁体</option>
-            </select>
-          </label>
-          <label class="rangeField">
-            <span>字号</span>
-            <input id="fontSizeRange" type="range" min="16" max="26" step="1" />
-          </label>
-          <label class="rangeField">
-            <span>行距</span>
-            <input id="lineHeightRange" type="range" min="1.6" max="2.4" step="0.1" />
-          </label>
+          <div class="panelTitle">个人数据</div>
           <div class="dataButtons">
             <button id="exportDataBtn" type="button">导出</button>
             <button id="importDataBtn" type="button">导入</button>
@@ -136,8 +103,51 @@
           </select>
           <button type="submit">查找</button>
         </form>
+        <button id="readerSettingsBtn" class="iconBtn readerSettingsBtn" aria-label="阅读设置">⚙</button>
         <button id="nextBtn" class="navBtn">下一章</button>
       </header>
+
+      <section id="readerSettingsPanel" class="readerSettingsPanel" hidden>
+        <div class="readerSettingsHeader">
+          <div>阅读设置</div>
+          <button id="closeReaderSettingsBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <div class="readerSettingsGrid">
+          <label class="field compactField">
+            <span>主题</span>
+            <select id="themeSelect">
+              <option value="light">日间</option>
+              <option value="dark">夜间</option>
+            </select>
+          </label>
+          <label class="field compactField">
+            <span>配色</span>
+            <select id="paletteSelect">
+              <option value="classic">经典纸张</option>
+              <option value="jade">清润青绿</option>
+              <option value="blue">安静蓝灰</option>
+              <option value="rose">柔和玫瑰</option>
+              <option value="mono">简洁墨白</option>
+            </select>
+          </label>
+          <label class="field compactField">
+            <span>简繁偏好</span>
+            <select id="scriptPreference">
+              <option value="auto">自动</option>
+              <option value="simplified">简体</option>
+              <option value="traditional">繁体</option>
+            </select>
+          </label>
+          <label class="rangeField">
+            <span>字号</span>
+            <input id="fontSizeRange" type="range" min="16" max="26" step="1" />
+          </label>
+          <label class="rangeField">
+            <span>行距</span>
+            <input id="lineHeightRange" type="range" min="1.6" max="2.4" step="0.1" />
+          </label>
+        </div>
+      </section>
 
       <section id="searchPanel" class="searchPanel" hidden>
         <div class="searchHeader">

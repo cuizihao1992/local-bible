@@ -499,13 +499,50 @@ select {
   z-index: 3;
   min-height: 74px;
   display: grid;
-  grid-template-columns: auto auto 1fr minmax(260px, 420px) auto;
+  grid-template-columns: auto auto 1fr minmax(260px, 420px) auto auto;
   align-items: center;
   gap: 12px;
   padding: 14px clamp(16px, 4vw, 42px);
   background: var(--topbar);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(14px);
+}
+
+.readerSettingsBtn {
+  display: inline-grid;
+  place-items: center;
+}
+
+.readerSettingsPanel {
+  position: fixed;
+  top: 82px;
+  right: 24px;
+  z-index: 12;
+  width: min(360px, calc(100vw - 32px));
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.readerSettingsPanel[hidden] {
+  display: none;
+}
+
+.readerSettingsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.readerSettingsGrid {
+  display: grid;
+  gap: 10px;
 }
 
 .quickForm {
@@ -1388,6 +1425,10 @@ mark {
   }
 
   .closeSidebarBtn {
+    position: fixed;
+    top: calc(12px + max(env(safe-area-inset-top), 28px));
+    right: 14px;
+    z-index: 8;
     display: grid;
     place-items: center;
     width: 40px;
@@ -1427,7 +1468,7 @@ mark {
   }
 
   .topbar {
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
     gap: 8px;
     padding: calc(10px + max(env(safe-area-inset-top), 28px)) 12px 8px;
     min-height: 0;
@@ -1435,6 +1476,18 @@ mark {
 
   .topbar > .navBtn {
     display: none;
+  }
+
+  .readerSettingsBtn {
+    display: inline-grid;
+    grid-column: 3;
+  }
+
+  .readerSettingsPanel {
+    top: calc(72px + max(env(safe-area-inset-top), 28px));
+    left: 12px;
+    right: 12px;
+    width: auto;
   }
 
   .titleBlock {
