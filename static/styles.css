@@ -175,6 +175,10 @@ body.darkTheme[data-palette="mono"] {
   margin-bottom: 24px;
 }
 
+.closeSidebarBtn {
+  display: none;
+}
+
 .mark {
   width: 42px;
   height: 42px;
@@ -1374,8 +1378,28 @@ mark {
     width: min(100vw, 380px);
     max-width: 100vw;
     height: 100dvh;
-    padding: 18px 16px calc(24px + env(safe-area-inset-bottom));
+    padding: calc(18px + max(env(safe-area-inset-top), 28px)) 16px calc(24px + env(safe-area-inset-bottom));
     box-shadow: var(--shadow);
+  }
+
+  .brand {
+    display: grid;
+    grid-template-columns: 42px 1fr 40px;
+  }
+
+  .closeSidebarBtn {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--control);
+    color: var(--accent);
+    cursor: pointer;
+    font: inherit;
+    font-size: 24px;
+    line-height: 1;
   }
 
   body.sidebarOpen .sidebar {
@@ -1405,7 +1429,7 @@ mark {
   .topbar {
     grid-template-columns: 42px minmax(0, 1fr);
     gap: 8px;
-    padding: calc(10px + env(safe-area-inset-top)) 12px 8px;
+    padding: calc(10px + max(env(safe-area-inset-top), 28px)) 12px 8px;
     min-height: 0;
   }
 
@@ -1588,7 +1612,7 @@ mark {
 
 @media (max-width: 420px) {
   .topbar {
-    padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
+    padding: calc(8px + max(env(safe-area-inset-top), 28px)) 10px 8px;
   }
 
   .versionTitle {

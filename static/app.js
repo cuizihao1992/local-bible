@@ -34,6 +34,7 @@ const content = document.querySelector("#content");
 const prevBtn = document.querySelector("#prevBtn");
 const nextBtn = document.querySelector("#nextBtn");
 const menuBtn = document.querySelector("#menuBtn");
+const closeSidebarBtn = document.querySelector("#closeSidebarBtn");
 const overlay = document.querySelector("#overlay");
 const quickForm = document.querySelector("#quickForm");
 const quickInput = document.querySelector("#quickInput");
@@ -1546,6 +1547,7 @@ nextBtn.addEventListener("click", () => {
   moveChapter(1);
 });
 menuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
+closeSidebarBtn.addEventListener("click", () => document.body.classList.remove("sidebarOpen"));
 overlay.addEventListener("click", () => document.body.classList.remove("sidebarOpen"));
 mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
 mobileNextBtn.addEventListener("click", () => moveChapter(1));
