@@ -80,6 +80,7 @@ const selectionSummary = document.querySelector("#selectionSummary");
 const copySelectionBtn = document.querySelector("#copySelectionBtn");
 const mobilePrevBtn = document.querySelector("#mobilePrevBtn");
 const mobileMenuBtn = document.querySelector("#mobileMenuBtn");
+const voiceBtn = document.querySelector("#voiceBtn");
 const mobileMarkReadBtn = document.querySelector("#mobileMarkReadBtn");
 const mobileMyBtn = document.querySelector("#mobileMyBtn");
 const mobileNextBtn = document.querySelector("#mobileNextBtn");
@@ -135,6 +136,53 @@ function bookAliases() {
     );
   });
   return [...aliases.entries()].sort((a, b) => b[0].length - a[0].length);
+}
+
+function normalizeVoiceText(input) {
+  return String(input || "")
+    .replace(/[，。？！,.?!]/g, "")
+    .replace(/跳转到|转到|打开|查找|请读|读到|经文/g, "")
+    .replace(/第/g, "")
+    .replace(/\s+/g, "");
+}
+
+function chineseNumberToInt(input) {
+  const raw = String(input || "");
+  if (/^\d+$/.test(raw)) return Number(raw);
+  const digits = { 零: 0, 〇: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+  if (!/[十百]/.test(raw)) {
+    return raw.split("").reduce((value, char) => value * 10 + (digits[char] ?? 0), 0);
+  }
+  let total = 0;
+  let current = 0;
+  for (const char of raw) {
+    if (char === "百") {
+      total += (current || 1) * 100;
+      current = 0;
+    } else if (char === "十") {
+      total += (current || 1) * 10;
+      current = 0;
+    } else if (Object.prototype.hasOwnProperty.call(digits, char)) {
+      current = digits[char];
+    }
+  }
+  return total + current;
+}
+
+function parseSpokenReference(input) {
+  const value = normalizeVoiceText(input);
+  if (!value) return null;
+  const numberPattern = "([0-9零〇一二两三四五六七八九十百]+)";
+  const match = value.match(new RegExp(`^(.+?)${numberPattern}章(?:${numberPattern}节?)?$`));
+  if (!match) return parseReference(value);
+  const rawBook = match[1];
+  const found = bookAliases().find(([alias, book]) => rawBook === alias || rawBook.endsWith(alias) || book.longName === rawBook);
+  if (!found) return null;
+  return {
+    book: found[1].id,
+    chapter: chineseNumberToInt(match[2]),
+    verse: match[3] ? chineseNumberToInt(match[3]) : null,
+  };
 }
 
 function versionLabel(versionId) {
@@ -947,12 +995,42 @@ function parseReference(input) {
 async function jumpToReference(ref) {
   state.book = ref.book;
   state.chapter = ref.chapter;
-  state.targetVerse = ref.verse;
+  state.targetVerse = ref.verse || null;
   renderBooks();
   renderChapterGrid();
   closeSearch();
   await loadChapter();
 }
+
+async function handleVoiceText(text) {
+  quickInput.value = text;
+  const ref = parseSpokenReference(text);
+  if (!ref) {
+    quickInput.value = text ? `未识别经文：${text}` : "未识别到经文";
+    return;
+  }
+  await jumpToReference(ref);
+}
+
+window.handleAndroidVoice = (type, text) => {
+  if (!voiceBtn) return;
+  if (type === "start" || type === "ready" || type === "speech") {
+    voiceBtn.classList.add("active");
+    voiceBtn.textContent = "聆听";
+    return;
+  }
+  if (type === "partial") {
+    if (text) quickInput.value = text;
+    return;
+  }
+  voiceBtn.classList.remove("active");
+  voiceBtn.textContent = "语音";
+  if (type === "result") {
+    handleVoiceText(text).catch(setError);
+  } else if (type === "error") {
+    quickInput.value = text || "语音识别失败";
+  }
+};
 
 async function runSearch(query) {
   const params = new URLSearchParams({
@@ -1555,5 +1633,29 @@ mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
 mobileNextBtn.addEventListener("click", () => moveChapter(1));
 mobileMenuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
 mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
+
+function startVoiceInput(event) {
+  event.preventDefault();
+  if (!window.AndroidVoiceApi?.start) {
+    quickInput.value = "当前环境不支持语音识别";
+    return;
+  }
+  voiceBtn.classList.add("active");
+  voiceBtn.textContent = "按住";
+  window.AndroidVoiceApi.start();
+}
+
+function stopVoiceInput(event) {
+  event.preventDefault();
+  if (!window.AndroidVoiceApi?.stop) return;
+  window.AndroidVoiceApi.stop();
+}
+
+voiceBtn.addEventListener("pointerdown", startVoiceInput);
+voiceBtn.addEventListener("pointerup", stopVoiceInput);
+voiceBtn.addEventListener("pointercancel", stopVoiceInput);
+voiceBtn.addEventListener("pointerleave", (event) => {
+  if (event.buttons) stopVoiceInput(event);
+});
 
 init();

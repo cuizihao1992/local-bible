@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccessFromFileURLs(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
         webView.addJavascriptInterface(new AndroidBridge(offlineApi), "AndroidBibleApi");
+        webView.addJavascriptInterface(new VoiceBridge(this, webView), "AndroidVoiceApi");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override

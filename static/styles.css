@@ -1571,7 +1571,7 @@ mark {
     bottom: calc(10px + env(safe-area-inset-bottom));
     z-index: 10;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 5px;
     min-height: var(--mobile-nav-height);
     padding: 8px;
