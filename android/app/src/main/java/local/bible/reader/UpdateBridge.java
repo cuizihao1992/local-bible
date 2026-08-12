@@ -18,7 +18,7 @@ import java.net.URL;
 
 public class UpdateBridge {
     private static final String LATEST_RELEASE_URL = "https://api.github.com/repos/cuizihao1992/local-bible/releases/latest";
-    private static final String CURRENT_VERSION = "1.9.1";
+    private static final String CURRENT_VERSION = "1.9.2";
     private final Activity activity;
 
     public UpdateBridge(Activity activity) {

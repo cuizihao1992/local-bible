@@ -275,6 +275,112 @@ select {
   margin-top: 10px;
 }
 
+.bookPicker {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.bookPickerTop {
+  display: grid;
+  gap: 8px;
+}
+
+.bookPicker input {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--ink);
+  font: inherit;
+  padding: 0 11px;
+}
+
+.bookFilterTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.bookFilterTabs button,
+.bookBtn {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+}
+
+.bookFilterTabs button {
+  height: 34px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bookFilterTabs button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  max-height: 270px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+
+.bookBtn {
+  display: grid;
+  gap: 3px;
+  min-height: 52px;
+  padding: 7px 5px;
+  text-align: center;
+}
+
+.bookBtn span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookBtn small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.bookBtn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+}
+
+.bookEmpty {
+  grid-column: 1 / -1;
+  padding: 12px;
+  color: var(--muted);
+  background: var(--soft);
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.chapterPanelHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .advancedPanel {
   margin-top: 18px;
   border-top: 1px solid var(--line);

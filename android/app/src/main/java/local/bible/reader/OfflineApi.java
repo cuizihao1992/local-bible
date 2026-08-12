@@ -27,7 +27,7 @@ public class OfflineApi {
     private final File bibleDir;
     private final File commentaryDir;
     private final SQLiteDatabase userDb;
-    private static final String RELEASE_BASE = "https://github.com/cuizihao1992/local-bible/releases/download/v1.9.1/";
+    private static final String RELEASE_BASE = "https://github.com/cuizihao1992/local-bible/releases/download/v1.9.2/";
 
     private static final Object[][] BOOKS = new Object[][]{
             {"创", "创世记", 50}, {"出", "出埃及记", 40}, {"利", "利未记", 27}, {"民", "民数记", 36},
@@ -135,8 +135,8 @@ public class OfflineApi {
 
     private JSONArray packages() throws Exception {
         JSONArray array = new JSONArray();
-        array.put(packageInfo("extra-bibles", "更多译本", "下载 22 个补充经文译本", "bibles-extra-v1.9.1.zip", bibleDir, 26));
-        array.put(packageInfo("commentaries", "注释库", "下载 18 个注释数据库", "commentaries-v1.9.1.zip", commentaryDir, 18));
+        array.put(packageInfo("extra-bibles", "更多译本", "下载 22 个补充经文译本", "bibles-extra-v1.9.2.zip", bibleDir, 26));
+        array.put(packageInfo("commentaries", "注释库", "下载 18 个注释数据库", "commentaries-v1.9.2.zip", commentaryDir, 18));
         return array;
     }
 
@@ -158,10 +158,10 @@ public class OfflineApi {
         String fileName;
         File targetDir;
         if ("extra-bibles".equals(packageId)) {
-            fileName = "bibles-extra-v1.9.1.zip";
+            fileName = "bibles-extra-v1.9.2.zip";
             targetDir = bibleDir;
         } else if ("commentaries".equals(packageId)) {
-            fileName = "commentaries-v1.9.1.zip";
+            fileName = "commentaries-v1.9.2.zip";
             targetDir = commentaryDir;
         } else {
             throw new Exception("未知资源包：" + packageId);
@@ -172,7 +172,7 @@ public class OfflineApi {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(20000);
         connection.setReadTimeout(120000);
-        connection.setRequestProperty("User-Agent", "LocalBibleReader/1.9.1");
+        connection.setRequestProperty("User-Agent", "LocalBibleReader/1.9.2");
         int status = connection.getResponseCode();
         if (status < 200 || status >= 300) throw new Exception("下载失败：" + status);
 

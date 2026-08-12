@@ -338,3 +338,21 @@
 
 - 每次推送 GitHub Release 前，同步更新 `package.json`、`package-lock.json`、`android/app/build.gradle`、`scripts/build-android.ps1`、`scripts/verify-android-apk.ps1` 中的版本号
 - Release tag、APK 文件名、资源包文件名和 Android 内置下载地址必须使用同一个版本号
+
+## V1.9.2 书卷选择面板与更新策略
+
+目标：让移动端选择书卷更快，并保证应用内检查更新可以发现新 APK。
+
+已完成：
+
+- Android 版本升级到 `1.9.2`
+- 书卷选择增加搜索框
+- 书卷选择增加“全部 / 旧约 / 新约”筛选
+- 书卷从系统下拉框扩展为按钮网格，显示简称、约别和章节数
+- 章节面板显示当前书卷、总章数和当前章
+- 保留原生下拉选择，兼容桌面和键盘操作
+
+发版提醒：
+
+- 覆盖同一个 GitHub Release asset 只能替换下载文件，应用内检查更新不会发现版本变化
+- 需要让 App 检查到更新时，必须升级版本号并创建新的 Release tag

@@ -34,7 +34,12 @@ const STORAGE_KEY = "localBibleReaderState";
 const versionSelect = document.querySelector("#versionSelect");
 const compareVersions = document.querySelector("#compareVersions");
 const bookSelect = document.querySelector("#bookSelect");
+const bookSearchInput = document.querySelector("#bookSearchInput");
+const bookFilterTabs = document.querySelector("#bookFilterTabs");
+const bookGrid = document.querySelector("#bookGrid");
 const chapterGrid = document.querySelector("#chapterGrid");
+const chapterPanelTitle = document.querySelector("#chapterPanelTitle");
+const chapterPanelMeta = document.querySelector("#chapterPanelMeta");
 const chapterTitle = document.querySelector("#chapterTitle");
 const versionTitle = document.querySelector("#versionTitle");
 const progressSummary = document.querySelector("#progressSummary");
@@ -122,10 +127,11 @@ let longPressTimer = null;
 let selectedVerseNumbers = [];
 let selectionFrame = 0;
 let lastUpdateInfo = null;
-const APP_VERSION = "1.9.1";
+let bookFilter = "all";
+const APP_VERSION = "1.9.2";
 const RELEASE_NOTES = [
   {
-    version: "1.9.1",
+    version: "1.9.2",
     date: "2026-08-12",
     items: ["菜单打开时 Android 系统返回手势只关闭菜单", "增加检查更新、下载更新和版本更新说明", "阅读设置迁移到右上角按钮，菜单关闭按钮固定显示"],
   },
@@ -604,12 +610,42 @@ function renderBooks() {
     .map((book) => `<option value="${book.id}">${escapeHtml(book.longName || book.shortName)}</option>`)
     .join("");
   bookSelect.value = String(state.book);
+  renderBookGrid();
+}
+
+function bookMatchesFilter(book) {
+  const keyword = bookSearchInput.value.trim().toLowerCase();
+  const inScope = bookFilter === "all" || (bookFilter === "ot" ? book.id <= 39 : book.id >= 40);
+  if (!inScope) return false;
+  if (!keyword) return true;
+  return `${book.shortName || ""} ${book.longName || ""}`.toLowerCase().includes(keyword);
+}
+
+function renderBookGrid() {
+  if (!bookGrid) return;
+  const books = state.books.filter(bookMatchesFilter);
+  bookGrid.innerHTML = books.length
+    ? books
+        .map((book) => {
+          const active = book.id === state.book ? " active" : "";
+          const testament = book.id <= 39 ? "旧" : "新";
+          return `
+            <button class="bookBtn${active}" type="button" data-book="${book.id}" title="${escapeHtml(book.longName || book.shortName)}">
+              <span>${escapeHtml(book.shortName || book.longName)}</span>
+              <small>${testament} · ${book.chapterCount}</small>
+            </button>
+          `;
+        })
+        .join("")
+    : `<div class="bookEmpty">没有匹配的书卷</div>`;
 }
 
 function renderChapterGrid() {
   const book = currentBook();
   const count = book?.chapterCount || 1;
   const readSet = new Set((state.progress?.readChapters || []).map((item) => `${item.book}:${item.chapter}`));
+  if (chapterPanelTitle) chapterPanelTitle.textContent = book ? `${book.longName || book.shortName} 章节` : "章节";
+  if (chapterPanelMeta) chapterPanelMeta.textContent = book ? `${count} 章 · 当前第 ${state.chapter} 章` : "";
   chapterGrid.innerHTML = Array.from({ length: count }, (_, index) => {
     const chapter = index + 1;
     const active = chapter === state.chapter ? " active" : "";
@@ -1566,6 +1602,28 @@ bookSelect.addEventListener("change", () => {
   state.book = Number(bookSelect.value);
   state.chapter = 1;
   state.targetVerse = null;
+  renderBooks();
+  renderChapterGrid();
+  loadChapter();
+});
+
+bookSearchInput.addEventListener("input", renderBookGrid);
+
+bookFilterTabs.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-book-filter]");
+  if (!button) return;
+  bookFilter = button.dataset.bookFilter;
+  bookFilterTabs.querySelectorAll("button").forEach((item) => item.classList.toggle("active", item === button));
+  renderBookGrid();
+});
+
+bookGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-book]");
+  if (!button) return;
+  state.book = Number(button.dataset.book);
+  state.chapter = 1;
+  state.targetVerse = null;
+  renderBooks();
   renderChapterGrid();
   loadChapter();
 });
