@@ -83,6 +83,10 @@ const dictionaryPanel = document.querySelector("#dictionaryPanel");
 const dictionarySummary = document.querySelector("#dictionarySummary");
 const dictionaryResults = document.querySelector("#dictionaryResults");
 const closeDictionaryBtn = document.querySelector("#closeDictionaryBtn");
+const aiResultPanel = document.querySelector("#aiResultPanel");
+const aiResultTitle = document.querySelector("#aiResultTitle");
+const aiResultContent = document.querySelector("#aiResultContent");
+const closeAiResultBtn = document.querySelector("#closeAiResultBtn");
 const themeSelect = document.querySelector("#themeSelect");
 const paletteSelect = document.querySelector("#paletteSelect");
 const scriptPreference = document.querySelector("#scriptPreference");
@@ -143,8 +147,13 @@ let selectionFrame = 0;
 let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
-const APP_VERSION = "1.9.6";
+const APP_VERSION = "1.9.7";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.7",
+    date: "2026-08-12",
+    items: ["经文右键/长按菜单增加 AI 解释、上下文和笔记", "新增 AI 查经结果面板", "AI 结果支持复制"],
+  },
   {
     version: "1.9.6",
     date: "2026-08-12",
@@ -581,6 +590,39 @@ function currentAiConfig() {
   };
 }
 
+async function requestAiText(prompt) {
+  const config = currentAiConfig();
+  if (!config.key) throw new Error(`请先在 AI 配置里填写 ${config.provider} Key。`);
+  const styleText = {
+    concise: "回答简洁，控制在 120 字以内。",
+    balanced: "回答适中，给出要点和必要背景。",
+    detailed: "回答详细一些，包含背景、结构和应用提醒。",
+  }[state.aiResponseStyle] || "回答适中。";
+  const response = await fetch(config.url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: config.model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "你是一个谨慎的中文圣经研读助手。避免武断教义结论，区分经文本身、解释和应用。不要编造原文或历史背景。",
+        },
+        { role: "user", content: `${prompt}\n\n${styleText}` },
+      ],
+      max_tokens: state.aiResponseStyle === "detailed" ? 900 : state.aiResponseStyle === "balanced" ? 520 : 260,
+      temperature: 0.2,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+  return data.choices?.[0]?.message?.content?.trim() || "AI 没有返回内容。";
+}
+
 async function testAiConfig() {
   saveAiConfig();
   const config = currentAiConfig();
@@ -972,6 +1014,60 @@ function verseTextForNumber(verseNo) {
   return content.querySelector(`.verse[data-verse="${verseNo}"] .verseText`)?.textContent.trim() || "";
 }
 
+function verseReference(verseNo) {
+  return `${currentBook().longName} ${state.chapter}:${verseNo}`;
+}
+
+function chapterContextAround(verseNo, radius = 2) {
+  const start = Math.max(1, Number(verseNo) - radius);
+  const end = Number(verseNo) + radius;
+  return [...content.querySelectorAll(".verse")]
+    .map((verse) => Number(verse.dataset.verse))
+    .filter((number) => number >= start && number <= end)
+    .map((number) => `${number}. ${verseTextForNumber(number)}`)
+    .join("\n");
+}
+
+function aiPromptForVerse(action, verseNo) {
+  const ref = verseReference(verseNo);
+  const text = verseTextForNumber(verseNo);
+  const context = chapterContextAround(verseNo);
+  if (action === "ai-context") {
+    return `请结合上下文解释这段经文。\n经文：${ref} ${text}\n上下文：\n${context}\n请按“上下文、重点、应用”三部分回答。`;
+  }
+  if (action === "ai-note") {
+    return `请把这节经文整理成一条个人查经笔记。\n经文：${ref} ${text}\n上下文：\n${context}\n请输出：观察、解释、应用、祷告。`;
+  }
+  return `请解释这节经文。\n经文：${ref} ${text}\n请说明核心意思、可能的背景和今天的应用，避免过度发挥。`;
+}
+
+function aiActionTitle(action, verseNo) {
+  const ref = verseReference(verseNo);
+  if (action === "ai-context") return `${ref} · AI 上下文`;
+  if (action === "ai-note") return `${ref} · AI 笔记`;
+  return `${ref} · AI 解释`;
+}
+
+async function runVerseAiAction(action, verseNo) {
+  saveAiConfig();
+  aiResultPanel.hidden = false;
+  aiResultTitle.textContent = aiActionTitle(action, verseNo);
+  aiResultContent.innerHTML = `<div class="aiLoading">正在请求 ${escapeHtml(currentAiConfig().provider)}...</div>`;
+  try {
+    const text = await requestAiText(aiPromptForVerse(action, verseNo));
+    aiResultContent.innerHTML = `
+      <div class="aiResultText">${escapeHtml(text)}</div>
+      <div class="aiResultActions">
+        <button type="button" data-copy-ai-result>复制结果</button>
+      </div>
+    `;
+    aiResultContent.dataset.aiResultText = text;
+    aiResultPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+  } catch (error) {
+    aiResultContent.innerHTML = `<div class="aiError">${escapeHtml(error.message || String(error))}</div>`;
+  }
+}
+
 function formatVerseLines(verseNumbers) {
   const book = currentBook();
   return verseNumbers
@@ -1067,6 +1163,8 @@ async function runVerseAction(action, verseNo = state.activeVerse) {
     await searchDictionary();
   } else if (action === "commentary") {
     focusCommentaryForVerse(Number(verseNo));
+  } else if (action.startsWith("ai-")) {
+    await runVerseAiAction(action, Number(verseNo));
   }
 }
 
@@ -1476,6 +1574,10 @@ function closeStrong() {
 
 function closeDictionary() {
   dictionaryPanel.hidden = true;
+}
+
+function closeAiResult() {
+  aiResultPanel.hidden = true;
 }
 
 function closeMyPanel() {
@@ -1950,6 +2052,14 @@ packageList?.addEventListener("click", (event) => {
 });
 clearDownloadCacheBtn?.addEventListener("click", clearDownloadCache);
 closeDictionaryBtn.addEventListener("click", closeDictionary);
+closeAiResultBtn.addEventListener("click", closeAiResult);
+aiResultContent.addEventListener("click", (event) => {
+  if (!event.target.closest("[data-copy-ai-result]")) return;
+  const text = aiResultContent.dataset.aiResultText || aiResultContent.textContent.trim();
+  writeClipboard(text).then(() => {
+    event.target.textContent = "已复制";
+  }).catch(setError);
+});
 closeMyPanelBtn.addEventListener("click", closeMyPanel);
 
 myPanel.addEventListener("click", async (event) => {

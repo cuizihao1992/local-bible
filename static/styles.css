@@ -914,6 +914,57 @@ select {
   padding: 0 18px;
 }
 
+.aiResultPanel {
+  width: min(860px, calc(100vw - 360px));
+  margin: 18px auto 0;
+  padding: 0 18px;
+}
+
+.aiResultContent {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.aiResultText,
+.aiLoading,
+.aiError {
+  white-space: pre-wrap;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.aiLoading {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.aiError {
+  color: #9a3412;
+}
+
+.aiResultActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.aiResultActions button {
+  min-height: 34px;
+  border: 1px solid rgba(45, 106, 95, 0.35);
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
 .myPanel {
   width: min(860px, calc(100vw - 360px));
   margin: 18px auto 0;
@@ -1438,6 +1489,11 @@ mark {
   outline: none;
 }
 
+.verseMenu [data-menu-action^="ai-"] {
+  color: var(--accent);
+  font-weight: 800;
+}
+
 .selectionBar {
   position: fixed;
   left: 50%;
@@ -1854,7 +1910,8 @@ mark {
     min-width: 0;
   }
 
-  .dictionaryResultsPanel {
+  .dictionaryResultsPanel,
+  .aiResultPanel {
     width: 100%;
     padding: 0 16px;
   }
@@ -2023,6 +2080,7 @@ mark {
   .searchPanel,
   .strongPanel,
   .dictionaryResultsPanel,
+  .aiResultPanel,
   .myPanel,
   .dashboardPanel,
   .commentaryContent {

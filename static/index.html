@@ -284,6 +284,14 @@
         <div id="dictionaryResults" class="dictionaryResults"></div>
       </section>
 
+      <section id="aiResultPanel" class="aiResultPanel" hidden>
+        <div class="searchHeader">
+          <div id="aiResultTitle">AI 查经</div>
+          <button id="closeAiResultBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <div id="aiResultContent" class="aiResultContent"></div>
+      </section>
+
       <section id="dashboardPanel" class="dashboardPanel"></section>
 
       <section id="mobileStatusPanel" class="mobileStatusPanel" hidden></section>
@@ -323,6 +331,9 @@
       <button type="button" data-menu-action="copy">复制</button>
       <button type="button" data-menu-action="dictionary">查词</button>
       <button type="button" data-menu-action="commentary">注释</button>
+      <button type="button" data-menu-action="ai-explain">AI 解释</button>
+      <button type="button" data-menu-action="ai-context">AI 上下文</button>
+      <button type="button" data-menu-action="ai-note">AI 笔记</button>
     </div>
 
     <div id="selectionBar" class="selectionBar" hidden>
