@@ -255,3 +255,23 @@
 - 桌面版增加单实例保护
 - `npm run check` 覆盖 Electron 桌面入口
 - 新增 [OPTIMIZATION.md](./OPTIMIZATION.md) 记录体检结果和后续优化清单
+
+## V1.7.0 Android 离线 APK
+
+目标：做出不依赖电脑后台服务的 Android 离线 APK。
+
+已完成：
+
+- 新增原生 Android WebView 工程
+- APK 内置前端静态资源
+- APK 构建时打包 `D:\bibleDownload\bibles` 下 26 个经文译本
+- Android 原生代码拦截 `/api/...` 请求并本地返回 JSON
+- 支持离线译本列表、书卷、章节、多译本对照和搜索
+- 支持 Android 本机用户数据库、阅读历史、阅读进度、收藏、高亮、笔记、导入和导出
+- 新增 `npm run dist:android`
+- 生成 `dist\android\local-bible-reader-offline-1.7.0-debug.apk`
+
+后续：
+
+- 将注释、辞典、原文和音频做成可选离线数据包
+- 增加正式 release 签名 APK

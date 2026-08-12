@@ -143,6 +143,11 @@ function setError(error) {
 }
 
 function postJson(path, payload) {
+  if (window.AndroidBibleApi?.postJson) {
+    const data = JSON.parse(window.AndroidBibleApi.postJson(path, JSON.stringify(payload)));
+    if (data.error) throw new Error(data.error);
+    return Promise.resolve(data);
+  }
   return fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

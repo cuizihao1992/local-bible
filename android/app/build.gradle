@@ -1,0 +1,49 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "local.bible.reader"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "local.bible.reader"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "1.7.0"
+    }
+
+    androidResources {
+        noCompress += ["db"]
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += ["$buildDir/generated/offlineAssets"]
+        }
+    }
+}
+
+def dataRoot = providers.gradleProperty("bibleDataRoot").orElse("D:/bibleDownload")
+def webSource = rootProject.projectDir.parentFile.toPath().resolve("static").toFile()
+def bibleSource = dataRoot.map { new File(it, "bibles") }
+
+tasks.register("syncOfflineAssets") {
+    outputs.dir("$buildDir/generated/offlineAssets")
+    doLast {
+        copy {
+            from(webSource)
+            into("$buildDir/generated/offlineAssets/static")
+        }
+        copy {
+            from(bibleSource)
+            include("*.db")
+            into("$buildDir/generated/offlineAssets/bibles")
+        }
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn("syncOfflineAssets")
+}

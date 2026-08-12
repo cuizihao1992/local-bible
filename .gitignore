@@ -1,7 +1,13 @@
 node_modules/
+.tools/
 dist/
 dist-electron/
 out/
+android/.gradle/
+android/**/build/
+android/local.properties
+android/app/src/main/assets/bibles/
+*.apk
 .env
 .DS_Store
 Thumbs.db
