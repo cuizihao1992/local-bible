@@ -53,12 +53,20 @@ tasks.register("syncOfflineAssets") {
     inputs.dir(bibleSource)
     outputs.dir("$buildDir/generated/offlineAssets")
     doLast {
+        def sourceDir = bibleSource.get()
+        if (!sourceDir.exists()) {
+            throw new GradleException("Bible data directory not found: ${sourceDir}. Provide -PbibleDataRoot=<path> with a bibles directory.")
+        }
+        def dbFiles = sourceDir.listFiles({ dir, name -> name.endsWith(".db") } as FilenameFilter)
+        if (dbFiles == null || dbFiles.length == 0) {
+            throw new GradleException("No .db files found in ${sourceDir}.")
+        }
         copy {
             from(webSource)
             into("$buildDir/generated/offlineAssets/static")
         }
         copy {
-            from(bibleSource)
+            from(sourceDir)
             include("*.db")
             into("$buildDir/generated/offlineAssets/bibles")
         }

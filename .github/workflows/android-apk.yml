@@ -1,0 +1,97 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      bible_data_url:
+        description: "Zip URL containing bibles/*.db or .db files"
+        required: true
+      build_type:
+        description: "Android build type"
+        required: true
+        default: "release"
+        type: choice
+        options:
+          - release
+          - debug
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Download Bible data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .github-data/raw .github-data/bibles
+          curl -L "${{ inputs.bible_data_url }}" -o .github-data/bibles.zip
+          unzip -q .github-data/bibles.zip -d .github-data/raw
+          if compgen -G ".github-data/raw/bibles/*.db" > /dev/null; then
+            cp .github-data/raw/bibles/*.db .github-data/bibles/
+          else
+            find .github-data/raw -maxdepth 2 -type f -name "*.db" -exec cp {} .github-data/bibles/ \;
+          fi
+          test "$(find .github-data/bibles -maxdepth 1 -type f -name '*.db' | wc -l)" -gt 0
+
+      - name: Build APK
+        shell: bash
+        env:
+          ANDROID_RELEASE_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
+          ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+          ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          TASK="assembleRelease"
+          SIGNING_ARGS=()
+          if [ "${{ inputs.build_type }}" = "debug" ]; then
+            TASK="assembleDebug"
+          elif [ -n "${ANDROID_RELEASE_KEYSTORE_BASE64:-}" ]; then
+            echo "$ANDROID_RELEASE_KEYSTORE_BASE64" | base64 -d > .github-data/release.jks
+            SIGNING_ARGS+=("-PreleaseStoreFile=$PWD/.github-data/release.jks")
+            SIGNING_ARGS+=("-PreleaseStorePassword=$ANDROID_RELEASE_KEYSTORE_PASSWORD")
+            SIGNING_ARGS+=("-PreleaseKeyAlias=$ANDROID_RELEASE_KEY_ALIAS")
+            SIGNING_ARGS+=("-PreleaseKeyPassword=$ANDROID_RELEASE_KEY_PASSWORD")
+          else
+            keytool -genkeypair -v \
+              -keystore .github-data/release.jks \
+              -storepass localbiblereader \
+              -keypass localbiblereader \
+              -alias local-bible-reader \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Local Bible Reader, OU=Offline, O=Local, L=Local, S=Local, C=US"
+            SIGNING_ARGS+=("-PreleaseStoreFile=$PWD/.github-data/release.jks")
+            SIGNING_ARGS+=("-PreleaseStorePassword=localbiblereader")
+            SIGNING_ARGS+=("-PreleaseKeyAlias=local-bible-reader")
+            SIGNING_ARGS+=("-PreleaseKeyPassword=localbiblereader")
+          fi
+          gradle -p android "$TASK" -PbibleDataRoot="$PWD/.github-data" "${SIGNING_ARGS[@]}"
+
+      - name: Rename APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/android
+          VERSION="$(node -p "require('./package.json').version")"
+          cp "android/app/build/outputs/apk/${{ inputs.build_type }}/app-${{ inputs.build_type }}.apk" "dist/android/local-bible-reader-offline-${VERSION}-${{ inputs.build_type }}.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-bible-reader-android-${{ inputs.build_type }}
+          path: dist/android/*.apk
