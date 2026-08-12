@@ -150,8 +150,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.8";
+const APP_VERSION = "1.9.9";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.9",
+    date: "2026-08-13",
+    items: ["检查 AI 增加 MiMo 语音配置检查", "Android APK 接入小米 MiMo 录音上传识别", "MiMo 语音识别结果可直接用于经文跳转"],
+  },
   {
     version: "1.9.8",
     date: "2026-08-12",
@@ -572,7 +577,7 @@ function renderAiConfig() {
       state.speechProvider === "system"
         ? "系统语音识别依赖手机内置语音服务；不支持时可切换到云端识别。云端录音上传还在接入中。"
         : state.speechProvider === "mimo"
-          ? "小米 MiMo 语音识别建议模型 mimo-v2.5-asr；当前版本先保存配置，录音上传下一步接入。"
+          ? "小米 MiMo 语音识别使用 mimo-v2.5-asr；Android APK 中按住语音按钮可录音上传识别。"
           : "OpenAI 语音识别推荐 gpt-4o-mini-transcribe；当前版本先保存配置，录音上传下一步接入。";
   }
 }
@@ -659,30 +664,45 @@ async function requestAiText(prompt) {
 async function testAiConfig() {
   saveAiConfig();
   const config = currentAiConfig();
-  if (!config.key) {
-    aiConfigHint.textContent = `请先填写 ${config.provider} Key。`;
-    return;
-  }
+  const checks = [];
   testAiConfigBtn.disabled = true;
   aiConfigHint.textContent = `正在检查 ${config.provider} 配置...`;
   try {
-    const response = await fetch(config.url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages: [{ role: "user", content: "请只回复 OK" }],
-        max_tokens: 8,
-        temperature: 0,
-      }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
-    const text = data.choices?.[0]?.message?.content?.trim() || "";
-    aiConfigHint.textContent = `${config.provider} 可用：${text || "已返回响应"}`;
+    if (!config.key) {
+      checks.push(`${config.provider} 文本模型：未填写 Key`);
+    } else {
+      const response = await fetch(config.url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [{ role: "user", content: "请只回复 OK" }],
+          max_tokens: 8,
+          temperature: 0,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+      const text = data.choices?.[0]?.message?.content?.trim() || "";
+      checks.push(`${config.provider} 文本模型可用：${text || "已返回响应"}`);
+    }
+    if (state.speechProvider === "mimo") {
+      if (!state.mimoKey) {
+        checks.push("MiMo 语音：未填写 MiMo Key");
+      } else if (state.speechModel !== "mimo-v2.5-asr") {
+        checks.push(`MiMo 语音：模型应选择 mimo-v2.5-asr，当前是 ${state.speechModel}`);
+      } else {
+        checks.push("MiMo 语音配置可用：Key 已填写，模型为 mimo-v2.5-asr。按住语音按钮可录音上传识别");
+      }
+    } else if (state.speechProvider === "openai") {
+      checks.push(state.openaiKey ? `OpenAI 语音配置已填写：${state.speechModel}` : "OpenAI 语音：未填写 OpenAI Key");
+    } else {
+      checks.push("系统语音：使用设备内置语音服务，不检查云端模型");
+    }
+    aiConfigHint.textContent = checks.join("；");
   } catch (error) {
     aiConfigHint.textContent = `${config.provider} 检查失败：${error.message || String(error)}`;
   } finally {
@@ -2350,12 +2370,26 @@ mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
 
 function startVoiceInput(event) {
   event.preventDefault();
-  if (state.speechProvider === "openai" || state.speechProvider === "mimo") {
-    const providerName = state.speechProvider === "mimo" ? "小米 MiMo" : "OpenAI";
-    const hasKey = state.speechProvider === "mimo" ? state.mimoKey : state.openaiKey;
-    quickInput.value = hasKey
-      ? `已配置 ${providerName} ${state.speechModel}。当前 APK 还未接入录音上传，请先使用系统语音识别或手动输入跳转。`
-      : `请先在 AI 配置里填写 ${providerName} Key。`;
+  saveAiConfig();
+  if (state.speechProvider === "mimo") {
+    if (!state.mimoKey) {
+      quickInput.value = "请先在 AI 配置里填写小米 MiMo Key。";
+      return;
+    }
+    if (!window.AndroidVoiceApi?.startCloud) {
+      quickInput.value = "当前版本不支持 MiMo 录音上传，请安装最新版 APK。";
+      return;
+    }
+    voiceBtn.classList.add("active");
+    voiceBtn.textContent = "录音";
+    quickInput.value = "正在录音，松开后上传 MiMo 识别...";
+    window.AndroidVoiceApi.startCloud("mimo", state.mimoKey, "mimo-v2.5-asr");
+    return;
+  }
+  if (state.speechProvider === "openai") {
+    quickInput.value = state.openaiKey
+      ? `已配置 OpenAI ${state.speechModel}。OpenAI 云端录音上传将在下一步接入。`
+      : "请先在 AI 配置里填写 OpenAI Key。";
     return;
   }
   if (!window.AndroidVoiceApi?.start) {
@@ -2376,6 +2410,12 @@ function startVoiceInput(event) {
 
 function stopVoiceInput(event) {
   event.preventDefault();
+  if (state.speechProvider === "mimo" && window.AndroidVoiceApi?.stopCloud) {
+    voiceBtn.textContent = "上传";
+    quickInput.value = "正在上传语音并识别...";
+    window.AndroidVoiceApi.stopCloud();
+    return;
+  }
   if (!window.AndroidVoiceApi?.stop) return;
   window.AndroidVoiceApi.stop();
 }

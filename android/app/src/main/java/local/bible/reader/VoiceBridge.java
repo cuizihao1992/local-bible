@@ -4,13 +4,23 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -18,6 +28,11 @@ public class VoiceBridge {
     private final Activity activity;
     private final WebView webView;
     private SpeechRecognizer recognizer;
+    private MediaRecorder cloudRecorder;
+    private File cloudAudioFile;
+    private String cloudProvider = "";
+    private String cloudKey = "";
+    private String cloudModel = "";
     private boolean listening = false;
 
     public VoiceBridge(Activity activity, WebView webView) {
@@ -79,6 +94,67 @@ public class VoiceBridge {
     }
 
     @JavascriptInterface
+    public String startCloud(String provider, String key, String model) {
+        activity.runOnUiThread(() -> {
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= 23 && activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    activity.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 42);
+                    emitError("请允许麦克风权限后再试一次");
+                    return;
+                }
+                if (!"mimo".equals(provider)) {
+                    emitError("当前云端语音暂只支持小米 MiMo");
+                    return;
+                }
+                if (key == null || key.trim().isEmpty()) {
+                    emitError("请先在 AI 配置里填写小米 MiMo Key");
+                    return;
+                }
+                stopCloudRecorder(false);
+                cloudProvider = provider;
+                cloudKey = key.trim();
+                cloudModel = model == null || model.trim().isEmpty() ? "mimo-v2.5-asr" : model.trim();
+                cloudAudioFile = new File(activity.getCacheDir(), "mimo-voice-" + System.currentTimeMillis() + ".m4a");
+                cloudRecorder = new MediaRecorder();
+                cloudRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                cloudRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                cloudRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                cloudRecorder.setAudioSamplingRate(16000);
+                cloudRecorder.setAudioEncodingBitRate(64000);
+                cloudRecorder.setOutputFile(cloudAudioFile.getAbsolutePath());
+                cloudRecorder.prepare();
+                cloudRecorder.start();
+                emit("start", "");
+            } catch (Throwable error) {
+                stopCloudRecorder(true);
+                emitError(message(error));
+            }
+        });
+        return "{\"ok\":true}";
+    }
+
+    @JavascriptInterface
+    public String stopCloud() {
+        activity.runOnUiThread(() -> {
+            File file = cloudAudioFile;
+            String provider = cloudProvider;
+            String key = cloudKey;
+            String model = cloudModel;
+            try {
+                if (cloudRecorder == null) return;
+                cloudRecorder.stop();
+                stopCloudRecorder(false);
+                emit("end", "");
+                new Thread(() -> uploadCloudAudio(provider, key, model, file)).start();
+            } catch (Throwable error) {
+                stopCloudRecorder(true);
+                emitError(message(error));
+            }
+        });
+        return "{\"ok\":true}";
+    }
+
+    @JavascriptInterface
     public String cancel() {
         activity.runOnUiThread(this::stopRecognizer);
         return "{\"ok\":true}";
@@ -130,6 +206,86 @@ public class VoiceBridge {
             }
             recognizer = null;
         }
+    }
+
+    private void stopCloudRecorder(boolean deleteFile) {
+        if (cloudRecorder != null) {
+            try {
+                cloudRecorder.release();
+            } catch (Throwable ignored) {
+            }
+            cloudRecorder = null;
+        }
+        if (deleteFile && cloudAudioFile != null) {
+            try {
+                cloudAudioFile.delete();
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    private void uploadCloudAudio(String provider, String key, String model, File file) {
+        try {
+            if (!"mimo".equals(provider)) throw new IllegalArgumentException("当前云端语音暂只支持小米 MiMo");
+            if (file == null || !file.exists() || file.length() < 512) throw new IllegalArgumentException("录音太短，请按住语音按钮说完后再松开");
+            emit("ready", "");
+            String text = requestMimoAsr(key, model, file);
+            emit("result", text);
+        } catch (Throwable error) {
+            emitError(message(error));
+        } finally {
+            if (file != null) {
+                try {
+                    file.delete();
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+    }
+
+    private String requestMimoAsr(String key, String model, File file) throws Exception {
+        String audioBase64 = Base64.encodeToString(readAll(new java.io.FileInputStream(file)), Base64.NO_WRAP);
+        JSONObject inputAudio = new JSONObject()
+                .put("data", "data:audio/mp4;base64," + audioBase64);
+        JSONObject audioContent = new JSONObject()
+                .put("type", "input_audio")
+                .put("input_audio", inputAudio);
+        JSONObject message = new JSONObject()
+                .put("role", "user")
+                .put("content", new JSONArray().put(audioContent));
+        JSONObject body = new JSONObject()
+                .put("model", model == null || model.isEmpty() ? "mimo-v2.5-asr" : model)
+                .put("messages", new JSONArray().put(message))
+                .put("asr_options", new JSONObject().put("language", "auto"));
+        HttpURLConnection connection = (HttpURLConnection) new URL("https://api.xiaomimimo.com/v1/chat/completions").openConnection();
+        connection.setConnectTimeout(20000);
+        connection.setReadTimeout(60000);
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Authorization", "Bearer " + key);
+        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
+        try (OutputStream output = connection.getOutputStream()) {
+            output.write(payload);
+        }
+        byte[] responseBytes;
+        if (connection.getResponseCode() >= 200 && connection.getResponseCode() < 300) {
+            responseBytes = readAll(connection.getInputStream());
+        } else {
+            responseBytes = readAll(connection.getErrorStream());
+            throw new RuntimeException(new String(responseBytes, StandardCharsets.UTF_8));
+        }
+        JSONObject response = new JSONObject(new String(responseBytes, StandardCharsets.UTF_8));
+        return response.getJSONArray("choices").getJSONObject(0).getJSONObject("message").optString("content", "");
+    }
+
+    private byte[] readAll(java.io.InputStream input) throws Exception {
+        if (input == null) return new byte[0];
+        byte[] buffer = new byte[8192];
+        java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+        int read;
+        while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
+        return output.toByteArray();
     }
 
     private String message(Throwable error) {
