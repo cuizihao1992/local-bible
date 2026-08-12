@@ -20,6 +20,14 @@ const state = {
   chapter: 1,
   targetVerse: null,
   activeVerse: null,
+  aiProvider: "deepseek",
+  deepseekKey: "",
+  deepseekModel: "deepseek-v4-flash",
+  deepseekThinking: false,
+  speechProvider: "system",
+  openaiKey: "",
+  speechModel: "gpt-4o-mini-transcribe",
+  aiResponseStyle: "concise",
 };
 const STORAGE_KEY = "localBibleReaderState";
 
@@ -78,6 +86,17 @@ const packageHint = document.querySelector("#packageHint");
 const updateStatus = document.querySelector("#updateStatus");
 const checkUpdateBtn = document.querySelector("#checkUpdateBtn");
 const showReleaseNotesBtn = document.querySelector("#showReleaseNotesBtn");
+const aiProviderSelect = document.querySelector("#aiProviderSelect");
+const deepseekKeyInput = document.querySelector("#deepseekKeyInput");
+const deepseekModelSelect = document.querySelector("#deepseekModelSelect");
+const deepseekThinkingToggle = document.querySelector("#deepseekThinkingToggle");
+const speechProviderSelect = document.querySelector("#speechProviderSelect");
+const openaiKeyInput = document.querySelector("#openaiKeyInput");
+const speechModelSelect = document.querySelector("#speechModelSelect");
+const aiResponseStyleSelect = document.querySelector("#aiResponseStyleSelect");
+const saveAiConfigBtn = document.querySelector("#saveAiConfigBtn");
+const showAiUsesBtn = document.querySelector("#showAiUsesBtn");
+const aiConfigHint = document.querySelector("#aiConfigHint");
 const dashboardPanel = document.querySelector("#dashboardPanel");
 const verseMenu = document.querySelector("#verseMenu");
 const verseMenuTitle = document.querySelector("#verseMenuTitle");
@@ -324,6 +343,14 @@ function restoreState() {
     if (saved.scriptPreference) state.scriptPreference = saved.scriptPreference;
     if (Number.isFinite(saved.fontSize)) state.fontSize = saved.fontSize;
     if (Number.isFinite(saved.lineHeight)) state.lineHeight = saved.lineHeight;
+    if (saved.aiProvider) state.aiProvider = saved.aiProvider;
+    if (saved.deepseekKey) state.deepseekKey = saved.deepseekKey;
+    if (saved.deepseekModel) state.deepseekModel = saved.deepseekModel;
+    state.deepseekThinking = !!saved.deepseekThinking;
+    if (saved.speechProvider) state.speechProvider = saved.speechProvider;
+    if (saved.openaiKey) state.openaiKey = saved.openaiKey;
+    if (saved.speechModel) state.speechModel = saved.speechModel;
+    if (saved.aiResponseStyle) state.aiResponseStyle = saved.aiResponseStyle;
     if (Number.isInteger(saved.book) && saved.book > 0) state.book = saved.book;
     if (Number.isInteger(saved.chapter) && saved.chapter > 0) state.chapter = saved.chapter;
   } catch {
@@ -345,6 +372,14 @@ function saveState() {
       scriptPreference: state.scriptPreference,
       fontSize: state.fontSize,
       lineHeight: state.lineHeight,
+      aiProvider: state.aiProvider,
+      deepseekKey: state.deepseekKey,
+      deepseekModel: state.deepseekModel,
+      deepseekThinking: state.deepseekThinking,
+      speechProvider: state.speechProvider,
+      openaiKey: state.openaiKey,
+      speechModel: state.speechModel,
+      aiResponseStyle: state.aiResponseStyle,
       book: state.book,
       chapter: state.chapter,
     }),
@@ -425,6 +460,42 @@ function renderDictionaries() {
   } else {
     dictionaryHint.textContent = "未找到辞典库";
   }
+}
+
+function renderAiConfig() {
+  aiProviderSelect.value = state.aiProvider;
+  deepseekKeyInput.value = state.deepseekKey;
+  deepseekModelSelect.value = state.deepseekModel;
+  deepseekThinkingToggle.checked = state.deepseekThinking;
+  speechProviderSelect.value = state.speechProvider;
+  openaiKeyInput.value = state.openaiKey;
+  speechModelSelect.value = state.speechModel;
+  aiResponseStyleSelect.value = state.aiResponseStyle;
+  if (aiConfigHint) {
+    aiConfigHint.textContent =
+      state.speechProvider === "system"
+        ? "系统语音识别依赖手机内置语音服务；不支持时可切换到 OpenAI 云端识别。"
+        : "OpenAI 云端识别需要网络和 OpenAI Key，推荐模型 gpt-4o-mini-transcribe。";
+  }
+}
+
+function saveAiConfig() {
+  state.aiProvider = aiProviderSelect.value;
+  state.deepseekKey = deepseekKeyInput.value.trim();
+  state.deepseekModel = deepseekModelSelect.value;
+  state.deepseekThinking = deepseekThinkingToggle.checked;
+  state.speechProvider = speechProviderSelect.value;
+  state.openaiKey = openaiKeyInput.value.trim();
+  state.speechModel = speechModelSelect.value;
+  state.aiResponseStyle = aiResponseStyleSelect.value;
+  saveState();
+  renderAiConfig();
+  aiConfigHint.textContent = "AI 配置已保存。Key 目前保存在本机浏览器/App 本地存储中。";
+}
+
+function showAiUses() {
+  aiConfigHint.textContent =
+    "DeepSeek 可用于经文解释、上下文问答、笔记整理、主题查经、搜索意图解析；OpenAI 语音模型可做跳转指令识别，例如“马太福音三章十一节”。";
 }
 
 function renderPackages() {
@@ -1404,6 +1475,7 @@ async function init() {
     renderCommentaries();
     renderStrongToggle();
     renderDictionaries();
+    renderAiConfig();
     setUpdateStatus(`当前版本 ${APP_VERSION}`);
     await loadPackages();
     applySettings();
@@ -1762,6 +1834,13 @@ closeStrongBtn.addEventListener("click", closeStrong);
 closeReleaseNotesBtn.addEventListener("click", closeReleaseNotes);
 showReleaseNotesBtn.addEventListener("click", () => openReleaseNotes());
 checkUpdateBtn.addEventListener("click", () => checkForUpdates());
+saveAiConfigBtn.addEventListener("click", saveAiConfig);
+showAiUsesBtn.addEventListener("click", showAiUses);
+speechProviderSelect.addEventListener("change", () => {
+  state.speechProvider = speechProviderSelect.value;
+  saveState();
+  renderAiConfig();
+});
 
 verseMenu.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-menu-action]");
@@ -1821,9 +1900,22 @@ mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
 
 function startVoiceInput(event) {
   event.preventDefault();
-  if (!window.AndroidVoiceApi?.start) {
-    quickInput.value = "当前环境不支持语音识别";
+  if (state.speechProvider === "openai") {
+    quickInput.value = state.openaiKey
+      ? `已配置 ${state.speechModel}，云端录音识别将在下一步接入。`
+      : "请先在 AI 配置里填写 OpenAI Key。";
     return;
+  }
+  if (!window.AndroidVoiceApi?.start) {
+    quickInput.value = "当前环境不支持系统语音识别，可在 AI 配置里切换到 OpenAI 云端识别。";
+    return;
+  }
+  if (window.AndroidVoiceApi?.isAvailable) {
+    const availability = JSON.parse(window.AndroidVoiceApi.isAvailable());
+    if (!availability.available) {
+      quickInput.value = "当前设备没有可用的系统语音识别服务，可在 AI 配置里切换到 OpenAI 云端识别。";
+      return;
+    }
   }
   voiceBtn.classList.add("active");
   voiceBtn.textContent = "按住";

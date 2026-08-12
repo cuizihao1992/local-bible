@@ -26,6 +26,15 @@ public class VoiceBridge {
     }
 
     @JavascriptInterface
+    public String isAvailable() {
+        try {
+            return "{\"available\":" + SpeechRecognizer.isRecognitionAvailable(activity) + "}";
+        } catch (Throwable error) {
+            return "{\"available\":false,\"error\":\"" + quoteValue(message(error)) + "\"}";
+        }
+    }
+
+    @JavascriptInterface
     public String start() {
         activity.runOnUiThread(() -> {
             try {
@@ -128,7 +137,11 @@ public class VoiceBridge {
     }
 
     private String quote(String value) {
+        return "\"" + quoteValue(value) + "\"";
+    }
+
+    private String quoteValue(String value) {
         String safe = value == null ? "" : value;
-        return "\"" + safe.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "") + "\"";
+        return safe.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
     }
 }

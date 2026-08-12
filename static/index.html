@@ -14,7 +14,6 @@
           <h1>本地圣经</h1>
           <p>离线版</p>
         </div>
-        <button id="closeSidebarBtn" class="closeSidebarBtn" type="button" aria-label="关闭目录">×</button>
       </div>
 
       <label class="field">
@@ -91,8 +90,67 @@
             <button id="showReleaseNotesBtn" type="button">更新说明</button>
           </div>
         </div>
+
+        <div class="aiConfigPanel">
+          <div class="panelTitle">AI 配置</div>
+          <label class="field compactField">
+            <span>文本模型服务</span>
+            <select id="aiProviderSelect">
+              <option value="deepseek">DeepSeek</option>
+              <option value="openai">OpenAI</option>
+            </select>
+          </label>
+          <label class="field compactField">
+            <span>DeepSeek Key</span>
+            <input id="deepseekKeyInput" type="password" placeholder="sk-..." autocomplete="off" />
+          </label>
+          <label class="field compactField">
+            <span>DeepSeek 模型</span>
+            <select id="deepseekModelSelect">
+              <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+              <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+            </select>
+          </label>
+          <label class="toggleField">
+            <input id="deepseekThinkingToggle" type="checkbox" />
+            <span>启用 DeepSeek 思考模式</span>
+          </label>
+          <label class="field compactField">
+            <span>语音识别服务</span>
+            <select id="speechProviderSelect">
+              <option value="system">系统语音识别</option>
+              <option value="openai">OpenAI 云端识别</option>
+            </select>
+          </label>
+          <label class="field compactField">
+            <span>OpenAI Key</span>
+            <input id="openaiKeyInput" type="password" placeholder="sk-..." autocomplete="off" />
+          </label>
+          <label class="field compactField">
+            <span>语音模型</span>
+            <select id="speechModelSelect">
+              <option value="gpt-4o-mini-transcribe">gpt-4o-mini-transcribe</option>
+              <option value="gpt-4o-transcribe">gpt-4o-transcribe</option>
+              <option value="whisper-1">whisper-1</option>
+            </select>
+          </label>
+          <label class="field compactField">
+            <span>回答风格</span>
+            <select id="aiResponseStyleSelect">
+              <option value="concise">简洁</option>
+              <option value="balanced">平衡</option>
+              <option value="detailed">详细</option>
+            </select>
+          </label>
+          <div class="dataButtons">
+            <button id="saveAiConfigBtn" type="button">保存 AI 配置</button>
+            <button id="showAiUsesBtn" type="button">能做什么</button>
+          </div>
+          <div id="aiConfigHint" class="panelHint"></div>
+        </div>
       </details>
     </aside>
+    <button id="closeSidebarBtn" class="closeSidebarBtn" type="button" aria-label="关闭目录">×</button>
 
     <main class="reader">
       <header class="topbar">
