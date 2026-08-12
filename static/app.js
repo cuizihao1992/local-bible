@@ -22,7 +22,7 @@ const state = {
   activeVerse: null,
   aiProvider: "deepseek",
   deepseekKey: "",
-  deepseekModel: "deepseek-chat",
+  deepseekModel: "deepseek-v4-flash",
   deepseekThinking: false,
   mimoKey: "",
   mimoModel: "mimo-v2.5",
@@ -143,8 +143,13 @@ let selectionFrame = 0;
 let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
-const APP_VERSION = "1.9.5";
+const APP_VERSION = "1.9.6";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.6",
+    date: "2026-08-12",
+    items: ["DeepSeek 模型更新为 v4-flash/v4-pro", "AI 配置页补充语音识别模型建议", "明确 AI 功能入口与云端语音接入状态"],
+  },
   {
     version: "1.9.5",
     date: "2026-08-12",
@@ -510,6 +515,8 @@ function renderDictionaries() {
 function renderAiConfig() {
   aiProviderSelect.value = state.aiProvider;
   deepseekKeyInput.value = state.deepseekKey;
+  if (state.deepseekModel === "deepseek-chat") state.deepseekModel = "deepseek-v4-flash";
+  if (state.deepseekModel === "deepseek-reasoner") state.deepseekModel = "deepseek-v4-pro";
   deepseekModelSelect.value = state.deepseekModel;
   deepseekThinkingToggle.checked = state.deepseekThinking;
   mimoKeyInput.value = state.mimoKey;
@@ -521,10 +528,10 @@ function renderAiConfig() {
   if (aiConfigHint) {
     aiConfigHint.textContent =
       state.speechProvider === "system"
-        ? "系统语音识别依赖手机内置语音服务；不支持时可切换到 OpenAI 云端识别。"
+        ? "系统语音识别依赖手机内置语音服务；不支持时可切换到云端识别。云端录音上传还在接入中。"
         : state.speechProvider === "mimo"
-          ? "小米 MiMo 云端识别需要网络和 MiMo Key，语音模型可选 mimo-v2.5-asr。"
-          : "OpenAI 云端识别需要网络和 OpenAI Key，推荐模型 gpt-4o-mini-transcribe。";
+          ? "小米 MiMo 语音识别建议模型 mimo-v2.5-asr；当前版本先保存配置，录音上传下一步接入。"
+          : "OpenAI 语音识别推荐 gpt-4o-mini-transcribe；当前版本先保存配置，录音上传下一步接入。";
   }
 }
 
@@ -546,7 +553,7 @@ function saveAiConfig() {
 
 function showAiUses() {
   aiConfigHint.textContent =
-    "DeepSeek/MiMo 可用于经文解释、上下文问答、笔记整理、主题查经、搜索意图解析；OpenAI/MiMo 语音模型可做跳转指令识别，例如“马太福音三章十一节”。";
+    "AI 可做：语音跳转通过底部“语音”按钮触发；经文解释、上下文问答、笔记整理可从经文长按/右键菜单触发；主题查经和搜索意图解析可从顶部搜索框触发。当前已支持 AI 配置检查，云端录音上传和经文菜单 AI 动作会继续接入。";
 }
 
 function currentAiConfig() {
@@ -570,7 +577,7 @@ function currentAiConfig() {
     provider: "DeepSeek",
     url: "https://api.deepseek.com/chat/completions",
     key: state.deepseekKey,
-    model: state.deepseekThinking ? "deepseek-reasoner" : state.deepseekModel,
+    model: state.deepseekThinking ? "deepseek-v4-pro" : state.deepseekModel,
   };
 }
 
@@ -2165,7 +2172,7 @@ function startVoiceInput(event) {
     const providerName = state.speechProvider === "mimo" ? "小米 MiMo" : "OpenAI";
     const hasKey = state.speechProvider === "mimo" ? state.mimoKey : state.openaiKey;
     quickInput.value = hasKey
-      ? `已配置 ${providerName} ${state.speechModel}，云端录音识别将在下一步接入。`
+      ? `已配置 ${providerName} ${state.speechModel}。当前 APK 还未接入录音上传，请先使用系统语音识别或手动输入跳转。`
       : `请先在 AI 配置里填写 ${providerName} Key。`;
     return;
   }

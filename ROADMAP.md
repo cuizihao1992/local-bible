@@ -380,8 +380,20 @@
 - AI 配置增加小米 MiMo Provider
 - 新增 MiMo Key、MiMo 文本模型和 `mimo-v2.5-asr` 语音模型配置
 - 新增“检查 AI”按钮，对当前文本模型 Provider 发起轻量请求验证配置
-- DeepSeek 默认模型调整为 `deepseek-chat`，思考模式使用 `deepseek-reasoner`
+- DeepSeek 增加默认模型和思考模式配置，后续在 V1.9.6 校准为 `deepseek-v4-flash` / `deepseek-v4-pro`
 - 语音服务切换到 MiMo 时自动选择 `mimo-v2.5-asr`
+
+## V1.9.6 AI 模型校准与能力入口说明
+
+目标：把 AI 配置里的模型名和触发方式校准到当前可用方案，避免语音按钮误导用户。
+已完成：
+
+- DeepSeek 文本模型更新为 `deepseek-v4-flash` / `deepseek-v4-pro`
+- 已保存的旧 `deepseek-chat` / `deepseek-reasoner` 配置会自动迁移到新模型名
+- 小米语音识别模型说明为 `mimo-v2.5-asr`
+- OpenAI 语音识别推荐 `gpt-4o-mini-transcribe`，可选 `gpt-4o-transcribe` / `whisper-1`
+- “能做什么”说明补充 AI 功能入口：语音跳转、经文解释/问答、笔记整理、主题查经、搜索意图解析
+- 云端语音按钮提示改为当前状态说明：已能保存配置，但录音上传仍需后续接入
 
 ## V1.9.5 顶部书卷选择入口
 
