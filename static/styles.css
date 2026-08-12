@@ -752,6 +752,24 @@ select {
   text-align: left;
 }
 
+.dashboardMiniAction {
+  min-height: 28px;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 8px;
+}
+
+.mobileStatusPanel {
+  display: none;
+}
+
 .dictionaryResults {
   display: grid;
   gap: 0;
@@ -1385,10 +1403,9 @@ mark {
   }
 
   .topbar {
-    grid-template-columns: 42px minmax(0, 1fr) auto;
+    grid-template-columns: 42px minmax(0, 1fr);
     gap: 8px;
-    padding: 10px 12px;
-    padding-bottom: 8px;
+    padding: calc(10px + env(safe-area-inset-top)) 12px 8px;
     min-height: 0;
   }
 
@@ -1427,16 +1444,7 @@ mark {
   }
 
   .progressInline {
-    justify-content: flex-start;
-    gap: 6px;
-    margin-top: 6px;
-    font-size: 11px;
-    flex-wrap: wrap;
-  }
-
-  .progressInline button {
-    min-height: 26px;
-    padding: 0 7px;
+    display: none;
   }
 
   .content {
@@ -1480,10 +1488,7 @@ mark {
   }
 
   .dashboardPanel {
-    width: 100%;
-    grid-template-columns: 1fr;
-    padding: 0 16px;
-    margin-top: 12px;
+    display: none;
   }
 
   .audioHeader {
@@ -1566,6 +1571,12 @@ mark {
     white-space: nowrap;
   }
 
+  .mobileNav button.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+
   .selectionBar button {
     min-height: 38px;
   }
@@ -1577,7 +1588,7 @@ mark {
 
 @media (max-width: 420px) {
   .topbar {
-    padding: 8px 10px;
+    padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
   }
 
   .versionTitle {

@@ -29,7 +29,6 @@ const bookSelect = document.querySelector("#bookSelect");
 const chapterGrid = document.querySelector("#chapterGrid");
 const chapterTitle = document.querySelector("#chapterTitle");
 const versionTitle = document.querySelector("#versionTitle");
-const markReadBtn = document.querySelector("#markReadBtn");
 const progressSummary = document.querySelector("#progressSummary");
 const content = document.querySelector("#content");
 const prevBtn = document.querySelector("#prevBtn");
@@ -80,7 +79,7 @@ const selectionSummary = document.querySelector("#selectionSummary");
 const copySelectionBtn = document.querySelector("#copySelectionBtn");
 const mobilePrevBtn = document.querySelector("#mobilePrevBtn");
 const mobileMenuBtn = document.querySelector("#mobileMenuBtn");
-const mobileSearchBtn = document.querySelector("#mobileSearchBtn");
+const mobileMarkReadBtn = document.querySelector("#mobileMarkReadBtn");
 const mobileMyBtn = document.querySelector("#mobileMyBtn");
 const mobileNextBtn = document.querySelector("#mobileNextBtn");
 const myPanel = document.querySelector("#myPanel");
@@ -417,10 +416,10 @@ function isCurrentChapterRead() {
 
 function renderProgressChrome() {
   const read = isCurrentChapterRead();
-  if (markReadBtn) {
-    markReadBtn.textContent = read ? "已读" : "标记已读";
-    markReadBtn.classList.toggle("active", read);
-    markReadBtn.disabled = !state.version;
+  if (mobileMarkReadBtn) {
+    mobileMarkReadBtn.textContent = read ? "已读" : "标记";
+    mobileMarkReadBtn.classList.toggle("active", read);
+    mobileMarkReadBtn.disabled = !state.version;
   }
   if (progressSummary) {
     progressSummary.textContent = state.progress ? `${state.progress.read}/${state.progress.total} 章 · ${state.progress.percent}%` : "";
@@ -745,6 +744,7 @@ async function loadDashboard() {
       <button class="dashboardAction" type="button" data-continue-unread>
         ${progressData ? `${progressData.read}/${progressData.total} 章 · ${progressData.percent}%` : "暂无进度"}
       </button>
+      <button class="dashboardMiniAction" type="button" data-mark-current-read>${isCurrentChapterRead() ? "取消本章已读" : "标记本章已读"}</button>
     </div>
     <div class="dashboardItem">
       <div class="dashboardLabel">数据状态</div>
@@ -1411,6 +1411,10 @@ dashboardPanel.addEventListener("click", async (event) => {
     await loadChapter();
     return;
   }
+  if (event.target.closest("[data-mark-current-read]")) {
+    await setCurrentChapterRead(!isCurrentChapterRead());
+    return;
+  }
   const action = event.target.closest(".dashboardAction");
   if (!action || action.disabled) return;
   if (action.dataset.version && state.versions.some((version) => version.id === action.dataset.version)) {
@@ -1453,7 +1457,7 @@ lineHeightRange.addEventListener("input", () => {
   saveState();
 });
 
-markReadBtn.addEventListener("click", () => {
+mobileMarkReadBtn.addEventListener("click", () => {
   setCurrentChapterRead(!isCurrentChapterRead()).catch(setError);
 });
 
@@ -1546,7 +1550,6 @@ overlay.addEventListener("click", () => document.body.classList.remove("sidebarO
 mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
 mobileNextBtn.addEventListener("click", () => moveChapter(1));
 mobileMenuBtn.addEventListener("click", () => document.body.classList.add("sidebarOpen"));
-mobileSearchBtn.addEventListener("click", () => quickInput.focus());
 mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
 
 init();

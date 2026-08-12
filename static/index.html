@@ -124,10 +124,6 @@
         <div class="titleBlock">
           <div id="chapterTitle" class="chapterTitle">加载中</div>
           <div id="versionTitle" class="versionTitle"></div>
-          <div class="progressInline">
-            <button id="markReadBtn" type="button">标记已读</button>
-            <span id="progressSummary"></span>
-          </div>
         </div>
         <form id="quickForm" class="quickForm" role="search">
           <input id="quickInput" type="search" placeholder="约3:16 或 关键词" autocomplete="off" />
@@ -170,6 +166,8 @@
 
       <section id="dashboardPanel" class="dashboardPanel"></section>
 
+      <section id="mobileStatusPanel" class="mobileStatusPanel" hidden></section>
+
       <section id="myPanel" class="myPanel" hidden>
         <div class="searchHeader">
           <div>我的收藏与笔记</div>
@@ -207,7 +205,7 @@
     <nav class="mobileNav" aria-label="移动端导航">
       <button id="mobilePrevBtn" type="button">上一章</button>
       <button id="mobileMenuBtn" type="button">目录</button>
-      <button id="mobileSearchBtn" type="button">搜索</button>
+      <button id="mobileMarkReadBtn" type="button">标记</button>
       <button id="mobileMyBtn" type="button">我的</button>
       <button id="mobileNextBtn" type="button">下一章</button>
     </nav>
