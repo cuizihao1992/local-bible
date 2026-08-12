@@ -1,7 +1,8 @@
 param(
-  [string]$ApkPath = "dist\android\local-bible-reader-offline-1.8.0-release.apk",
-  [string]$ExpectedVersion = "1.8.0",
-  [int]$ExpectedVersionCode = 3
+  [string]$ApkPath = "dist\android\local-bible-reader-offline-1.9.0-release.apk",
+  [string]$ExpectedVersion = "1.9.0",
+  [int]$ExpectedVersionCode = 4,
+  [int]$ExpectedDbCount = 4
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,8 +40,8 @@ if ($badging -match "application-debuggable") {
 
 $listing = tar -tf $apk
 $dbCount = @($listing | Where-Object { $_ -like "assets/bibles/*.db" }).Count
-if ($dbCount -ne 26) {
-  throw "Expected 26 bundled Bible DB files, got $dbCount"
+if ($dbCount -ne $ExpectedDbCount) {
+  throw "Expected $ExpectedDbCount bundled Bible DB files, got $dbCount"
 }
 
 foreach ($asset in @("assets/static/index.html", "assets/static/app.js", "assets/static/styles.css")) {
@@ -82,4 +83,4 @@ if (Test-Path $apksigner) {
 }
 
 $size = (Get-Item $apk).Length
-Write-Host "Android APK verification ok: $ApkPath; version=$ExpectedVersion; dbs=$dbCount; bytes=$size"
+Write-Host "Android APK verification ok: $ApkPath; version=$ExpectedVersion; bundledDbs=$dbCount; bytes=$size"

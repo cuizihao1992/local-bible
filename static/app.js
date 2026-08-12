@@ -3,6 +3,7 @@ const state = {
   books: [],
   commentaries: [],
   dictionaries: [],
+  packages: [],
   marks: new Map(),
   progress: null,
   version: "",
@@ -69,6 +70,8 @@ const exportDataBtn = document.querySelector("#exportDataBtn");
 const importDataBtn = document.querySelector("#importDataBtn");
 const importDataFile = document.querySelector("#importDataFile");
 const userDataHint = document.querySelector("#userDataHint");
+const packageList = document.querySelector("#packageList");
+const packageHint = document.querySelector("#packageHint");
 const dashboardPanel = document.querySelector("#dashboardPanel");
 const verseMenu = document.querySelector("#verseMenu");
 const verseMenuTitle = document.querySelector("#verseMenuTitle");
@@ -158,6 +161,10 @@ function postJson(path, payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   }).then(readResponse);
+}
+
+function isAndroidOffline() {
+  return !!window.AndroidBibleApi;
 }
 
 function restoreState() {
@@ -275,6 +282,89 @@ function renderDictionaries() {
     }`;
   } else {
     dictionaryHint.textContent = "未找到辞典库";
+  }
+}
+
+function renderPackages() {
+  if (!packageList) return;
+  if (!isAndroidOffline()) {
+    packageList.innerHTML = "";
+    if (packageHint) packageHint.textContent = "资源包下载仅用于 Android APK。";
+    return;
+  }
+  packageList.innerHTML = state.packages.length
+    ? state.packages
+        .map(
+          (item) => `
+            <div class="packageItem">
+              <div>
+                <div class="packageTitle">${escapeHtml(item.title)}</div>
+                <div class="packageMeta">${escapeHtml(item.description)} · ${item.installedCount}/${item.fullCount}</div>
+              </div>
+              <button type="button" data-package-id="${escapeHtml(item.id)}" ${item.installed ? "disabled" : ""}>
+                ${item.installed ? "已安装" : "下载"}
+              </button>
+            </div>
+          `,
+        )
+        .join("")
+    : `<div class="panelHint">暂无可下载资源包</div>`;
+  if (packageHint) packageHint.textContent = state.packages.length ? "下载后会保存到本机，之后可离线使用。" : "";
+}
+
+async function loadPackages() {
+  if (!isAndroidOffline()) {
+    renderPackages();
+    return;
+  }
+  try {
+    const data = await api("/api/packages");
+    state.packages = data.packages || [];
+    renderPackages();
+  } catch (error) {
+    if (packageHint) packageHint.textContent = error.message || String(error);
+  }
+}
+
+async function refreshResourceLists() {
+  const [versionData, commentaryData] = await Promise.all([api("/api/versions"), api("/api/commentaries")]);
+  state.versions = versionData.versions;
+  state.commentaries = commentaryData.commentaries;
+  if (!state.versions.some((version) => version.id === state.version)) state.version = state.versions[0]?.id || "";
+  state.compareVersions = state.compareVersions.filter((version) =>
+    state.versions.some((item) => item.id === version && item.id !== state.version),
+  );
+  if (!state.commentaries.some((source) => source.id === state.commentary)) state.commentary = "";
+  renderVersions();
+  renderCompareVersions();
+  renderCommentaries();
+}
+
+async function installPackage(packageId) {
+  if (!isAndroidOffline()) return;
+  const button = packageList?.querySelector(`[data-package-id="${CSS.escape(packageId)}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "下载中";
+  }
+  if (packageHint) packageHint.textContent = "正在从 GitHub 下载资源包，请保持网络连接。";
+  try {
+    const data = window.AndroidBibleApi?.installPackage
+      ? JSON.parse(window.AndroidBibleApi.installPackage(packageId))
+      : await postJson("/api/package/install", { id: packageId });
+    if (data.error) throw new Error(data.error);
+    state.packages = data.packages || state.packages;
+    await refreshResourceLists();
+    renderPackages();
+    await loadBooks();
+    await loadChapter();
+    if (packageHint) packageHint.textContent = `已安装 ${data.installed || 0} 个资源文件。`;
+  } catch (error) {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "重试";
+    }
+    if (packageHint) packageHint.textContent = error.message || String(error);
   }
 }
 
@@ -1063,6 +1153,7 @@ async function init() {
     renderCommentaries();
     renderStrongToggle();
     renderDictionaries();
+    await loadPackages();
     applySettings();
     await loadBooks();
     await loadProgress();
@@ -1269,6 +1360,11 @@ dictionaryInput.addEventListener("keydown", (event) => {
   }
 });
 dictionarySelect.addEventListener("change", renderDictionaries);
+packageList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-package-id]");
+  if (!button) return;
+  installPackage(button.dataset.packageId).catch(setError);
+});
 closeDictionaryBtn.addEventListener("click", closeDictionary);
 closeMyPanelBtn.addEventListener("click", closeMyPanel);
 

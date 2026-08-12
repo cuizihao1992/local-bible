@@ -1,6 +1,6 @@
 {
   "name": "local-bible-reader",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "本地圣经阅读器桌面版",
   "author": "Local",
   "private": true,
@@ -11,6 +11,7 @@
     "desktop": "electron .",
     "dist:android": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1",
     "dist:android:debug": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1 -BuildType debug",
+    "dist:android:packages": "powershell -ExecutionPolicy Bypass -File scripts/build-android-packages.ps1",
     "dist:win": "electron-builder --win portable",
     "start": "node --no-warnings server.js",
     "test": "node --no-warnings scripts/smoke-test.js",

@@ -332,6 +332,61 @@ select {
   font-weight: 800;
 }
 
+.packagePanel {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.packageList {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.packageItem {
+  display: grid;
+  grid-template-columns: 1fr 64px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.packageTitle {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.packageMeta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+.packageItem button {
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.packageItem button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.72;
+}
+
 .dictionarySearch button {
   color: var(--accent);
   cursor: pointer;

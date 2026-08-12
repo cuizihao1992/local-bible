@@ -298,6 +298,24 @@
 - 新增 `npm run verify:android` 检查 APK 包名、版本、图标、签名、26 个内置译本和独立运行资源
 - 生成 `dist\android\local-bible-reader-offline-1.8.0-release.apk`
 
+## V1.9.0 Android 轻量 APK 与按需资源包
+
+目标：让 APK 更小，只内置常用译本，其他译本和注释库从 GitHub Release 按需下载。
+
+已完成：
+
+- Android 版本升级到 `1.9.0`
+- APK 只内置 `和合本.db`、`和合本修订版.db`、`KJV.db`、`WEB.db`
+- 新增 Android 网络权限和资源包下载/解压/安装接口
+- 新增 `/api/packages` 和 APK 原生 `installPackage` 桥接
+- 新增“高级设置 -> 离线资源”面板
+- 下载更多译本后自动刷新译本和对照列表
+- 下载注释库后自动刷新注释列表，并支持读取基础 `commentary` 表内容
+- 新增 `npm run dist:android:packages`
+- 生成 `bibles-extra-v1.9.0.zip` 和 `commentaries-v1.9.0.zip`
+- `npm run verify:android` 改为验证 4 个内置译本
+- APK 从约 316 MB 降到约 43 MB
+
 后续：
 
-- 将注释、辞典、原文和音频做成可选离线数据包
+- 将辞典、原文和音频继续做成可选离线数据包

@@ -20,4 +20,9 @@ public class AndroidBridge {
     public String postJson(String path, String payload) {
         return offlineApi.handlePost(path, payload);
     }
+
+    @JavascriptInterface
+    public String installPackage(String packageId) {
+        return offlineApi.installPackage(packageId);
+    }
 }
