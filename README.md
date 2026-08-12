@@ -38,7 +38,7 @@ D:\bibleDownload
 
 ## Android 离线 APK
 
-构建 Android 离线 debug APK：
+构建 Android 离线 release APK：
 
 ```powershell
 npm run dist:android
@@ -47,10 +47,16 @@ npm run dist:android
 生成文件：
 
 ```text
-dist\android\local-bible-reader-offline-1.7.0-debug.apk
+dist\android\local-bible-reader-offline-1.7.1-release.apk
 ```
 
-当前 Android 离线版会把 `D:\bibleDownload\bibles` 下的 26 个经文译本打包进 APK，不依赖电脑后台服务，也不需要局域网。第一版离线 APK 覆盖核心读经、译本、书卷章节、搜索、阅读进度、收藏、高亮和笔记保存；注释、辞典、原文和音频后续可拆成可选数据包继续做。
+如需调试包，可以运行：
+
+```powershell
+npm run dist:android:debug
+```
+
+当前 Android 离线版会把 `D:\bibleDownload\bibles` 下的 26 个经文译本打包进 APK，不依赖电脑后台服务，也不需要局域网。离线 APK 覆盖核心读经、译本、书卷章节、搜索、阅读进度、收藏、高亮和笔记保存；注释、辞典、原文和音频后续可拆成可选数据包继续做。
 
 ## 配置
 
@@ -103,7 +109,7 @@ npm test
 
 ## 当前状态
 
-当前是 `V1.7.0` Android 离线 APK 版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
+当前是 `V1.7.1` Android 离线 release APK 版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
 
 ## 数据说明
 
@@ -132,7 +138,7 @@ data\user.sqlite
 - 鼠标多选跨节经文后可一键复制规范格式
 - 左侧面板默认只展示译本、书卷、章节，高级功能折叠显示
 - Electron Windows 便携版 exe
-- Android 离线 debug APK
+- Android 离线 release APK
 - 前端错误处理、选区性能、桌面单实例等稳定性优化
 - 移动端底部导航
 - 手机端顶部栏、侧栏、底部安全区适配

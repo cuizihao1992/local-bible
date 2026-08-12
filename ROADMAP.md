@@ -271,7 +271,18 @@
 - 新增 `npm run dist:android`
 - 生成 `dist\android\local-bible-reader-offline-1.7.0-debug.apk`
 
+## V1.7.1 Android 离线 release APK
+
+目标：生成更适合安装分发的离线 APK，并保留 debug 构建入口。
+
+已完成：
+
+- 将 Android 版本升级到 `1.7.1`
+- `npm run dist:android` 默认构建 release APK
+- 新增 `npm run dist:android:debug` 保留调试包构建
+- 自动在 `.tools` 下生成本地 release 签名文件，不提交密钥
+- 生成 `dist\android\local-bible-reader-offline-1.7.1-release.apk`
+
 后续：
 
 - 将注释、辞典、原文和音频做成可选离线数据包
-- 增加正式 release 签名 APK
