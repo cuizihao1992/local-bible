@@ -447,6 +447,17 @@
 - 检查 AI 与语音上传会自动拼接 `/chat/completions`
 - 如果已填写完整 `/chat/completions` 地址则保持原样
 
+## V1.9.12 MiMo Key 类型切换
+
+目标：同时支持普通 MiMo Key 和 CodePlan/Token Plan Key，避免两种 Key 混用地址导致检查失败。
+已完成：
+
+- AI 配置增加“小米 MiMo Key 类型”
+- 普通 Key 固定使用默认 Base URL
+- CodePlan / Token Plan 使用手动填写的专属 Base URL
+- “检查 AI”会显示当前 MiMo 类型和实际测试地址
+- 语音上传按同一类型与地址规则执行
+
 ## V1.9.5 顶部书卷选择入口
 
 目标：书卷/章节选择不再放在侧栏菜单里，改为点击顶部当前书卷名打开，贴近常见圣经阅读 App 的操作习惯。

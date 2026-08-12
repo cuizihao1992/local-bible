@@ -10,8 +10,8 @@ android {
         applicationId "local.bible.reader"
         minSdk 26
         targetSdk 35
-        versionCode 15
-        versionName "1.9.11"
+        versionCode 16
+        versionName "1.9.12"
     }
 
     signingConfigs {

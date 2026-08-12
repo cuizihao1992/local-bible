@@ -25,6 +25,7 @@ const state = {
   deepseekModel: "deepseek-v4-flash",
   deepseekThinking: false,
   mimoKey: "",
+  mimoKeyType: "standard",
   mimoBaseUrl: "https://api.xiaomimimo.com/v1",
   mimoModel: "mimo-v2.5",
   speechProvider: "system",
@@ -116,6 +117,7 @@ const deepseekKeyInput = document.querySelector("#deepseekKeyInput");
 const deepseekModelSelect = document.querySelector("#deepseekModelSelect");
 const deepseekThinkingToggle = document.querySelector("#deepseekThinkingToggle");
 const mimoKeyInput = document.querySelector("#mimoKeyInput");
+const mimoKeyTypeSelect = document.querySelector("#mimoKeyTypeSelect");
 const mimoBaseUrlInput = document.querySelector("#mimoBaseUrlInput");
 const mimoModelSelect = document.querySelector("#mimoModelSelect");
 const speechProviderSelect = document.querySelector("#speechProviderSelect");
@@ -152,8 +154,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.11";
+const APP_VERSION = "1.9.12";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.12",
+    date: "2026-08-13",
+    items: ["MiMo 增加 Key 类型切换", "普通 Key 与 CodePlan/Token Plan 分别按对应地址检查", "检查 AI 显示当前 MiMo 类型和实际测试地址"],
+  },
   {
     version: "1.9.11",
     date: "2026-08-13",
@@ -451,6 +458,7 @@ function restoreState() {
     if (saved.deepseekModel) state.deepseekModel = saved.deepseekModel;
     state.deepseekThinking = !!saved.deepseekThinking;
     if (saved.mimoKey) state.mimoKey = saved.mimoKey;
+    if (saved.mimoKeyType) state.mimoKeyType = saved.mimoKeyType;
     if (saved.mimoBaseUrl) state.mimoBaseUrl = saved.mimoBaseUrl;
     if (saved.mimoModel) state.mimoModel = saved.mimoModel;
     if (saved.speechProvider) state.speechProvider = saved.speechProvider;
@@ -483,6 +491,7 @@ function saveState() {
       deepseekModel: state.deepseekModel,
       deepseekThinking: state.deepseekThinking,
       mimoKey: state.mimoKey,
+      mimoKeyType: state.mimoKeyType,
       mimoBaseUrl: state.mimoBaseUrl,
       mimoModel: state.mimoModel,
       speechProvider: state.speechProvider,
@@ -581,7 +590,9 @@ function renderAiConfig() {
   deepseekModelSelect.value = state.deepseekModel;
   deepseekThinkingToggle.checked = state.deepseekThinking;
   mimoKeyInput.value = state.mimoKey;
+  mimoKeyTypeSelect.value = state.mimoKeyType;
   mimoBaseUrlInput.value = state.mimoBaseUrl;
+  mimoBaseUrlInput.disabled = state.mimoKeyType !== "codeplan";
   mimoModelSelect.value = state.mimoModel;
   speechProviderSelect.value = state.speechProvider;
   openaiKeyInput.value = state.openaiKey;
@@ -592,7 +603,7 @@ function renderAiConfig() {
       state.speechProvider === "system"
         ? "系统语音识别依赖手机内置语音服务；不支持时可切换到云端识别。云端录音上传还在接入中。"
         : state.speechProvider === "mimo"
-          ? "小米 MiMo 语音识别使用 mimo-v2.5-asr；Android APK 中按住语音按钮可录音上传识别。"
+          ? `小米 MiMo 语音识别使用 mimo-v2.5-asr；${state.mimoKeyType === "codeplan" ? "CodePlan/Token Plan 会使用专属 Base URL。" : "普通 Key 使用默认 Base URL。"}`
           : "OpenAI 语音识别推荐 gpt-4o-mini-transcribe；当前版本先保存配置，录音上传下一步接入。";
   }
 }
@@ -603,6 +614,7 @@ function saveAiConfig() {
   state.deepseekModel = deepseekModelSelect.value;
   state.deepseekThinking = deepseekThinkingToggle.checked;
   state.mimoKey = mimoKeyInput.value.trim();
+  state.mimoKeyType = mimoKeyTypeSelect.value;
   state.mimoBaseUrl = mimoBaseUrlInput.value.trim() || "https://api.xiaomimimo.com/v1";
   state.mimoModel = mimoModelSelect.value;
   state.speechProvider = speechProviderSelect.value;
@@ -620,10 +632,15 @@ function showAiUses() {
 }
 
 function normalizeMimoChatUrl(value = state.mimoBaseUrl) {
-  const raw = String(value || "").trim() || "https://api.xiaomimimo.com/v1";
+  const source = state.mimoKeyType === "codeplan" ? value : "https://api.xiaomimimo.com/v1";
+  const raw = String(source || "").trim() || "https://api.xiaomimimo.com/v1";
   const base = raw.replace(/\/+$/, "");
   if (/\/chat\/completions$/i.test(base)) return base;
   return `${base}/chat/completions`;
+}
+
+function mimoKeyTypeLabel() {
+  return state.mimoKeyType === "codeplan" ? "CodePlan/Token Plan" : "普通 Key";
 }
 
 function currentAiConfig() {
@@ -694,6 +711,9 @@ async function testAiConfig() {
     if (!config.key) {
       checks.push(`${config.provider} 文本模型：未填写 Key`);
     } else {
+      if (config.provider === "小米 MiMo") {
+        checks.push(`MiMo Key 类型：${mimoKeyTypeLabel()}，测试地址：${config.url}`);
+      }
       const response = await fetch(config.url, {
         method: "POST",
         headers: {
@@ -712,7 +732,7 @@ async function testAiConfig() {
       if (!response.ok) {
         const message = data.error?.message || data.message || `HTTP ${response.status}`;
         if (config.provider === "小米 MiMo" && response.status === 401) {
-          throw new Error(`MiMo Key 鉴权失败。请检查 Key 是否完整，或 Token Plan 是否需要填写专属 Base URL。原始信息：${message}`);
+          throw new Error(`MiMo ${mimoKeyTypeLabel()} 鉴权失败。普通 Key 请切到“普通 Key”；tp- 开头的 CodePlan/Token Plan Key 请切到“CodePlan / Token Plan”并填写后台专属 Base URL。原始信息：${message}`);
         }
         throw new Error(message);
       }
@@ -722,10 +742,12 @@ async function testAiConfig() {
     if (state.speechProvider === "mimo") {
       if (!state.mimoKey) {
         checks.push("MiMo 语音：未填写 MiMo Key");
+      } else if (state.mimoKeyType === "codeplan" && !state.mimoBaseUrl.trim()) {
+        checks.push("MiMo 语音：CodePlan/Token Plan 需要填写专属 Base URL");
       } else if (state.speechModel !== "mimo-v2.5-asr") {
         checks.push(`MiMo 语音：模型应选择 mimo-v2.5-asr，当前是 ${state.speechModel}`);
       } else {
-        checks.push("MiMo 语音配置可用：Key 已填写，模型为 mimo-v2.5-asr。按住语音按钮可录音上传识别");
+        checks.push(`MiMo 语音配置可用：${mimoKeyTypeLabel()}，模型为 mimo-v2.5-asr。按住语音按钮可录音上传识别`);
       }
     } else if (state.speechProvider === "openai") {
       checks.push(state.openaiKey ? `OpenAI 语音配置已填写：${state.speechModel}` : "OpenAI 语音：未填写 OpenAI Key");
@@ -2338,6 +2360,12 @@ speechProviderSelect.addEventListener("change", () => {
   saveState();
   renderAiConfig();
 });
+mimoKeyTypeSelect.addEventListener("change", () => {
+  state.mimoKeyType = mimoKeyTypeSelect.value;
+  if (state.mimoKeyType === "standard") state.mimoBaseUrl = "https://api.xiaomimimo.com/v1";
+  saveState();
+  renderAiConfig();
+});
 
 verseMenu.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-menu-action]");
@@ -2404,6 +2432,10 @@ function startVoiceInput(event) {
   if (state.speechProvider === "mimo") {
     if (!state.mimoKey) {
       quickInput.value = "请先在 AI 配置里填写小米 MiMo Key。";
+      return;
+    }
+    if (state.mimoKeyType === "codeplan" && !state.mimoBaseUrl.trim()) {
+      quickInput.value = "CodePlan / Token Plan 需要填写小米后台专属 Base URL。";
       return;
     }
     if (!window.AndroidVoiceApi?.startCloud) {
