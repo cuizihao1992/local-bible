@@ -10,7 +10,7 @@ $javaHome = Join-Path $root ".tools\jdk17"
 $sdkRoot = Join-Path $root ".tools\android-sdk"
 $gradle = Join-Path $root ".tools\gradle-8.10.2\bin\gradle.bat"
 $apkDir = Join-Path $root "dist\android"
-$version = "1.7.1"
+$version = "1.8.0"
 $apkSource = Join-Path $root "android\app\build\outputs\apk\$BuildType\app-$BuildType.apk"
 $apkTarget = Join-Path $apkDir "local-bible-reader-offline-$version-$BuildType.apk"
 

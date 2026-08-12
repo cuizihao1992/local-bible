@@ -10,8 +10,8 @@ android {
         applicationId "local.bible.reader"
         minSdk 26
         targetSdk 35
-        versionCode 2
-        versionName "1.7.1"
+        versionCode 3
+        versionName "1.8.0"
     }
 
     signingConfigs {
@@ -49,6 +49,8 @@ def webSource = rootProject.projectDir.parentFile.toPath().resolve("static").toF
 def bibleSource = dataRoot.map { new File(it, "bibles") }
 
 tasks.register("syncOfflineAssets") {
+    inputs.dir(webSource)
+    inputs.dir(bibleSource)
     outputs.dir("$buildDir/generated/offlineAssets")
     doLast {
         copy {

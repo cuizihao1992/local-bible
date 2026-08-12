@@ -47,7 +47,7 @@ npm run dist:android
 生成文件：
 
 ```text
-dist\android\local-bible-reader-offline-1.7.1-release.apk
+dist\android\local-bible-reader-offline-1.8.0-release.apk
 ```
 
 如需调试包，可以运行：
@@ -56,7 +56,7 @@ dist\android\local-bible-reader-offline-1.7.1-release.apk
 npm run dist:android:debug
 ```
 
-当前 Android 离线版会把 `D:\bibleDownload\bibles` 下的 26 个经文译本打包进 APK，不依赖电脑后台服务，也不需要局域网。离线 APK 覆盖核心读经、译本、书卷章节、搜索、阅读进度、收藏、高亮和笔记保存；注释、辞典、原文和音频后续可拆成可选数据包继续做。
+当前 Android 离线版会在构建时把 `D:\bibleDownload\bibles` 下的 26 个经文译本打包进 APK。安装到手机后，APK 独立运行，不再读取电脑 D 盘、不依赖电脑后台服务，也不需要局域网。离线 APK 覆盖核心读经、译本、书卷章节、搜索、阅读进度、收藏、高亮和笔记保存；注释、辞典、原文和音频后续可拆成可选数据包继续做。
 
 ## 配置
 
@@ -109,7 +109,7 @@ npm test
 
 ## 当前状态
 
-当前是 `V1.7.1` Android 离线 release APK 版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
+当前是 `V1.8.0` Android 独立离线 APK 版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
 
 ## 数据说明
 
@@ -139,6 +139,7 @@ data\user.sqlite
 - 左侧面板默认只展示译本、书卷、章节，高级功能折叠显示
 - Electron Windows 便携版 exe
 - Android 离线 release APK
+- APK 内置经文、前端静态资源和应用图标，安装后独立运行
 - 前端错误处理、选区性能、桌面单实例等稳定性优化
 - 移动端底部导航
 - 手机端顶部栏、侧栏、底部安全区适配

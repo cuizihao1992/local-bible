@@ -105,6 +105,11 @@ async function readResponse(response) {
 }
 
 async function api(path) {
+  if (window.AndroidBibleApi?.getJson) {
+    const data = JSON.parse(window.AndroidBibleApi.getJson(path));
+    if (data.error) throw new Error(data.error);
+    return data;
+  }
   const response = await fetch(path);
   return readResponse(response);
 }
@@ -1006,7 +1011,7 @@ async function init() {
     state.commentaries = commentaryData.commentaries;
     state.dictionaries = dictionaryData.dictionaries;
     if (!state.versions.length) {
-      content.innerHTML = `<div class="empty">没有在 D:\\bibleDownload\\bibles 找到 .db 译本。</div>`;
+      content.innerHTML = `<div class="empty">没有找到可用的离线经文译本。</div>`;
       return;
     }
     const preferred = state.versions.find((version) => version.fileName.includes("和合本.db"));

@@ -283,6 +283,21 @@
 - 自动在 `.tools` 下生成本地 release 签名文件，不提交密钥
 - 生成 `dist\android\local-bible-reader-offline-1.7.1-release.apk`
 
+## V1.8.0 Android 独立 APK 重做
+
+目标：让 APK 作为独立手机 App 运行，安装后不再读取电脑 D 盘，也不再依赖网页服务。
+
+已完成：
+
+- 将 Android 版本升级到 `1.8.0`
+- 前端静态资源在 APK 中使用相对路径加载，避免 `file:///android_asset` 下脚本和样式加载失败
+- 新增 Android 原生 `getJson` 桥接，前端 GET/POST 接口都可直接调用 APK 内本地数据层
+- APK 运行界面移除 `D:\bibleDownload` 文案
+- APK manifest 设置应用图标和圆形图标
+- 构建任务声明静态网页和经文 DB 输入，前端变更会重新打进 APK
+- 新增 `npm run verify:android` 检查 APK 包名、版本、图标、签名、26 个内置译本和独立运行资源
+- 生成 `dist\android\local-bible-reader-offline-1.8.0-release.apk`
+
 后续：
 
 - 将注释、辞典、原文和音频做成可选离线数据包
