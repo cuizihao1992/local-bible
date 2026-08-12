@@ -121,6 +121,7 @@
             <select id="aiProviderSelect">
               <option value="deepseek">DeepSeek</option>
               <option value="openai">OpenAI</option>
+              <option value="mimo">小米 MiMo</option>
             </select>
           </label>
           <label class="field compactField">
@@ -130,8 +131,8 @@
           <label class="field compactField">
             <span>DeepSeek 模型</span>
             <select id="deepseekModelSelect">
-              <option value="deepseek-v4-flash">deepseek-v4-flash</option>
-              <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+              <option value="deepseek-chat">deepseek-chat</option>
+              <option value="deepseek-reasoner">deepseek-reasoner</option>
             </select>
           </label>
           <label class="toggleField">
@@ -139,10 +140,22 @@
             <span>启用 DeepSeek 思考模式</span>
           </label>
           <label class="field compactField">
+            <span>小米 MiMo Key</span>
+            <input id="mimoKeyInput" type="password" placeholder="MIMO_API_KEY" autocomplete="off" />
+          </label>
+          <label class="field compactField">
+            <span>小米 MiMo 文本模型</span>
+            <select id="mimoModelSelect">
+              <option value="mimo-v2.5">mimo-v2.5</option>
+              <option value="mimo-v2.5-pro">mimo-v2.5-pro</option>
+            </select>
+          </label>
+          <label class="field compactField">
             <span>语音识别服务</span>
             <select id="speechProviderSelect">
               <option value="system">系统语音识别</option>
               <option value="openai">OpenAI 云端识别</option>
+              <option value="mimo">小米 MiMo 云端识别</option>
             </select>
           </label>
           <label class="field compactField">
@@ -155,6 +168,7 @@
               <option value="gpt-4o-mini-transcribe">gpt-4o-mini-transcribe</option>
               <option value="gpt-4o-transcribe">gpt-4o-transcribe</option>
               <option value="whisper-1">whisper-1</option>
+              <option value="mimo-v2.5-asr">mimo-v2.5-asr</option>
             </select>
           </label>
           <label class="field compactField">
@@ -167,6 +181,7 @@
           </label>
           <div class="dataButtons">
             <button id="saveAiConfigBtn" type="button">保存 AI 配置</button>
+            <button id="testAiConfigBtn" type="button">检查 AI</button>
             <button id="showAiUsesBtn" type="button">能做什么</button>
           </div>
           <div id="aiConfigHint" class="panelHint"></div>

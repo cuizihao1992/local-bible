@@ -22,8 +22,10 @@ const state = {
   activeVerse: null,
   aiProvider: "deepseek",
   deepseekKey: "",
-  deepseekModel: "deepseek-v4-flash",
+  deepseekModel: "deepseek-chat",
   deepseekThinking: false,
+  mimoKey: "",
+  mimoModel: "mimo-v2.5",
   speechProvider: "system",
   openaiKey: "",
   speechModel: "gpt-4o-mini-transcribe",
@@ -102,11 +104,14 @@ const aiProviderSelect = document.querySelector("#aiProviderSelect");
 const deepseekKeyInput = document.querySelector("#deepseekKeyInput");
 const deepseekModelSelect = document.querySelector("#deepseekModelSelect");
 const deepseekThinkingToggle = document.querySelector("#deepseekThinkingToggle");
+const mimoKeyInput = document.querySelector("#mimoKeyInput");
+const mimoModelSelect = document.querySelector("#mimoModelSelect");
 const speechProviderSelect = document.querySelector("#speechProviderSelect");
 const openaiKeyInput = document.querySelector("#openaiKeyInput");
 const speechModelSelect = document.querySelector("#speechModelSelect");
 const aiResponseStyleSelect = document.querySelector("#aiResponseStyleSelect");
 const saveAiConfigBtn = document.querySelector("#saveAiConfigBtn");
+const testAiConfigBtn = document.querySelector("#testAiConfigBtn");
 const showAiUsesBtn = document.querySelector("#showAiUsesBtn");
 const aiConfigHint = document.querySelector("#aiConfigHint");
 const dashboardPanel = document.querySelector("#dashboardPanel");
@@ -134,10 +139,10 @@ let selectionFrame = 0;
 let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
-const APP_VERSION = "1.9.3";
+const APP_VERSION = "1.9.4";
 const RELEASE_NOTES = [
   {
-    version: "1.9.3",
+    version: "1.9.4",
     date: "2026-08-12",
     items: ["菜单打开时 Android 系统返回手势只关闭菜单", "增加检查更新、下载更新和版本更新说明", "阅读设置迁移到右上角按钮，菜单关闭按钮固定显示"],
   },
@@ -361,6 +366,8 @@ function restoreState() {
     if (saved.deepseekKey) state.deepseekKey = saved.deepseekKey;
     if (saved.deepseekModel) state.deepseekModel = saved.deepseekModel;
     state.deepseekThinking = !!saved.deepseekThinking;
+    if (saved.mimoKey) state.mimoKey = saved.mimoKey;
+    if (saved.mimoModel) state.mimoModel = saved.mimoModel;
     if (saved.speechProvider) state.speechProvider = saved.speechProvider;
     if (saved.openaiKey) state.openaiKey = saved.openaiKey;
     if (saved.speechModel) state.speechModel = saved.speechModel;
@@ -390,6 +397,8 @@ function saveState() {
       deepseekKey: state.deepseekKey,
       deepseekModel: state.deepseekModel,
       deepseekThinking: state.deepseekThinking,
+      mimoKey: state.mimoKey,
+      mimoModel: state.mimoModel,
       speechProvider: state.speechProvider,
       openaiKey: state.openaiKey,
       speechModel: state.speechModel,
@@ -483,6 +492,8 @@ function renderAiConfig() {
   deepseekKeyInput.value = state.deepseekKey;
   deepseekModelSelect.value = state.deepseekModel;
   deepseekThinkingToggle.checked = state.deepseekThinking;
+  mimoKeyInput.value = state.mimoKey;
+  mimoModelSelect.value = state.mimoModel;
   speechProviderSelect.value = state.speechProvider;
   openaiKeyInput.value = state.openaiKey;
   speechModelSelect.value = state.speechModel;
@@ -491,7 +502,9 @@ function renderAiConfig() {
     aiConfigHint.textContent =
       state.speechProvider === "system"
         ? "系统语音识别依赖手机内置语音服务；不支持时可切换到 OpenAI 云端识别。"
-        : "OpenAI 云端识别需要网络和 OpenAI Key，推荐模型 gpt-4o-mini-transcribe。";
+        : state.speechProvider === "mimo"
+          ? "小米 MiMo 云端识别需要网络和 MiMo Key，语音模型可选 mimo-v2.5-asr。"
+          : "OpenAI 云端识别需要网络和 OpenAI Key，推荐模型 gpt-4o-mini-transcribe。";
   }
 }
 
@@ -500,6 +513,8 @@ function saveAiConfig() {
   state.deepseekKey = deepseekKeyInput.value.trim();
   state.deepseekModel = deepseekModelSelect.value;
   state.deepseekThinking = deepseekThinkingToggle.checked;
+  state.mimoKey = mimoKeyInput.value.trim();
+  state.mimoModel = mimoModelSelect.value;
   state.speechProvider = speechProviderSelect.value;
   state.openaiKey = openaiKeyInput.value.trim();
   state.speechModel = speechModelSelect.value;
@@ -511,7 +526,66 @@ function saveAiConfig() {
 
 function showAiUses() {
   aiConfigHint.textContent =
-    "DeepSeek 可用于经文解释、上下文问答、笔记整理、主题查经、搜索意图解析；OpenAI 语音模型可做跳转指令识别，例如“马太福音三章十一节”。";
+    "DeepSeek/MiMo 可用于经文解释、上下文问答、笔记整理、主题查经、搜索意图解析；OpenAI/MiMo 语音模型可做跳转指令识别，例如“马太福音三章十一节”。";
+}
+
+function currentAiConfig() {
+  if (state.aiProvider === "mimo") {
+    return {
+      provider: "小米 MiMo",
+      url: "https://api.xiaomimimo.com/v1/chat/completions",
+      key: state.mimoKey,
+      model: state.mimoModel,
+    };
+  }
+  if (state.aiProvider === "openai") {
+    return {
+      provider: "OpenAI",
+      url: "https://api.openai.com/v1/chat/completions",
+      key: state.openaiKey,
+      model: "gpt-4o-mini",
+    };
+  }
+  return {
+    provider: "DeepSeek",
+    url: "https://api.deepseek.com/chat/completions",
+    key: state.deepseekKey,
+    model: state.deepseekThinking ? "deepseek-reasoner" : state.deepseekModel,
+  };
+}
+
+async function testAiConfig() {
+  saveAiConfig();
+  const config = currentAiConfig();
+  if (!config.key) {
+    aiConfigHint.textContent = `请先填写 ${config.provider} Key。`;
+    return;
+  }
+  testAiConfigBtn.disabled = true;
+  aiConfigHint.textContent = `正在检查 ${config.provider} 配置...`;
+  try {
+    const response = await fetch(config.url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [{ role: "user", content: "请只回复 OK" }],
+        max_tokens: 8,
+        temperature: 0,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+    const text = data.choices?.[0]?.message?.content?.trim() || "";
+    aiConfigHint.textContent = `${config.provider} 可用：${text || "已返回响应"}`;
+  } catch (error) {
+    aiConfigHint.textContent = `${config.provider} 检查失败：${error.message || String(error)}`;
+  } finally {
+    testAiConfigBtn.disabled = false;
+  }
 }
 
 function renderPackages() {
@@ -1989,9 +2063,14 @@ closeReleaseNotesBtn.addEventListener("click", closeReleaseNotes);
 showReleaseNotesBtn.addEventListener("click", () => openReleaseNotes());
 checkUpdateBtn.addEventListener("click", () => checkForUpdates());
 saveAiConfigBtn.addEventListener("click", saveAiConfig);
+testAiConfigBtn.addEventListener("click", () => testAiConfig());
 showAiUsesBtn.addEventListener("click", showAiUses);
 speechProviderSelect.addEventListener("change", () => {
   state.speechProvider = speechProviderSelect.value;
+  if (state.speechProvider === "mimo") state.speechModel = "mimo-v2.5-asr";
+  if (state.speechProvider === "openai" && state.speechModel === "mimo-v2.5-asr") {
+    state.speechModel = "gpt-4o-mini-transcribe";
+  }
   saveState();
   renderAiConfig();
 });
@@ -2054,10 +2133,12 @@ mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
 
 function startVoiceInput(event) {
   event.preventDefault();
-  if (state.speechProvider === "openai") {
-    quickInput.value = state.openaiKey
-      ? `已配置 ${state.speechModel}，云端录音识别将在下一步接入。`
-      : "请先在 AI 配置里填写 OpenAI Key。";
+  if (state.speechProvider === "openai" || state.speechProvider === "mimo") {
+    const providerName = state.speechProvider === "mimo" ? "小米 MiMo" : "OpenAI";
+    const hasKey = state.speechProvider === "mimo" ? state.mimoKey : state.openaiKey;
+    quickInput.value = hasKey
+      ? `已配置 ${providerName} ${state.speechModel}，云端录音识别将在下一步接入。`
+      : `请先在 AI 配置里填写 ${providerName} Key。`;
     return;
   }
   if (!window.AndroidVoiceApi?.start) {

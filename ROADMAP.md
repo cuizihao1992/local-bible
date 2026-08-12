@@ -369,3 +369,16 @@
 - APK 更新下载增加百分比、已下载大小和总大小显示
 - 下载失败后可以清理资源包临时缓存和 APK 更新缓存
 - Android 下载改为后台线程，前端通过状态轮询更新进度
+
+## V1.9.4 MiMo 与 AI 配置检查
+
+目标：让语音识别服务支持小米 MiMo 配置，并能检查当前 AI Key/模型是否可用。
+
+已完成：
+
+- Android 版本升级到 `1.9.4`
+- AI 配置增加小米 MiMo Provider
+- 新增 MiMo Key、MiMo 文本模型和 `mimo-v2.5-asr` 语音模型配置
+- 新增“检查 AI”按钮，对当前文本模型 Provider 发起轻量请求验证配置
+- DeepSeek 默认模型调整为 `deepseek-chat`，思考模式使用 `deepseek-reasoner`
+- 语音服务切换到 MiMo 时自动选择 `mimo-v2.5-asr`
