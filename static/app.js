@@ -107,6 +107,8 @@ const downloadProgressBar = document.querySelector("#downloadProgressBar");
 const clearDownloadCacheBtn = document.querySelector("#clearDownloadCacheBtn");
 const updateStatus = document.querySelector("#updateStatus");
 const checkUpdateBtn = document.querySelector("#checkUpdateBtn");
+const downloadLatestApkBtn = document.querySelector("#downloadLatestApkBtn");
+const copyApkLinkBtn = document.querySelector("#copyApkLinkBtn");
 const showReleaseNotesBtn = document.querySelector("#showReleaseNotesBtn");
 const aiProviderSelect = document.querySelector("#aiProviderSelect");
 const deepseekKeyInput = document.querySelector("#deepseekKeyInput");
@@ -147,8 +149,14 @@ let selectionFrame = 0;
 let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
-const APP_VERSION = "1.9.7";
+let latestApkAsset = null;
+const APP_VERSION = "1.9.8";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.8",
+    date: "2026-08-12",
+    items: ["版本更新区增加下载最新 APK 按钮", "支持复制最新 APK 下载链接", "非 Android 本地网页也可检查 GitHub 最新版本"],
+  },
   {
     version: "1.9.7",
     date: "2026-08-12",
@@ -307,6 +315,31 @@ function compareAppVersions(left, right) {
 
 function apkAssetFromRelease(release) {
   return (release.assets || []).find((asset) => /\.apk$/i.test(asset.name || ""));
+}
+
+async function fetchLatestRelease() {
+  if (window.AndroidUpdateApi?.checkLatest) {
+    const info = JSON.parse(window.AndroidUpdateApi.checkLatest());
+    if (info.error) throw new Error(info.error);
+    return info;
+  }
+  const response = await fetch("https://api.github.com/repos/cuizihao1992/local-bible/releases/latest", {
+    headers: { Accept: "application/vnd.github+json" },
+  });
+  const release = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(release.message || `GitHub Release 请求失败：${response.status}`);
+  return {
+    tagName: release.tag_name,
+    version: String(release.tag_name || "").replace(/^v/i, ""),
+    name: release.name,
+    body: release.body,
+    publishedAt: release.published_at,
+    assets: (release.assets || []).map((asset) => ({
+      name: asset.name,
+      size: asset.size,
+      url: asset.browser_download_url,
+    })),
+  };
 }
 
 function closeSidebar() {
@@ -1622,18 +1655,18 @@ function setUpdateStatus(text) {
   if (updateStatus) updateStatus.textContent = text;
 }
 
+function setLatestApkAsset(asset) {
+  latestApkAsset = asset || null;
+  if (downloadLatestApkBtn) downloadLatestApkBtn.disabled = !latestApkAsset;
+  if (copyApkLinkBtn) copyApkLinkBtn.disabled = !latestApkAsset;
+}
+
 async function checkForUpdates() {
-  if (!window.AndroidUpdateApi?.checkLatest) {
-    setUpdateStatus(`当前版本 ${APP_VERSION}。检查与下载更新仅用于 Android APK。`);
-    openReleaseNotes();
-    return;
-  }
   checkUpdateBtn.disabled = true;
+  setLatestApkAsset(null);
   setUpdateStatus("正在检查 GitHub Release...");
-  let startedDownload = false;
   try {
-    const info = JSON.parse(window.AndroidUpdateApi.checkLatest());
-    if (info.error) throw new Error(info.error);
+    const info = await fetchLatestRelease();
     lastUpdateInfo = info;
     renderReleaseNotes(info);
     const asset = apkAssetFromRelease(info);
@@ -1641,27 +1674,64 @@ async function checkForUpdates() {
       setUpdateStatus(`当前版本 ${APP_VERSION}，最新 ${info.tagName || ""} 未找到 APK。`);
       return;
     }
+    setLatestApkAsset(asset);
     const latestVersion = String(info.version || info.tagName || "").replace(/^v/i, "");
     if (compareAppVersions(latestVersion, APP_VERSION) <= 0) {
-      setUpdateStatus(`已是最新版本 ${APP_VERSION}。`);
+      setUpdateStatus(`已是最新版本 ${APP_VERSION}。仍可复制或重新下载 APK：${asset.name}`);
       return;
     }
-    setUpdateStatus(`发现新版本 ${latestVersion}，正在下载 APK...`);
-    pollDownloadProgress("update", () => {
-      setUpdateStatus("APK 已下载，请在系统安装界面确认更新。");
-      checkUpdateBtn.disabled = false;
-    });
-    const result = JSON.parse(window.AndroidUpdateApi.downloadAndInstall(asset.url, asset.name));
-    if (result.error) throw new Error(result.error);
-    startedDownload = !!result.started;
-    if (!startedDownload) setUpdateStatus(result.message || "APK 已下载，请在系统安装界面确认更新。");
+    setUpdateStatus(`发现新版本 ${latestVersion}：${asset.name}。可点击“下载最新 APK”或“复制 APK 链接”。`);
   } catch (error) {
     setUpdateStatus(error.message || String(error));
     renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
-    checkUpdateBtn.disabled = false;
   } finally {
-    if (!startedDownload) stopDownloadProgressPolling();
+    checkUpdateBtn.disabled = false;
   }
+}
+
+async function downloadLatestApk() {
+  if (!latestApkAsset) {
+    await checkForUpdates();
+    if (!latestApkAsset) return;
+  }
+  if (!window.AndroidUpdateApi?.downloadAndInstall) {
+    window.open(latestApkAsset.url, "_blank", "noopener");
+    setUpdateStatus(`已打开 APK 下载链接：${latestApkAsset.name}`);
+    return;
+  }
+  downloadLatestApkBtn.disabled = true;
+  setUpdateStatus(`正在下载 APK：${latestApkAsset.name}`);
+  pollDownloadProgress("update", () => {
+    setUpdateStatus("APK 已下载，请在系统安装界面确认更新。");
+    downloadLatestApkBtn.disabled = false;
+  });
+  try {
+    const result = JSON.parse(window.AndroidUpdateApi.downloadAndInstall(latestApkAsset.url, latestApkAsset.name));
+    if (result.error) throw new Error(result.error);
+    if (!result.started) {
+      setUpdateStatus(result.message || "APK 已下载，请在系统安装界面确认更新。");
+      stopDownloadProgressPolling();
+      downloadLatestApkBtn.disabled = false;
+    }
+  } catch (error) {
+    setUpdateStatus(error.message || String(error));
+    renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
+    stopDownloadProgressPolling();
+    downloadLatestApkBtn.disabled = false;
+  }
+}
+
+async function copyLatestApkLink() {
+  if (!latestApkAsset) {
+    await checkForUpdates();
+    if (!latestApkAsset) return;
+  }
+  await writeClipboard(latestApkAsset.url);
+  setUpdateStatus(`已复制 APK 链接：${latestApkAsset.name}`);
+  copyApkLinkBtn.textContent = "已复制链接";
+  window.setTimeout(() => {
+    copyApkLinkBtn.textContent = "复制 APK 链接";
+  }, 1200);
 }
 
 async function openMyPanel(kind = "all") {
@@ -2204,6 +2274,8 @@ closeStrongBtn.addEventListener("click", closeStrong);
 closeReleaseNotesBtn.addEventListener("click", closeReleaseNotes);
 showReleaseNotesBtn.addEventListener("click", () => openReleaseNotes());
 checkUpdateBtn.addEventListener("click", () => checkForUpdates());
+downloadLatestApkBtn.addEventListener("click", () => downloadLatestApk().catch(setError));
+copyApkLinkBtn.addEventListener("click", () => copyLatestApkLink().catch(setError));
 saveAiConfigBtn.addEventListener("click", saveAiConfig);
 testAiConfigBtn.addEventListener("click", () => testAiConfig());
 showAiUsesBtn.addEventListener("click", showAiUses);
