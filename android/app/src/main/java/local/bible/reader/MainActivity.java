@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private OfflineApi offlineApi;
+    private WebView webView;
 
     @Override
     @SuppressLint("SetJavaScriptEnabled")
@@ -22,7 +23,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         offlineApi = new OfflineApi(this);
 
-        WebView webView = new WebView(this);
+        webView = new WebView(this);
         setContentView(webView, new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -38,6 +39,7 @@ public class MainActivity extends Activity {
         settings.setAllowUniversalAccessFromFileURLs(true);
         webView.addJavascriptInterface(new AndroidBridge(offlineApi), "AndroidBibleApi");
         webView.addJavascriptInterface(new VoiceBridge(this, webView), "AndroidVoiceApi");
+        webView.addJavascriptInterface(new UpdateBridge(this), "AndroidUpdateApi");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -51,6 +53,20 @@ public class MainActivity extends Activity {
         });
 
         webView.loadUrl("file:///android_asset/static/index.html");
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (webView == null) {
+            super.onBackPressed();
+            return;
+        }
+        webView.evaluateJavascript(
+                "(window.handleAndroidBack && window.handleAndroidBack()) ? 'handled' : 'exit'",
+                value -> {
+                    if (!"\"handled\"".equals(value)) MainActivity.super.onBackPressed();
+                }
+        );
     }
 
     private WebResourceResponse jsonResponse(String json) {

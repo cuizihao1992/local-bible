@@ -1,0 +1,133 @@
+package local.bible.reader;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+import android.webkit.JavascriptInterface;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class UpdateBridge {
+    private static final String LATEST_RELEASE_URL = "https://api.github.com/repos/cuizihao1992/local-bible/releases/latest";
+    private static final String CURRENT_VERSION = "1.9.1";
+    private final Activity activity;
+
+    public UpdateBridge(Activity activity) {
+        this.activity = activity;
+    }
+
+    @JavascriptInterface
+    public String checkLatest() {
+        try {
+            JSONObject release = new JSONObject(readText(LATEST_RELEASE_URL));
+            JSONObject result = new JSONObject()
+                    .put("currentVersion", CURRENT_VERSION)
+                    .put("tagName", release.optString("tag_name"))
+                    .put("version", release.optString("tag_name").replaceFirst("^v", ""))
+                    .put("name", release.optString("name"))
+                    .put("body", release.optString("body"))
+                    .put("publishedAt", release.optString("published_at"));
+            JSONArray assets = new JSONArray();
+            JSONArray sourceAssets = release.optJSONArray("assets");
+            if (sourceAssets != null) {
+                for (int index = 0; index < sourceAssets.length(); index += 1) {
+                    JSONObject asset = sourceAssets.getJSONObject(index);
+                    assets.put(new JSONObject()
+                            .put("name", asset.optString("name"))
+                            .put("size", asset.optLong("size"))
+                            .put("url", asset.optString("browser_download_url")));
+                }
+            }
+            return result.put("assets", assets).toString();
+        } catch (Throwable error) {
+            return errorJson(error);
+        }
+    }
+
+    @JavascriptInterface
+    public String downloadAndInstall(String downloadUrl, String fileName) {
+        try {
+            if (downloadUrl == null || !downloadUrl.startsWith("https://github.com/")) {
+                throw new IllegalArgumentException("更新下载地址不正确");
+            }
+            String safeName = fileName == null || fileName.trim().isEmpty() ? "local-bible-reader-update.apk" : fileName.replace("/", "").replace("\\", "");
+            File target = new File(activity.getExternalFilesDir("updates"), safeName);
+            File parent = target.getParentFile();
+            if (parent != null) parent.mkdirs();
+            downloadTo(downloadUrl, target);
+            openInstaller(target);
+            return new JSONObject()
+                    .put("ok", true)
+                    .put("file", target.getAbsolutePath())
+                    .put("message", "APK 已下载，请在系统安装界面确认更新。")
+                    .toString();
+        } catch (Throwable error) {
+            return errorJson(error);
+        }
+    }
+
+    private String readText(String urlText) throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(urlText).openConnection();
+        connection.setConnectTimeout(15000);
+        connection.setReadTimeout(20000);
+        connection.setRequestProperty("Accept", "application/vnd.github+json");
+        connection.setRequestProperty("User-Agent", "LocalBibleReader/" + CURRENT_VERSION);
+        try (InputStream in = connection.getInputStream()) {
+            byte[] buffer = new byte[8192];
+            StringBuilder builder = new StringBuilder();
+            int read;
+            while ((read = in.read(buffer)) > 0) {
+                builder.append(new String(buffer, 0, read, java.nio.charset.StandardCharsets.UTF_8));
+            }
+            return builder.toString();
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private void downloadTo(String urlText, File target) throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(urlText).openConnection();
+        connection.setConnectTimeout(15000);
+        connection.setReadTimeout(60000);
+        connection.setRequestProperty("User-Agent", "LocalBibleReader/" + CURRENT_VERSION);
+        try (InputStream in = connection.getInputStream(); FileOutputStream out = new FileOutputStream(target)) {
+            byte[] buffer = new byte[1024 * 64];
+            int read;
+            while ((read = in.read(buffer)) > 0) out.write(buffer, 0, read);
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private void openInstaller(File apk) {
+        activity.runOnUiThread(() -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !activity.getPackageManager().canRequestPackageInstalls()) {
+                Intent permissionIntent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                        .setData(Uri.parse("package:" + activity.getPackageName()))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                activity.startActivity(permissionIntent);
+                return;
+            }
+            Uri uri = Uri.parse("content://" + activity.getPackageName() + ".apkprovider/" + apk.getName());
+            Intent intent = new Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, "application/vnd.android.package-archive")
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            activity.startActivity(intent);
+        });
+    }
+
+    private String errorJson(Throwable error) {
+        String message = error == null || error.getMessage() == null ? "Update bridge error" : error.getMessage();
+        return "{\"error\":\"" + message.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "") + "\"}";
+    }
+}

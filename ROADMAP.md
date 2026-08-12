@@ -319,3 +319,22 @@
 后续：
 
 - 将辞典、原文和音频继续做成可选离线数据包
+
+## V1.9.1 Android 更新与返回手势优化
+
+目标：让 APK 可以在应用内检查 GitHub Release 更新，并修复系统返回手势在菜单打开时直接退出的问题。
+
+已完成：
+
+- Android 版本升级到 `1.9.1`
+- 系统返回键/返回手势优先交给网页处理，菜单、设置、搜索、我的、版本说明等面板打开时只关闭当前面板
+- 新增 Android 原生 `AndroidUpdateApi` 桥接
+- 新增“版本更新”入口，可检查 GitHub 最新 Release
+- 新增 APK 下载并调起系统安装器
+- 新增“版本更新说明”页面，记录本地版本更新内容和 GitHub Release 说明
+- 数据资源包下载地址同步到 `v1.9.1`
+
+发版要求：
+
+- 每次推送 GitHub Release 前，同步更新 `package.json`、`package-lock.json`、`android/app/build.gradle`、`scripts/build-android.ps1`、`scripts/verify-android-apk.ps1` 中的版本号
+- Release tag、APK 文件名、资源包文件名和 Android 内置下载地址必须使用同一个版本号

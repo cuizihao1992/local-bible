@@ -75,6 +75,9 @@ const importDataFile = document.querySelector("#importDataFile");
 const userDataHint = document.querySelector("#userDataHint");
 const packageList = document.querySelector("#packageList");
 const packageHint = document.querySelector("#packageHint");
+const updateStatus = document.querySelector("#updateStatus");
+const checkUpdateBtn = document.querySelector("#checkUpdateBtn");
+const showReleaseNotesBtn = document.querySelector("#showReleaseNotesBtn");
 const dashboardPanel = document.querySelector("#dashboardPanel");
 const verseMenu = document.querySelector("#verseMenu");
 const verseMenuTitle = document.querySelector("#verseMenuTitle");
@@ -91,9 +94,26 @@ const myPanel = document.querySelector("#myPanel");
 const myResults = document.querySelector("#myResults");
 const myTagFilter = document.querySelector("#myTagFilter");
 const closeMyPanelBtn = document.querySelector("#closeMyPanelBtn");
+const releaseNotesPanel = document.querySelector("#releaseNotesPanel");
+const releaseNotesContent = document.querySelector("#releaseNotesContent");
+const closeReleaseNotesBtn = document.querySelector("#closeReleaseNotesBtn");
 let longPressTimer = null;
 let selectedVerseNumbers = [];
 let selectionFrame = 0;
+let lastUpdateInfo = null;
+const APP_VERSION = "1.9.1";
+const RELEASE_NOTES = [
+  {
+    version: "1.9.1",
+    date: "2026-08-12",
+    items: ["菜单打开时 Android 系统返回手势只关闭菜单", "增加检查更新、下载更新和版本更新说明", "阅读设置迁移到右上角按钮，菜单关闭按钮固定显示"],
+  },
+  {
+    version: "1.9.0",
+    date: "2026-08-12",
+    items: ["Android APK 改为轻量离线包", "常用译本内置，其他译本和注释支持按需下载", "增加语音跳转、移动端菜单与高亮优化"],
+  },
+];
 
 async function readResponse(response) {
   const text = await response.text();
@@ -217,6 +237,77 @@ function postJson(path, payload) {
 function isAndroidOffline() {
   return !!window.AndroidBibleApi;
 }
+
+function compareAppVersions(left, right) {
+  const a = String(left || "").replace(/^v/i, "").split(".").map((part) => Number(part) || 0);
+  const b = String(right || "").replace(/^v/i, "").split(".").map((part) => Number(part) || 0);
+  const length = Math.max(a.length, b.length);
+  for (let index = 0; index < length; index += 1) {
+    if ((a[index] || 0) > (b[index] || 0)) return 1;
+    if ((a[index] || 0) < (b[index] || 0)) return -1;
+  }
+  return 0;
+}
+
+function apkAssetFromRelease(release) {
+  return (release.assets || []).find((asset) => /\.apk$/i.test(asset.name || ""));
+}
+
+function closeSidebar() {
+  document.body.classList.remove("sidebarOpen");
+}
+
+function closeTopPanels() {
+  toggleReaderSettings(false);
+  closeSearch();
+  closeStrong();
+  closeDictionary();
+  closeMyPanel();
+  closeReleaseNotes();
+  closeVerseMenu();
+}
+
+function handleBackIntent() {
+  if (document.body.classList.contains("sidebarOpen")) {
+    closeSidebar();
+    return true;
+  }
+  if (!readerSettingsPanel.hidden) {
+    toggleReaderSettings(false);
+    return true;
+  }
+  if (!releaseNotesPanel.hidden) {
+    closeReleaseNotes();
+    return true;
+  }
+  if (!myPanel.hidden) {
+    closeMyPanel();
+    return true;
+  }
+  if (!dictionaryPanel.hidden) {
+    closeDictionary();
+    return true;
+  }
+  if (!strongPanel.hidden) {
+    closeStrong();
+    return true;
+  }
+  if (!searchPanel.hidden) {
+    closeSearch();
+    return true;
+  }
+  if (!verseMenu.hidden) {
+    closeVerseMenu();
+    return true;
+  }
+  if (!selectionBar.hidden) {
+    closeSelectionBar();
+    return true;
+  }
+  return false;
+}
+
+window.handleAndroidBack = handleBackIntent;
 
 function restoreState() {
   try {
@@ -1095,6 +1186,78 @@ function closeMyPanel() {
   myPanel.hidden = true;
 }
 
+function closeReleaseNotes() {
+  releaseNotesPanel.hidden = true;
+}
+
+function renderReleaseNotes(release = null) {
+  const releaseNotes = release?.body ? `<pre>${escapeHtml(release.body)}</pre>` : "";
+  releaseNotesContent.innerHTML = `
+    <div class="releaseCurrent">
+      <div class="releaseVersion">当前版本 ${APP_VERSION}</div>
+      <div class="releaseHint">${
+        release ? `GitHub 最新版本 ${escapeHtml(release.tagName || release.version || "")}` : "可在此查看本地更新记录和 GitHub Release 说明。"
+      }</div>
+    </div>
+    ${RELEASE_NOTES.map(
+      (item) => `
+        <article class="releaseNote">
+          <div class="releaseNoteTitle">V${escapeHtml(item.version)} <span>${escapeHtml(item.date)}</span></div>
+          <ul>
+            ${item.items.map((text) => `<li>${escapeHtml(text)}</li>`).join("")}
+          </ul>
+        </article>
+      `,
+    ).join("")}
+    ${releaseNotes ? `<article class="releaseNote"><div class="releaseNoteTitle">GitHub Release</div>${releaseNotes}</article>` : ""}
+  `;
+}
+
+function openReleaseNotes(release = lastUpdateInfo) {
+  renderReleaseNotes(release);
+  closeTopPanels();
+  releaseNotesPanel.hidden = false;
+  releaseNotesPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
+function setUpdateStatus(text) {
+  if (updateStatus) updateStatus.textContent = text;
+}
+
+async function checkForUpdates() {
+  if (!window.AndroidUpdateApi?.checkLatest) {
+    setUpdateStatus(`当前版本 ${APP_VERSION}。检查与下载更新仅用于 Android APK。`);
+    openReleaseNotes();
+    return;
+  }
+  checkUpdateBtn.disabled = true;
+  setUpdateStatus("正在检查 GitHub Release...");
+  try {
+    const info = JSON.parse(window.AndroidUpdateApi.checkLatest());
+    if (info.error) throw new Error(info.error);
+    lastUpdateInfo = info;
+    renderReleaseNotes(info);
+    const asset = apkAssetFromRelease(info);
+    if (!asset) {
+      setUpdateStatus(`当前版本 ${APP_VERSION}，最新 ${info.tagName || ""} 未找到 APK。`);
+      return;
+    }
+    const latestVersion = String(info.version || info.tagName || "").replace(/^v/i, "");
+    if (compareAppVersions(latestVersion, APP_VERSION) <= 0) {
+      setUpdateStatus(`已是最新版本 ${APP_VERSION}。`);
+      return;
+    }
+    setUpdateStatus(`发现新版本 ${latestVersion}，正在下载 APK...`);
+    const result = JSON.parse(window.AndroidUpdateApi.downloadAndInstall(asset.url, asset.name));
+    if (result.error) throw new Error(result.error);
+    setUpdateStatus(result.message || "APK 已下载，请在系统安装界面确认更新。");
+  } catch (error) {
+    setUpdateStatus(error.message || String(error));
+  } finally {
+    checkUpdateBtn.disabled = false;
+  }
+}
+
 async function openMyPanel(kind = "all") {
   const params = new URLSearchParams({ kind, tag: myTagFilter.value.trim(), limit: "300" });
   const data = await api(`/api/user/marks/all?${params.toString()}`);
@@ -1241,6 +1404,7 @@ async function init() {
     renderCommentaries();
     renderStrongToggle();
     renderDictionaries();
+    setUpdateStatus(`当前版本 ${APP_VERSION}`);
     await loadPackages();
     applySettings();
     await loadBooks();
@@ -1595,6 +1759,9 @@ importDataFile.addEventListener("change", async () => {
 
 closeSearchBtn.addEventListener("click", closeSearch);
 closeStrongBtn.addEventListener("click", closeStrong);
+closeReleaseNotesBtn.addEventListener("click", closeReleaseNotes);
+showReleaseNotesBtn.addEventListener("click", () => openReleaseNotes());
+checkUpdateBtn.addEventListener("click", () => checkForUpdates());
 
 verseMenu.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-menu-action]");

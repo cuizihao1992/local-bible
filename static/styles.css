@@ -811,6 +811,65 @@ select {
   display: none;
 }
 
+.releaseNotesPanel {
+  margin: 0 clamp(16px, 4vw, 42px);
+}
+
+.releaseNotesPanel[hidden] {
+  display: none;
+}
+
+.releaseNotesContent {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.releaseCurrent,
+.releaseNote {
+  padding: 12px 14px;
+  background: var(--control);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.releaseVersion,
+.releaseNoteTitle {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.releaseHint,
+.releaseNoteTitle span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.releaseNote ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.releaseNote li {
+  margin: 5px 0;
+  color: var(--ink);
+  line-height: 1.7;
+}
+
+.releaseNote pre {
+  margin: 10px 0 0;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 .dictionaryResults {
   display: grid;
   gap: 0;
@@ -1553,6 +1612,12 @@ mark {
   .myPanel {
     width: 100%;
     padding: 0 16px;
+  }
+
+  .releaseNotesPanel {
+    width: 100%;
+    margin: 0;
+    padding: 0 16px calc(var(--mobile-nav-height) + 32px + env(safe-area-inset-bottom));
   }
 
   .myFilters {

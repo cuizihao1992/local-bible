@@ -82,6 +82,15 @@
           <div id="packageList" class="packageList"></div>
           <div id="packageHint" class="panelHint"></div>
         </div>
+
+        <div class="updatePanel">
+          <div class="panelTitle">版本更新</div>
+          <div id="updateStatus" class="panelHint"></div>
+          <div class="dataButtons">
+            <button id="checkUpdateBtn" type="button">检查更新</button>
+            <button id="showReleaseNotesBtn" type="button">更新说明</button>
+          </div>
+        </div>
       </details>
     </aside>
 
@@ -191,6 +200,14 @@
           <input id="myTagFilter" type="search" placeholder="标签筛选" />
         </div>
         <div id="myResults" class="myResults"></div>
+      </section>
+
+      <section id="releaseNotesPanel" class="releaseNotesPanel" hidden>
+        <div class="searchHeader">
+          <div>版本更新说明</div>
+          <button id="closeReleaseNotesBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <div id="releaseNotesContent" class="releaseNotesContent"></div>
       </section>
 
       <section id="content" class="content" aria-live="polite"></section>
