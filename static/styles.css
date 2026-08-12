@@ -225,6 +225,15 @@ p {
   accent-color: var(--accent);
 }
 
+.rangeField b {
+  float: right;
+  min-width: 48px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
 .field span,
 .panelTitle {
   color: var(--muted);
@@ -1665,8 +1674,8 @@ mark {
   }
 
   .verseText {
-    font-size: 18px;
-    line-height: 1.95;
+    font-size: var(--reader-font-size);
+    line-height: var(--reader-line-height);
   }
 
   .verseTools {
@@ -1790,8 +1799,8 @@ mark {
   }
 
   .verseText {
-    font-size: 17px;
-    line-height: 1.9;
+    font-size: var(--reader-font-size);
+    line-height: var(--reader-line-height);
   }
 
   .mobileNav {

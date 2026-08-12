@@ -77,6 +77,8 @@ const paletteSelect = document.querySelector("#paletteSelect");
 const scriptPreference = document.querySelector("#scriptPreference");
 const fontSizeRange = document.querySelector("#fontSizeRange");
 const lineHeightRange = document.querySelector("#lineHeightRange");
+const fontSizeValue = document.querySelector("#fontSizeValue");
+const lineHeightValue = document.querySelector("#lineHeightValue");
 const exportDataBtn = document.querySelector("#exportDataBtn");
 const importDataBtn = document.querySelector("#importDataBtn");
 const importDataFile = document.querySelector("#importDataFile");
@@ -445,6 +447,8 @@ function applySettings() {
   scriptPreference.value = state.scriptPreference;
   fontSizeRange.value = String(state.fontSize);
   lineHeightRange.value = String(state.lineHeight);
+  fontSizeValue.textContent = `${state.fontSize}px`;
+  lineHeightValue.textContent = state.lineHeight.toFixed(1);
 }
 
 function renderDictionaries() {
