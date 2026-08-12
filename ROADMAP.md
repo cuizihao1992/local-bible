@@ -428,6 +428,16 @@
 - 按住底部语音按钮录音，松开后上传到小米 MiMo ASR
 - MiMo 返回文本后复用原有语音跳转解析
 
+## V1.9.10 MiMo 鉴权配置
+
+目标：处理小米 MiMo 返回 `Invalid API Key` 时难以排查的问题，支持不同 Key 类型需要的不同地址。
+已完成：
+
+- AI 配置增加“小米 MiMo Base URL”
+- MiMo 文本检查和语音上传都使用可配置 Base URL
+- MiMo 请求同时发送 `Authorization: Bearer ...` 和 `api-key`
+- MiMo 401 错误提示补充 Key、空格和 Token Plan 专属 Base URL 排查方向
+
 ## V1.9.5 顶部书卷选择入口
 
 目标：书卷/章节选择不再放在侧栏菜单里，改为点击顶部当前书卷名打开，贴近常见圣经阅读 App 的操作习惯。

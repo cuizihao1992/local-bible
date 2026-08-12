@@ -25,6 +25,7 @@ const state = {
   deepseekModel: "deepseek-v4-flash",
   deepseekThinking: false,
   mimoKey: "",
+  mimoBaseUrl: "https://api.xiaomimimo.com/v1/chat/completions",
   mimoModel: "mimo-v2.5",
   speechProvider: "system",
   openaiKey: "",
@@ -115,6 +116,7 @@ const deepseekKeyInput = document.querySelector("#deepseekKeyInput");
 const deepseekModelSelect = document.querySelector("#deepseekModelSelect");
 const deepseekThinkingToggle = document.querySelector("#deepseekThinkingToggle");
 const mimoKeyInput = document.querySelector("#mimoKeyInput");
+const mimoBaseUrlInput = document.querySelector("#mimoBaseUrlInput");
 const mimoModelSelect = document.querySelector("#mimoModelSelect");
 const speechProviderSelect = document.querySelector("#speechProviderSelect");
 const openaiKeyInput = document.querySelector("#openaiKeyInput");
@@ -150,8 +152,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.9";
+const APP_VERSION = "1.9.10";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.10",
+    date: "2026-08-13",
+    items: ["小米 MiMo 增加 Base URL 配置", "MiMo 请求同时兼容 Authorization 与 api-key 鉴权头", "MiMo 401 错误提示补充 Key 和 Token Plan 专属地址排查"],
+  },
   {
     version: "1.9.9",
     date: "2026-08-13",
@@ -439,6 +446,7 @@ function restoreState() {
     if (saved.deepseekModel) state.deepseekModel = saved.deepseekModel;
     state.deepseekThinking = !!saved.deepseekThinking;
     if (saved.mimoKey) state.mimoKey = saved.mimoKey;
+    if (saved.mimoBaseUrl) state.mimoBaseUrl = saved.mimoBaseUrl;
     if (saved.mimoModel) state.mimoModel = saved.mimoModel;
     if (saved.speechProvider) state.speechProvider = saved.speechProvider;
     if (saved.openaiKey) state.openaiKey = saved.openaiKey;
@@ -470,6 +478,7 @@ function saveState() {
       deepseekModel: state.deepseekModel,
       deepseekThinking: state.deepseekThinking,
       mimoKey: state.mimoKey,
+      mimoBaseUrl: state.mimoBaseUrl,
       mimoModel: state.mimoModel,
       speechProvider: state.speechProvider,
       openaiKey: state.openaiKey,
@@ -567,6 +576,7 @@ function renderAiConfig() {
   deepseekModelSelect.value = state.deepseekModel;
   deepseekThinkingToggle.checked = state.deepseekThinking;
   mimoKeyInput.value = state.mimoKey;
+  mimoBaseUrlInput.value = state.mimoBaseUrl;
   mimoModelSelect.value = state.mimoModel;
   speechProviderSelect.value = state.speechProvider;
   openaiKeyInput.value = state.openaiKey;
@@ -588,6 +598,7 @@ function saveAiConfig() {
   state.deepseekModel = deepseekModelSelect.value;
   state.deepseekThinking = deepseekThinkingToggle.checked;
   state.mimoKey = mimoKeyInput.value.trim();
+  state.mimoBaseUrl = mimoBaseUrlInput.value.trim() || "https://api.xiaomimimo.com/v1/chat/completions";
   state.mimoModel = mimoModelSelect.value;
   state.speechProvider = speechProviderSelect.value;
   state.openaiKey = openaiKeyInput.value.trim();
@@ -607,7 +618,7 @@ function currentAiConfig() {
   if (state.aiProvider === "mimo") {
     return {
       provider: "小米 MiMo",
-      url: "https://api.xiaomimimo.com/v1/chat/completions",
+      url: state.mimoBaseUrl,
       key: state.mimoKey,
       model: state.mimoModel,
     };
@@ -675,6 +686,7 @@ async function testAiConfig() {
         method: "POST",
         headers: {
           Authorization: `Bearer ${config.key}`,
+          "api-key": config.key,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -685,7 +697,13 @@ async function testAiConfig() {
         }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+      if (!response.ok) {
+        const message = data.error?.message || data.message || `HTTP ${response.status}`;
+        if (config.provider === "小米 MiMo" && response.status === 401) {
+          throw new Error(`MiMo Key 鉴权失败。请检查 Key 是否完整，或 Token Plan 是否需要填写专属 Base URL。原始信息：${message}`);
+        }
+        throw new Error(message);
+      }
       const text = data.choices?.[0]?.message?.content?.trim() || "";
       checks.push(`${config.provider} 文本模型可用：${text || "已返回响应"}`);
     }
@@ -2383,7 +2401,7 @@ function startVoiceInput(event) {
     voiceBtn.classList.add("active");
     voiceBtn.textContent = "录音";
     quickInput.value = "正在录音，松开后上传 MiMo 识别...";
-    window.AndroidVoiceApi.startCloud("mimo", state.mimoKey, "mimo-v2.5-asr");
+    window.AndroidVoiceApi.startCloud("mimo", state.mimoKey, "mimo-v2.5-asr", state.mimoBaseUrl);
     return;
   }
   if (state.speechProvider === "openai") {
