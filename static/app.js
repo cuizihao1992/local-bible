@@ -218,6 +218,50 @@ const RELEASE_NOTES = [
   },
 ];
 
+const SECTION_HEADINGS = {
+  "1:1": { 1: "创造天地", 3: "神说，要有光", 6: "空气以上和以下的水", 9: "旱地和海", 14: "光体管理昼夜", 20: "水中和空中的活物", 24: "地上的活物", 26: "照神形像造人" },
+  "1:2": { 1: "第七日安息", 4: "伊甸园", 18: "造女人" },
+  "1:3": { 1: "蛇引诱人", 8: "人躲避神", 14: "咒诅与应许", 22: "逐出伊甸园" },
+  "40:1": { 1: "耶稣基督的家谱", 18: "耶稣基督降生" },
+  "40:2": { 1: "博士朝拜", 13: "逃往埃及", 16: "希律屠杀男孩", 19: "回到拿撒勒" },
+  "40:3": { 1: "施洗约翰传道", 13: "耶稣受洗" },
+  "40:4": { 1: "耶稣受试探", 12: "开始在加利利传道", 18: "呼召门徒", 23: "医病赶鬼" },
+  "40:5": { 1: "登山宝训", 3: "八福", 13: "盐和光", 17: "成全律法", 21: "论仇恨", 27: "论奸淫", 33: "论起誓", 38: "论报复", 43: "爱仇敌" },
+  "40:6": { 1: "论施舍", 5: "论祷告", 9: "主祷文", 16: "论禁食", 19: "天上的财宝", 25: "不要忧虑" },
+  "40:7": { 1: "不要论断", 7: "祈求寻找叩门", 13: "窄门", 24: "两种根基" },
+  "40:13": { 1: "撒种的比喻", 24: "稗子的比喻", 31: "芥菜种和面酵", 44: "藏宝与寻珠", 53: "拿撒勒人厌弃耶稣" },
+  "40:26": { 1: "谋害耶稣", 17: "最后的晚餐", 36: "客西马尼园祷告", 47: "耶稣被捕", 57: "受审", 69: "彼得不认主" },
+  "40:27": { 1: "耶稣交给彼拉多", 27: "兵丁戏弄耶稣", 32: "钉十字架", 57: "安葬耶稣" },
+  "40:28": { 1: "耶稣复活", 16: "大使命" },
+  "41:1": { 1: "福音的起头", 9: "耶稣受洗", 12: "受试探", 16: "呼召门徒", 21: "在会堂赶鬼", 40: "洁净麻风病人" },
+  "41:4": { 1: "撒种的比喻", 21: "灯和量器", 26: "种子生长", 30: "芥菜种", 35: "平静风浪" },
+  "41:8": { 27: "彼得认耶稣为基督", 31: "预言受难", 34: "背十字架跟从主" },
+  "41:15": { 1: "耶稣受审", 16: "兵丁戏弄耶稣", 21: "钉十字架", 42: "安葬耶稣" },
+  "41:16": { 1: "耶稣复活", 9: "复活后的显现" },
+  "42:1": { 1: "写作缘起", 5: "预告约翰出生", 26: "预告耶稣降生", 46: "马利亚尊主颂", 57: "施洗约翰出生" },
+  "42:2": { 1: "耶稣降生", 8: "牧羊人朝见", 21: "献与主", 41: "少年耶稣在圣殿" },
+  "42:10": { 25: "好撒玛利亚人的比喻", 38: "马大和马利亚" },
+  "42:15": { 1: "失羊的比喻", 8: "失钱的比喻", 11: "浪子的比喻" },
+  "42:22": { 7: "最后的晚餐", 39: "橄榄山祷告", 47: "耶稣被捕", 54: "彼得不认主", 66: "公会审问" },
+  "42:23": { 1: "耶稣受审", 26: "钉十字架", 50: "安葬耶稣" },
+  "42:24": { 1: "耶稣复活", 13: "以马忤斯路上", 36: "向门徒显现", 50: "耶稣升天" },
+  "43:1": { 1: "道成肉身", 19: "施洗约翰的见证", 35: "最初的门徒" },
+  "43:2": { 1: "迦拿婚筵", 13: "洁净圣殿" },
+  "43:3": { 1: "耶稣与尼哥底母", 16: "神爱世人", 22: "约翰为耶稣作见证" },
+  "43:4": { 1: "耶稣与撒玛利亚妇人", 43: "医治大臣的儿子" },
+  "43:6": { 1: "五饼二鱼", 16: "耶稣履海", 22: "生命的粮" },
+  "43:10": { 1: "好牧人", 22: "修殿节的争论" },
+  "43:11": { 1: "拉撒路复活", 45: "公会商议杀害耶稣" },
+  "43:13": { 1: "为门徒洗脚", 21: "预言被卖", 31: "赐下新命令" },
+  "43:14": { 1: "耶稣是道路、真理、生命", 15: "应许圣灵" },
+  "43:15": { 1: "真葡萄树", 18: "世人恨门徒" },
+  "43:17": { 1: "耶稣的祷告" },
+  "43:18": { 1: "耶稣被捕", 12: "受审", 25: "彼得不认主", 28: "彼拉多审问" },
+  "43:19": { 1: "钉十字架", 28: "耶稣死了", 38: "安葬耶稣" },
+  "43:20": { 1: "耶稣复活", 19: "向门徒显现", 24: "多马信主", 30: "本书目的" },
+  "43:21": { 1: "提比哩亚海边显现", 15: "耶稣与彼得", 20: "耶稣所爱的门徒" },
+};
+
 async function readResponse(response) {
   const text = await response.text();
   let data = null;
@@ -1073,11 +1117,13 @@ function renderVerses(data) {
     verses: new Map(chapter.verses.map((verse) => [verse.verse, verse.text])),
   }));
 
+  const headings = SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {};
   content.innerHTML = mainChapter.verses
     .map(
       (verse) => {
         const mark = markForVerse(verse.verse);
         return `
+        ${headings[verse.verse] ? `<div class="sectionHeading">${escapeHtml(headings[verse.verse])}</div>` : ""}
         <article class="verse ${verseMarkClasses(mark)}" data-verse="${verse.verse}">
           <div class="verseNo" id="v${verse.verse}">${verse.verse}</div>
           <div class="verseBody" data-verse="${verse.verse}">
@@ -1093,6 +1139,12 @@ function renderVerses(data) {
     .join("");
   renderVerseSelectionState();
   focusTargetVerse();
+}
+
+function scrollReaderToTop() {
+  const top = document.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
+  const target = Math.max(0, window.scrollY + content.getBoundingClientRect().top - top - 8);
+  window.scrollTo({ top: target, behavior: "auto" });
 }
 
 function markForVerse(verse) {
@@ -1449,7 +1501,7 @@ async function loadBooks() {
   renderChapterGrid();
 }
 
-async function loadChapter() {
+async function loadChapter(options = {}) {
   setLoading("正在读取经文");
   rememberCurrentBook();
   renderChrome();
@@ -1460,6 +1512,7 @@ async function loadChapter() {
     const data = await api(`/api/chapters?${params.toString()}`);
     await Promise.all([loadMarks(), loadProgress()]);
     renderVerses(data);
+    if (options.scrollTop && !state.targetVerse) scrollReaderToTop();
     await loadCommentary();
     await loadAudio();
     saveReadingHistory();
@@ -2097,7 +2150,7 @@ function moveChapter(delta) {
     }
   }
   renderBooks();
-  loadChapter();
+  loadChapter({ scrollTop: true });
 }
 
 function escapeHtml(value) {
@@ -2118,7 +2171,7 @@ versionSelect.addEventListener("change", async () => {
   await loadBooks();
   await loadProgress();
   await loadDashboard();
-  await loadChapter();
+  await loadChapter({ scrollTop: true });
 });
 
 compareVersions.addEventListener("click", (event) => {
@@ -2149,7 +2202,7 @@ bookSelect.addEventListener("change", () => {
   state.targetVerse = null;
   renderBooks();
   renderChapterGrid();
-  loadChapter();
+  loadChapter({ scrollTop: true });
 });
 
 chapterTitleBtn.addEventListener("click", () => toggleBookPicker());
@@ -2173,7 +2226,7 @@ bookGrid.addEventListener("click", (event) => {
   state.targetVerse = null;
   renderBooks();
   renderChapterGrid();
-  loadChapter();
+  loadChapter({ scrollTop: true });
 });
 
 chapterGrid.addEventListener("click", (event) => {
@@ -2183,7 +2236,7 @@ chapterGrid.addEventListener("click", (event) => {
   state.targetVerse = null;
   document.body.classList.remove("sidebarOpen");
   toggleBookPicker(false);
-  loadChapter();
+  loadChapter({ scrollTop: true });
 });
 
 quickForm.addEventListener("submit", async (event) => {

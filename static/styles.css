@@ -1384,6 +1384,18 @@ mark {
   position: relative;
 }
 
+.sectionHeading {
+  margin: 22px 0 4px 58px;
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.sectionHeading:first-child {
+  margin-top: 4px;
+}
+
 .verse:hover {
   background: color-mix(in srgb, var(--accent) 5%, transparent);
 }
@@ -2037,6 +2049,11 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     padding: 11px 0;
   }
 
+  .sectionHeading {
+    margin: 18px 0 3px 42px;
+    font-size: 14px;
+  }
+
   .verseText {
     font-size: var(--reader-font-size);
     line-height: var(--reader-line-height);
@@ -2195,6 +2212,10 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   .verse {
     grid-template-columns: 26px 1fr;
     gap: 8px;
+  }
+
+  .sectionHeading {
+    margin-left: 34px;
   }
 
   .verseNo {
