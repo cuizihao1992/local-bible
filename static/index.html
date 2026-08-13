@@ -269,6 +269,7 @@
             <input id="bookSearchInput" type="search" placeholder="搜索书卷" autocomplete="off" />
             <div id="bookFilterTabs" class="bookFilterTabs" role="tablist" aria-label="书卷范围">
               <button type="button" data-book-filter="all" class="active">全部</button>
+              <button type="button" data-book-filter="recent">最近</button>
               <button type="button" data-book-filter="ot">旧约</button>
               <button type="button" data-book-filter="nt">新约</button>
             </div>
@@ -365,6 +366,11 @@
 
     <div id="selectionBar" class="selectionBar" hidden>
       <span id="selectionSummary">已选择经文</span>
+      <select id="copyFormatSelect" aria-label="复制格式">
+        <option value="reference">带出处</option>
+        <option value="plain">只复制经文</option>
+        <option value="paragraph">合并成一段</option>
+      </select>
       <button id="copySelectionBtn" type="button">复制所选</button>
       <button id="cancelSelectionBtn" type="button">取消</button>
     </div>

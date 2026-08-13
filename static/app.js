@@ -32,6 +32,7 @@ const state = {
   openaiKey: "",
   speechModel: "gpt-4o-mini-transcribe",
   aiResponseStyle: "concise",
+  recentBooks: [],
 };
 const STORAGE_KEY = "localBibleReaderState";
 
@@ -134,6 +135,7 @@ const verseMenu = document.querySelector("#verseMenu");
 const verseMenuTitle = document.querySelector("#verseMenuTitle");
 const selectionBar = document.querySelector("#selectionBar");
 const selectionSummary = document.querySelector("#selectionSummary");
+const copyFormatSelect = document.querySelector("#copyFormatSelect");
 const copySelectionBtn = document.querySelector("#copySelectionBtn");
 const cancelSelectionBtn = document.querySelector("#cancelSelectionBtn");
 const mobilePrevBtn = document.querySelector("#mobilePrevBtn");
@@ -489,6 +491,7 @@ function restoreState() {
     if (saved.openaiKey) state.openaiKey = saved.openaiKey;
     if (saved.speechModel) state.speechModel = saved.speechModel;
     if (saved.aiResponseStyle) state.aiResponseStyle = saved.aiResponseStyle;
+    if (Array.isArray(saved.recentBooks)) state.recentBooks = saved.recentBooks.filter(Number.isInteger).slice(0, 8);
     if (Number.isInteger(saved.book) && saved.book > 0) state.book = saved.book;
     if (Number.isInteger(saved.chapter) && saved.chapter > 0) state.chapter = saved.chapter;
   } catch {
@@ -522,6 +525,7 @@ function saveState() {
       openaiKey: state.openaiKey,
       speechModel: state.speechModel,
       aiResponseStyle: state.aiResponseStyle,
+      recentBooks: state.recentBooks,
       book: state.book,
       chapter: state.chapter,
     }),
@@ -970,7 +974,9 @@ function renderBooks() {
 
 function bookMatchesFilter(book) {
   const keyword = bookSearchInput.value.trim().toLowerCase();
-  const inScope = bookFilter === "all" || (bookFilter === "ot" ? book.id <= 39 : book.id >= 40);
+  const inScope =
+    bookFilter === "all" ||
+    (bookFilter === "ot" ? book.id <= 39 : bookFilter === "nt" ? book.id >= 40 : state.recentBooks.includes(book.id));
   if (!inScope) return false;
   if (!keyword) return true;
   return `${book.shortName || ""} ${book.longName || ""}`.toLowerCase().includes(keyword);
@@ -978,7 +984,13 @@ function bookMatchesFilter(book) {
 
 function renderBookGrid() {
   if (!bookGrid) return;
-  const books = state.books.filter(bookMatchesFilter);
+  bookFilterTabs?.querySelectorAll("button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.bookFilter === bookFilter);
+  });
+  const books =
+    bookFilter === "recent"
+      ? state.recentBooks.map((id) => state.books.find((book) => book.id === id)).filter(Boolean).filter(bookMatchesFilter)
+      : state.books.filter(bookMatchesFilter);
   bookGrid.innerHTML = books.length
     ? books
         .map((book) => {
@@ -992,7 +1004,12 @@ function renderBookGrid() {
           `;
         })
         .join("")
-    : `<div class="bookEmpty">没有匹配的书卷</div>`;
+    : `<div class="bookEmpty">${bookFilter === "recent" ? "最近读过的书卷会显示在这里" : "没有匹配的书卷"}</div>`;
+}
+
+function rememberCurrentBook() {
+  if (!state.book) return;
+  state.recentBooks = [state.book, ...state.recentBooks.filter((book) => book !== state.book)].slice(0, 8);
 }
 
 function renderChapterGrid() {
@@ -1241,15 +1258,24 @@ async function runVerseAiAction(action, verseNo) {
   }
 }
 
-function formatVerseLines(verseNumbers) {
+function formatVerseLines(verseNumbers, format = "reference") {
   const book = currentBook();
-  return verseNumbers
+  const lines = verseNumbers
     .map((verseNo) => {
       const verse = verseTextForNumber(verseNo);
-      return verse ? `${book.longName} ${state.chapter}:${verseNo} ${verse}` : "";
+      if (!verse) return "";
+      if (format === "plain") return verse;
+      if (format === "paragraph") return verse;
+      return `${book.longName} ${state.chapter}:${verseNo} ${verse}`;
     })
-    .filter(Boolean)
-    .join("\n");
+    .filter(Boolean);
+  if (format === "paragraph") {
+    const first = verseNumbers[0];
+    const last = verseNumbers[verseNumbers.length - 1];
+    const ref = verseNumbers.length === 1 ? `${book.longName} ${state.chapter}:${first}` : `${book.longName} ${state.chapter}:${first}-${last}`;
+    return `${ref} ${lines.join("")}`;
+  }
+  return lines.join("\n");
 }
 
 async function writeClipboard(text) {
@@ -1317,7 +1343,7 @@ function updateSelectionBar() {
 async function copySelectedVerses() {
   if (!selectedVerseNumbers.length) updateSelectionBar();
   if (!selectedVerseNumbers.length) return;
-  await writeClipboard(formatVerseLines(selectedVerseNumbers));
+  await writeClipboard(formatVerseLines(selectedVerseNumbers, copyFormatSelect?.value || "reference"));
   copySelectionBtn.textContent = "已复制";
   window.setTimeout(closeSelectionBar, 900);
 }
@@ -1420,6 +1446,7 @@ async function loadBooks() {
 
 async function loadChapter() {
   setLoading("正在读取经文");
+  rememberCurrentBook();
   renderChrome();
   renderChapterGrid();
   try {

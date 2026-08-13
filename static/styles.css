@@ -390,7 +390,7 @@ select {
 
 .bookFilterTabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
 }
 
@@ -1545,7 +1545,8 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   left: 50%;
   bottom: 22px;
   z-index: 18;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 8px;
   max-width: min(620px, calc(100vw - 28px));
@@ -1569,6 +1570,15 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.selectionBar select {
+  width: auto;
+  min-width: 98px;
+  height: 34px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .selectionBar button {
@@ -2041,14 +2051,16 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   }
 
   .verseMenu {
-    left: 12px !important;
-    right: 12px;
+    left: 8px !important;
+    right: 8px;
     top: auto !important;
-    bottom: calc(var(--mobile-nav-height) + 12px + env(safe-area-inset-bottom));
+    bottom: calc(var(--mobile-nav-height) + 8px + env(safe-area-inset-bottom));
     width: auto;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
+    padding: 10px;
+    border-radius: 8px 8px 0 0;
   }
 
   .verseMenu[hidden] {
@@ -2074,7 +2086,7 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     max-width: none;
     transform: none;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
   }
 
   .mobileNav {
@@ -2227,6 +2239,17 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     right: 6px;
     gap: 8px;
     padding: 8px 8px 8px 10px;
+    font-size: 12px;
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .selectionBar span {
+    grid-column: 1 / -1;
+  }
+
+  .selectionBar select {
+    width: 100%;
+    min-width: 0;
     font-size: 12px;
   }
 
