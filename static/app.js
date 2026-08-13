@@ -159,8 +159,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.15";
+const APP_VERSION = "1.9.16";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.16",
+    date: "2026-08-13",
+    items: ["每一章第 1 节前都显示兜底小标题", "腓利门书、约二、约三、犹大书增加细分小标题", "没有精细标题的章节不再空白"],
+  },
   {
     version: "1.9.15",
     date: "2026-08-13",
