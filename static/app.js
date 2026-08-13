@@ -159,8 +159,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.16";
+const APP_VERSION = "1.9.17";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.17",
+    date: "2026-08-13",
+    items: ["后端读取经文 DB 的 Titles 小标题表", "本地网页与 Android APK 都返回真实小标题", "前端优先显示译本自带小标题，没有数据时才使用兜底标题"],
+  },
   {
     version: "1.9.16",
     date: "2026-08-13",
