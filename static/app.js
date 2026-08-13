@@ -283,6 +283,15 @@ function defaultSectionHeading() {
   return `${book.longName || book.shortName}第 ${state.chapter} 章`;
 }
 
+function chapterTitleMap(chapter) {
+  const fromDb = Object.fromEntries(
+    (chapter.titles || [])
+      .map((title) => [Number(title.verse), String(title.text || "").trim()])
+      .filter(([verse, text]) => verse > 0 && text),
+  );
+  return { 1: defaultSectionHeading(), ...(SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {}), ...fromDb };
+}
+
 async function readResponse(response) {
   const text = await response.text();
   let data = null;
@@ -1138,7 +1147,7 @@ function renderVerses(data) {
     verses: new Map(chapter.verses.map((verse) => [verse.verse, verse.text])),
   }));
 
-  const headings = { 1: defaultSectionHeading(), ...(SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {}) };
+  const headings = chapterTitleMap(mainChapter);
   content.innerHTML = mainChapter.verses
     .map(
       (verse) => {

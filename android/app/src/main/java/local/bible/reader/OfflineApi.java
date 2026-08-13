@@ -372,6 +372,7 @@ public class OfflineApi {
     private JSONObject chapter(String version, int book, int chapter) throws Exception {
         SQLiteDatabase db = openBible(version);
         JSONArray verses = new JSONArray();
+        JSONArray titles = new JSONArray();
         try (Cursor cursor = db.rawQuery("select Verse, Scripture from Bible where Book=? and Chapter=? order by Verse",
                 new String[]{String.valueOf(book), String.valueOf(chapter)})) {
             while (cursor.moveToNext()) {
@@ -379,6 +380,19 @@ public class OfflineApi {
                         .put("verse", cursor.getInt(0))
                         .put("text", cleanText(cursor.getString(1)))
                         .put("strongs", new JSONArray()));
+            }
+            if (hasTable(db, "Titles")) {
+                try (Cursor titleCursor = db.rawQuery("select Verse, Scripture from Titles where Book=? and Chapter=? order by Verse",
+                        new String[]{String.valueOf(book), String.valueOf(chapter)})) {
+                    while (titleCursor.moveToNext()) {
+                        String title = cleanText(titleCursor.getString(1));
+                        if (!title.isEmpty()) {
+                            titles.put(new JSONObject()
+                                    .put("verse", titleCursor.getInt(0))
+                                    .put("text", title));
+                        }
+                    }
+                }
             }
         } finally {
             db.close();
@@ -389,7 +403,14 @@ public class OfflineApi {
                 .put("shortName", version.replace(".db", ""))
                 .put("book", book)
                 .put("chapter", chapter)
+                .put("titles", titles)
                 .put("verses", verses);
+    }
+
+    private boolean hasTable(SQLiteDatabase db, String tableName) {
+        try (Cursor cursor = db.rawQuery("select name from sqlite_master where type='table' and name=?", new String[]{tableName})) {
+            return cursor.moveToFirst();
+        }
     }
 
     private JSONObject search(Uri uri) throws Exception {

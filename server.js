@@ -239,6 +239,18 @@ function hasTable(db, tableName) {
   return !!db.prepare("select name from sqlite_master where type='table' and name=?").get(tableName);
 }
 
+function readChapterTitles(db, book, chapter) {
+  if (!hasTable(db, "Titles")) return [];
+  return db
+    .prepare("select Verse, Scripture from Titles where Book=? and Chapter=? order by Verse")
+    .all(book, chapter)
+    .map((row) => ({
+      verse: Number(row.Verse),
+      text: cleanText(row.Scripture),
+    }))
+    .filter((item) => item.verse > 0 && item.text);
+}
+
 function readMetadata(filePath) {
   const metadata = {};
   try {
@@ -453,6 +465,7 @@ function getChapter(versionId, book, chapter) {
     const rows = db
       .prepare("select Verse, Scripture from Bible where Book=? and Chapter=? order by Verse")
       .all(book, chapter);
+    const titles = readChapterTitles(db, book, chapter);
     const books = getBooks(versionId);
     const bookInfo = books.find((item) => item.id === book);
     const versionInfo = bibleFiles().find((item) => item.id === versionId);
@@ -463,6 +476,7 @@ function getChapter(versionId, book, chapter) {
       book,
       bookName: bookInfo?.longName || `第 ${book} 卷`,
       chapter,
+      titles,
       verses: rows.map((row) => ({
         verse: Number(row.Verse),
         text: cleanText(row.Scripture),
