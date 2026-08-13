@@ -159,8 +159,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.13";
+const APP_VERSION = "1.9.14";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.14",
+    date: "2026-08-13",
+    items: ["菜单改为阅读/工具/数据/AI 分类", "经文长按菜单增加应用内多选", "多选复制支持带出处、纯经文和合并段落格式", "书卷选择增加最近书卷入口"],
+  },
   {
     version: "1.9.13",
     date: "2026-08-13",
