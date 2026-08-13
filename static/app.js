@@ -56,6 +56,7 @@ const prevBtn = document.querySelector("#prevBtn");
 const nextBtn = document.querySelector("#nextBtn");
 const menuBtn = document.querySelector("#menuBtn");
 const closeSidebarBtn = document.querySelector("#closeSidebarBtn");
+const sidebarTabs = document.querySelector(".sidebarTabs");
 const readerSettingsBtn = document.querySelector("#readerSettingsBtn");
 const readerSettingsPanel = document.querySelector("#readerSettingsPanel");
 const closeReaderSettingsBtn = document.querySelector("#closeReaderSettingsBtn");
@@ -134,6 +135,7 @@ const verseMenuTitle = document.querySelector("#verseMenuTitle");
 const selectionBar = document.querySelector("#selectionBar");
 const selectionSummary = document.querySelector("#selectionSummary");
 const copySelectionBtn = document.querySelector("#copySelectionBtn");
+const cancelSelectionBtn = document.querySelector("#cancelSelectionBtn");
 const mobilePrevBtn = document.querySelector("#mobilePrevBtn");
 const mobileMenuBtn = document.querySelector("#mobileMenuBtn");
 const voiceBtn = document.querySelector("#voiceBtn");
@@ -149,6 +151,7 @@ const releaseNotesContent = document.querySelector("#releaseNotesContent");
 const closeReleaseNotesBtn = document.querySelector("#closeReleaseNotesBtn");
 let longPressTimer = null;
 let selectedVerseNumbers = [];
+let verseSelectionMode = false;
 let selectionFrame = 0;
 let lastUpdateInfo = null;
 let bookFilter = "all";
@@ -373,6 +376,22 @@ async function fetchLatestRelease() {
 
 function closeSidebar() {
   document.body.classList.remove("sidebarOpen");
+}
+
+function showSidebarPanel(name = "reading") {
+  document.querySelectorAll("[data-sidebar-target]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.sidebarTarget === name);
+  });
+  document.querySelectorAll("[data-sidebar-panel]").forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.sidebarPanel === name);
+  });
+}
+
+function openSidebar(panel = "reading") {
+  toggleBookPicker(false);
+  toggleReaderSettings(false);
+  showSidebarPanel(panel);
+  document.body.classList.add("sidebarOpen");
 }
 
 function toggleBookPicker(show = bookPickerPanel.hidden) {
@@ -1050,6 +1069,7 @@ function renderVerses(data) {
       },
     )
     .join("");
+  renderVerseSelectionState();
   focusTargetVerse();
 }
 
@@ -1111,9 +1131,52 @@ function closeVerseMenu() {
   verseMenu.hidden = true;
 }
 
+function renderVerseSelectionState() {
+  const selected = new Set(selectedVerseNumbers);
+  content.querySelectorAll(".verse").forEach((verse) => {
+    verse.classList.toggle("selectedVerse", selected.has(Number(verse.dataset.verse)));
+  });
+  document.body.classList.toggle("verseSelectionMode", verseSelectionMode);
+}
+
+function updateManualSelectionBar() {
+  if (!selectedVerseNumbers.length) {
+    closeSelectionBar();
+    return;
+  }
+  selectedVerseNumbers = [...new Set(selectedVerseNumbers)].sort((a, b) => a - b);
+  const first = selectedVerseNumbers[0];
+  const last = selectedVerseNumbers[selectedVerseNumbers.length - 1];
+  selectionSummary.textContent =
+    selectedVerseNumbers.length === 1
+      ? `${currentBook().longName} ${state.chapter}:${first} · 点击经文继续选择`
+      : `${currentBook().longName} ${state.chapter}:${first}-${last} · ${selectedVerseNumbers.length} 节`;
+  copySelectionBtn.textContent = "复制所选";
+  selectionBar.hidden = false;
+  renderVerseSelectionState();
+}
+
+function startVerseSelection(verseNo) {
+  verseSelectionMode = true;
+  selectedVerseNumbers = Number.isFinite(Number(verseNo)) ? [Number(verseNo)] : [];
+  updateManualSelectionBar();
+}
+
+function toggleVerseSelection(verseNo) {
+  if (!verseSelectionMode) return;
+  const value = Number(verseNo);
+  if (!Number.isFinite(value)) return;
+  selectedVerseNumbers = selectedVerseNumbers.includes(value)
+    ? selectedVerseNumbers.filter((item) => item !== value)
+    : [...selectedVerseNumbers, value];
+  updateManualSelectionBar();
+}
+
 function closeSelectionBar() {
   selectionBar.hidden = true;
   selectedVerseNumbers = [];
+  verseSelectionMode = false;
+  renderVerseSelectionState();
 }
 
 function toggleReaderSettings(show = readerSettingsPanel.hidden) {
@@ -1219,6 +1282,10 @@ function selectedVersesFromRange(range) {
 }
 
 function updateSelectionBar() {
+  if (verseSelectionMode) {
+    updateManualSelectionBar();
+    return;
+  }
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed || !selection.rangeCount) {
     closeSelectionBar();
@@ -1258,7 +1325,9 @@ async function copySelectedVerses() {
 async function runVerseAction(action, verseNo = state.activeVerse) {
   if (!verseNo) return;
   const mark = markForVerse(verseNo);
-  if (action === "favorite") {
+  if (action === "select") {
+    startVerseSelection(verseNo);
+  } else if (action === "favorite") {
     await saveVerseMark({ ...mark, favorite: !mark.favorite });
   } else if (action === "highlight") {
     await saveVerseMark({ ...mark, highlighted: !mark.highlighted });
@@ -2133,6 +2202,10 @@ content.addEventListener("click", (event) => {
   }
   const verse = event.target.closest(".verse");
   if (!verse) return;
+  if (verseSelectionMode) {
+    toggleVerseSelection(Number(verse.dataset.verse));
+    return;
+  }
   focusCommentaryForVerse(Number(verse.dataset.verse));
 });
 
@@ -2170,6 +2243,7 @@ document.addEventListener("selectionchange", () => {
 
 content.addEventListener("dblclick", () => {
   const selected = window.getSelection()?.toString().trim();
+  if (verseSelectionMode) return;
   if (!selected || selected.length > 30) return;
   dictionaryInput.value = selected;
   searchDictionary().catch(setError);
@@ -2388,6 +2462,7 @@ copySelectionBtn.addEventListener("pointerdown", (event) => {
 copySelectionBtn.addEventListener("click", () => {
   copySelectedVerses().catch(setError);
 });
+cancelSelectionBtn.addEventListener("click", closeSelectionBar);
 
 document.addEventListener("click", (event) => {
   if (verseMenu.hidden || verseMenu.contains(event.target)) return;
@@ -2412,11 +2487,14 @@ nextBtn.addEventListener("click", () => {
   moveChapter(1);
 });
 menuBtn.addEventListener("click", () => {
-  toggleBookPicker(false);
-  toggleReaderSettings(false);
-  document.body.classList.add("sidebarOpen");
+  openSidebar("reading");
 });
 closeSidebarBtn.addEventListener("click", () => document.body.classList.remove("sidebarOpen"));
+sidebarTabs?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-sidebar-target]");
+  if (!button) return;
+  showSidebarPanel(button.dataset.sidebarTarget);
+});
 readerSettingsBtn.addEventListener("click", () => toggleReaderSettings());
 closeReaderSettingsBtn.addEventListener("click", () => toggleReaderSettings(false));
 overlay.addEventListener("click", () => {
@@ -2427,9 +2505,7 @@ overlay.addEventListener("click", () => {
 mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
 mobileNextBtn.addEventListener("click", () => moveChapter(1));
 mobileMenuBtn.addEventListener("click", () => {
-  toggleBookPicker(false);
-  toggleReaderSettings(false);
-  document.body.classList.add("sidebarOpen");
+  openSidebar("reading");
 });
 mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
 

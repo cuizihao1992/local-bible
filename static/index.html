@@ -8,22 +8,29 @@
   </head>
   <body>
     <aside class="sidebar">
-      <div class="brand">
-        <div class="mark">读</div>
-        <div>
-          <h1>本地圣经</h1>
-          <p>离线版</p>
+      <div class="sidebarHeader">
+        <div class="brand">
+          <div class="mark">读</div>
+          <div>
+            <h1>本地圣经</h1>
+            <p>离线版</p>
+          </div>
         </div>
+        <div class="sidebarHint">菜单</div>
       </div>
 
-      <label class="field">
-        <span>译本</span>
-        <select id="versionSelect"></select>
-      </label>
+      <div class="sidebarTabs" role="tablist" aria-label="菜单分类">
+        <button type="button" class="active" data-sidebar-target="reading">阅读</button>
+        <button type="button" data-sidebar-target="tools">工具</button>
+        <button type="button" data-sidebar-target="data">数据</button>
+        <button type="button" data-sidebar-target="ai">AI</button>
+      </div>
 
-      <details class="advancedPanel">
-        <summary>高级设置</summary>
-
+      <section class="sidebarSection active" data-sidebar-panel="reading">
+        <label class="field">
+          <span>译本</span>
+          <select id="versionSelect"></select>
+        </label>
         <div class="comparePanel">
           <div class="panelTitle">对照版本</div>
           <div class="panelHint">最多选择 3 个</div>
@@ -35,7 +42,9 @@
           <select id="commentarySelect"></select>
           <div id="commentaryHint" class="panelHint"></div>
         </div>
+      </section>
 
+      <section class="sidebarSection" data-sidebar-panel="tools">
         <label class="toggleField">
           <input id="strongToggle" type="checkbox" />
           <span>显示 Strong 编号</span>
@@ -55,7 +64,9 @@
           </div>
           <div id="dictionaryHint" class="panelHint"></div>
         </div>
+      </section>
 
+      <section class="sidebarSection" data-sidebar-panel="data">
         <div class="settingsPanel">
           <div class="panelTitle">个人数据</div>
           <div class="dataButtons">
@@ -90,7 +101,9 @@
             <button id="showReleaseNotesBtn" type="button">更新说明</button>
           </div>
         </div>
+      </section>
 
+      <section class="sidebarSection" data-sidebar-panel="ai">
         <div class="aiConfigPanel">
           <div class="panelTitle">AI 配置</div>
           <label class="field compactField">
@@ -174,7 +187,7 @@
           </div>
           <div id="aiConfigHint" class="panelHint"></div>
         </div>
-      </details>
+      </section>
     </aside>
     <button id="closeSidebarBtn" class="closeSidebarBtn" type="button" aria-label="关闭目录">×</button>
 
@@ -338,6 +351,7 @@
 
     <div id="verseMenu" class="verseMenu" hidden>
       <div id="verseMenuTitle" class="verseMenuTitle"></div>
+      <button type="button" data-menu-action="select">多选</button>
       <button type="button" data-menu-action="favorite">收藏</button>
       <button type="button" data-menu-action="highlight">高亮</button>
       <button type="button" data-menu-action="note">笔记</button>
@@ -352,6 +366,7 @@
     <div id="selectionBar" class="selectionBar" hidden>
       <span id="selectionSummary">已选择经文</span>
       <button id="copySelectionBtn" type="button">复制所选</button>
+      <button id="cancelSelectionBtn" type="button">取消</button>
     </div>
 
     <nav class="mobileNav" aria-label="移动端导航">
