@@ -265,7 +265,18 @@ const SECTION_HEADINGS = {
   "43:19": { 1: "钉十字架", 28: "耶稣死了", 38: "安葬耶稣" },
   "43:20": { 1: "耶稣复活", 19: "向门徒显现", 24: "多马信主", 30: "本书目的" },
   "43:21": { 1: "提比哩亚海边显现", 15: "耶稣与彼得", 20: "耶稣所爱的门徒" },
+  "57:1": { 1: "问安与感恩", 8: "为阿尼西母求情", 17: "接纳与盼望", 23: "最后问安" },
+  "63:1": { 1: "问安与真理中的爱", 4: "遵行爱的命令", 7: "防备迷惑人的人", 12: "最后问安" },
+  "64:1": { 1: "问安", 5: "接待传道人", 9: "丢特腓与低米丢", 13: "最后问安" },
+  "65:1": { 1: "问安", 3: "为真道竭力争辩", 17: "保守自己在神爱中", 24: "颂赞" },
 };
+
+function defaultSectionHeading() {
+  const book = currentBook();
+  if (!book) return "本章经文";
+  if (book.chapterCount === 1) return `${book.longName || book.shortName}正文`;
+  return `${book.longName || book.shortName}第 ${state.chapter} 章`;
+}
 
 async function readResponse(response) {
   const text = await response.text();
@@ -1122,7 +1133,7 @@ function renderVerses(data) {
     verses: new Map(chapter.verses.map((verse) => [verse.verse, verse.text])),
   }));
 
-  const headings = SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {};
+  const headings = { 1: defaultSectionHeading(), ...(SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {}) };
   content.innerHTML = mainChapter.verses
     .map(
       (verse) => {
