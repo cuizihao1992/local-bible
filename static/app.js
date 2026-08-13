@@ -159,8 +159,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.14";
+const APP_VERSION = "1.9.15";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.15",
+    date: "2026-08-13",
+    items: ["切换上一章/下一章后自动回到章节开头", "点击书卷或章节跳转后从第一节开始显示", "新增福音书主要段落小标题", "新增创世记开篇段落小标题"],
+  },
   {
     version: "1.9.14",
     date: "2026-08-13",
