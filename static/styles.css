@@ -1116,7 +1116,36 @@ select {
 }
 
 .mobileStatusPanel {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--mobile-nav-height) + 22px + env(safe-area-inset-bottom));
+  z-index: 24;
+  max-width: min(520px, calc(100vw - 28px));
+  padding: 10px 14px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.mobileStatusPanel[hidden] {
   display: none;
+}
+
+.mobileStatusPanel[data-tone="success"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.mobileStatusPanel[data-tone="error"] {
+  background: #8b1f1f;
+  color: #fff;
 }
 
 .releaseNotesPanel {

@@ -131,6 +131,7 @@ const testAiConfigBtn = document.querySelector("#testAiConfigBtn");
 const showAiUsesBtn = document.querySelector("#showAiUsesBtn");
 const aiConfigHint = document.querySelector("#aiConfigHint");
 const dashboardPanel = document.querySelector("#dashboardPanel");
+const mobileStatusPanel = document.querySelector("#mobileStatusPanel");
 const verseMenu = document.querySelector("#verseMenu");
 const verseMenuTitle = document.querySelector("#verseMenuTitle");
 const selectionBar = document.querySelector("#selectionBar");
@@ -162,6 +163,7 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
+let statusTimer = null;
 const APP_VERSION = "1.9.19";
 const RELEASE_NOTES = [
   {
@@ -428,7 +430,23 @@ function setLoading(text = "加载中") {
 }
 
 function setError(error) {
-  content.innerHTML = `<div class="error">${error.message || error}</div>`;
+  const message = error.message || String(error);
+  content.innerHTML = `<div class="error">${message}</div>`;
+  showStatus(message, "error");
+}
+
+function showStatus(message, tone = "info") {
+  if (!mobileStatusPanel || !message) return;
+  mobileStatusPanel.textContent = message;
+  mobileStatusPanel.dataset.tone = tone;
+  mobileStatusPanel.hidden = false;
+  if (statusTimer) window.clearTimeout(statusTimer);
+  statusTimer = window.setTimeout(
+    () => {
+      mobileStatusPanel.hidden = true;
+    },
+    tone === "error" ? 3600 : 1800,
+  );
 }
 
 function postJson(path, payload) {
@@ -1035,9 +1053,11 @@ function clearDownloadCache() {
       : { bytes: 0 };
     const bytes = Number(androidResult.bytes || 0) + Number(updateResult.bytes || 0);
     renderDownloadProgress({ state: "cleared", message: `已清理 ${formatBytes(bytes)} 下载缓存`, percent: 100 });
+    showStatus(`已清理 ${formatBytes(bytes)} 下载缓存`, "success");
     if (packageHint) packageHint.textContent = androidResult.message || "已清理下载缓存。";
   } catch (error) {
     renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
+    showStatus(error.message || String(error), "error");
   }
 }
 
@@ -1519,6 +1539,7 @@ async function copySelectedVerses() {
   if (!selectedVerseNumbers.length) return;
   await writeClipboard(formatVerseLines(selectedVerseNumbers, copyFormatSelect?.value || "reference"));
   copySelectionBtn.textContent = "已复制";
+  showStatus(`已复制 ${selectedVerseNumbers.length} 节经文`, "success");
   window.setTimeout(closeSelectionBar, 900);
 }
 
@@ -1872,7 +1893,16 @@ async function jumpToReference(ref) {
   renderBooks();
   renderChapterGrid();
   closeSearch();
-  await loadChapter();
+  closeMyPanel();
+  closeStrong();
+  closeDictionary();
+  closeAiResult();
+  closeVerseMenu();
+  closeSelectionBar();
+  showReadingChrome();
+  await loadChapter({ scrollTop: !state.targetVerse });
+  const book = currentBook();
+  if (book) showStatus(`${book.longName} ${state.chapter}${state.targetVerse ? `:${state.targetVerse}` : ""}`);
 }
 
 async function handleVoiceText(text) {
@@ -2065,6 +2095,7 @@ async function downloadLatestApk() {
     const message = `${error.message || String(error)}。如果进度停在 0%，请点“复制 APK 链接”后用浏览器下载。`;
     setUpdateStatus(message);
     renderDownloadProgress({ state: "error", message, percent: 0 });
+    showStatus("下载失败，可复制 APK 链接", "error");
     stopDownloadProgressPolling();
     downloadLatestApkBtn.disabled = false;
     copyApkLinkBtn.disabled = false;
@@ -2078,6 +2109,7 @@ async function copyLatestApkLink() {
   }
   await writeClipboard(latestApkAsset.url);
   setUpdateStatus(`已复制 APK 链接：${latestApkAsset.name}`);
+  showStatus("已复制 APK 链接", "success");
   copyApkLinkBtn.textContent = "已复制链接";
   window.setTimeout(() => {
     copyApkLinkBtn.textContent = "复制 APK 链接";
@@ -2245,7 +2277,16 @@ async function init() {
 
 function moveChapter(delta) {
   const book = currentBook();
-  if (!book) return;
+  if (!book) return false;
+  const lastBook = state.books[state.books.length - 1];
+  if (delta < 0 && state.book === 1 && state.chapter === 1) {
+    showStatus("已经是第一章");
+    return false;
+  }
+  if (delta > 0 && lastBook && state.book === lastBook.id && state.chapter === lastBook.chapterCount) {
+    showStatus("已经是最后一章");
+    return false;
+  }
   state.chapter += delta;
   if (state.chapter < 1) {
     const index = state.books.findIndex((item) => item.id === state.book);
@@ -2266,8 +2307,12 @@ function moveChapter(delta) {
       state.chapter = book.chapterCount;
     }
   }
+  state.targetVerse = null;
   renderBooks();
   loadChapter({ scrollTop: true });
+  const nextBook = currentBook();
+  if (nextBook) showStatus(`${nextBook.longName} ${state.chapter}`);
+  return true;
 }
 
 function escapeHtml(value) {
@@ -2628,6 +2673,7 @@ async function copyVerse(verseNo) {
   const verse = verseTextForNumber(verseNo);
   const text = `${book.longName} ${state.chapter}:${verseNo} ${verse}`;
   await writeClipboard(text);
+  showStatus("已复制经文", "success");
 }
 
 document.addEventListener("keydown", (event) => {
