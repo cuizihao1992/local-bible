@@ -165,8 +165,13 @@ let downloadProgressTimer = null;
 let latestApkAsset = null;
 let statusTimer = null;
 let chapterLoadToken = 0;
-const APP_VERSION = "1.9.20";
+const APP_VERSION = "1.9.21";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.21",
+    date: "2026-08-14",
+    items: ["连续滑动或连续点下一章时忽略旧章节请求", "经文、笔记标记、进度、注释、音频使用同一章节快照加载", "遮罩点击统一走返回关闭逻辑", "轻提示增加辅助功能播报属性", "语音按钮状态点改为 CSS 绘制"],
+  },
   {
     version: "1.9.20",
     date: "2026-08-14",
