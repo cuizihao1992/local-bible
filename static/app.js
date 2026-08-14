@@ -186,8 +186,13 @@ let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.34";
+const APP_VERSION = "1.9.35";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.35",
+    date: "2026-08-14",
+    items: ["AI 结果复制增加忙碌保护，避免连续点击重复复制", "复制中按钮显示“复制中”并暂时禁用", "复制成功后提示“已复制 AI 结果”，按钮恢复“复制结果”", "复制失败或关闭 AI 面板后恢复复制状态", "AI 复制按钮增加 disabled 视觉样式"],
+  },
   {
     version: "1.9.34",
     date: "2026-08-14",
