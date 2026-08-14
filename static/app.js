@@ -1520,9 +1520,9 @@ function isCurrentChapterRead() {
 function renderProgressChrome() {
   const read = isCurrentChapterRead();
   if (mobileMarkReadBtn) {
-    mobileMarkReadBtn.textContent = read ? "已读" : "标记";
+    mobileMarkReadBtn.textContent = progressSaving ? "保存中" : read ? "已读" : "标记";
     mobileMarkReadBtn.classList.toggle("active", read);
-    mobileMarkReadBtn.disabled = !state.version;
+    mobileMarkReadBtn.disabled = !state.version || progressSaving;
   }
   if (progressSummary) {
     progressSummary.textContent = state.progress ? `${state.progress.read}/${state.progress.total} 章 · ${state.progress.percent}%` : "";
@@ -2135,12 +2135,18 @@ async function loadProgress(version = state.version, token = null) {
 }
 
 async function setCurrentChapterRead(read) {
-  if (progressSaving) return;
+  if (progressSaving) {
+    showStatus("正在保存阅读进度，请稍候");
+    return;
+  }
   progressSaving = true;
   const buttons = [mobileMarkReadBtn, ...dashboardPanel.querySelectorAll("[data-mark-current-read]")].filter(Boolean);
   buttons.forEach((button) => {
     button.disabled = true;
+    button.dataset.previousText = button.textContent;
+    button.textContent = "保存中";
   });
+  renderProgressChrome();
   try {
     const data = await postJson("/api/user/progress", {
       version: state.version,
@@ -2153,10 +2159,17 @@ async function setCurrentChapterRead(read) {
     renderChapterGrid();
     await loadDashboard();
     showStatus(read ? "已标记本章已读" : "已取消本章已读", "success");
+  } catch (error) {
+    showStatus(error.message || String(error), "error");
+    throw error;
   } finally {
     progressSaving = false;
     buttons.forEach((button) => {
       button.disabled = false;
+      if (button.dataset.previousText) {
+        button.textContent = button.dataset.previousText;
+        delete button.dataset.previousText;
+      }
     });
     renderProgressChrome();
   }

@@ -98,6 +98,10 @@ assert(appJs.includes("function setChapterError"), "Chapter retry error renderer
 assert(appJs.includes("data-retry-chapter"), "Chapter retry button missing");
 assert(appJs.includes('loadChapter({ scrollTop: true });') && appJs.includes('[data-retry-chapter]'), "Chapter retry click handler missing");
 assert(appJs.includes("let progressSaving = false;"), "Progress save busy guard missing");
+assert(appJs.includes('mobileMarkReadBtn.textContent = progressSaving ? "保存中"'), "Mobile progress save busy text missing");
+assert(appJs.includes("正在保存阅读进度，请稍候"), "Duplicate progress save feedback missing");
+assert(appJs.includes("button.dataset.previousText = button.textContent") && appJs.includes('button.textContent = "保存中"'), "Progress dashboard save busy text missing");
+assert(appJs.includes("delete button.dataset.previousText"), "Progress save button text recovery missing");
 assert(appJs.includes("let exportInProgress = false;"), "Export busy guard missing");
 assert(appJs.includes("let importInProgress = false;"), "Import busy guard missing");
 assert(appJs.includes("let packageInstallInProgress = false;"), "Package install busy guard missing");
