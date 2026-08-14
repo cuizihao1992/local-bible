@@ -178,8 +178,13 @@ let dictionaryRequestToken = 0;
 let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
-const APP_VERSION = "1.9.27";
+const APP_VERSION = "1.9.28";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.28",
+    date: "2026-08-14",
+    items: ["章节加载失败页增加当前章节提示和“重试”按钮", "点击重试会重新读取当前章节并回到顶部", "章节读取失败时显示可恢复状态提示，不再只停留在纯错误文本", "smoke test 增加章节失败重试断言"],
+  },
   {
     version: "1.9.27",
     date: "2026-08-14",
