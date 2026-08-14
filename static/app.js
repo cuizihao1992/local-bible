@@ -165,6 +165,8 @@ let downloadProgressTimer = null;
 let latestApkAsset = null;
 let statusTimer = null;
 let chapterLoadToken = 0;
+let progressSaving = false;
+let importInProgress = false;
 const APP_VERSION = "1.9.21";
 const RELEASE_NOTES = [
   {
@@ -1814,16 +1816,31 @@ async function loadProgress(version = state.version, token = null) {
 }
 
 async function setCurrentChapterRead(read) {
-  const data = await postJson("/api/user/progress", {
-    version: state.version,
-    book: state.book,
-    chapter: state.chapter,
-    read,
+  if (progressSaving) return;
+  progressSaving = true;
+  const buttons = [mobileMarkReadBtn, ...dashboardPanel.querySelectorAll("[data-mark-current-read]")].filter(Boolean);
+  buttons.forEach((button) => {
+    button.disabled = true;
   });
-  state.progress = data.progress;
-  renderProgressChrome();
-  renderChapterGrid();
-  await loadDashboard();
+  try {
+    const data = await postJson("/api/user/progress", {
+      version: state.version,
+      book: state.book,
+      chapter: state.chapter,
+      read,
+    });
+    state.progress = data.progress;
+    renderProgressChrome();
+    renderChapterGrid();
+    await loadDashboard();
+    showStatus(read ? "已标记本章已读" : "已取消本章已读", "success");
+  } finally {
+    progressSaving = false;
+    buttons.forEach((button) => {
+      button.disabled = false;
+    });
+    renderProgressChrome();
+  }
 }
 
 function saveReadingHistory(snapshot = {}) {
@@ -2750,15 +2767,30 @@ exportDataBtn.addEventListener("click", async () => {
 
 importDataBtn.addEventListener("click", () => importDataFile.click());
 importDataFile.addEventListener("change", async () => {
+  if (importInProgress) return;
   const file = importDataFile.files?.[0];
   if (!file) return;
-  const payload = JSON.parse(await file.text());
-  const result = await postJson("/api/user/import", payload);
-  userDataHint.textContent = `已导入 ${result.imported} 条，阅读进度 ${result.progressImported || 0} 章`;
-  await loadMarks();
-  await loadProgress();
-  await loadDashboard();
-  await loadChapter();
+  importInProgress = true;
+  importDataBtn.disabled = true;
+  userDataHint.textContent = "正在导入数据...";
+  try {
+    const payload = JSON.parse(await file.text());
+    const result = await postJson("/api/user/import", payload);
+    userDataHint.textContent = `已导入 ${result.imported} 条，阅读进度 ${result.progressImported || 0} 章`;
+    showStatus("数据导入完成", "success");
+    await loadMarks();
+    await loadProgress();
+    await loadDashboard();
+    await loadChapter();
+  } catch (error) {
+    const message = error.message || String(error);
+    userDataHint.textContent = `导入失败：${message}`;
+    showStatus("导入失败，请检查文件", "error");
+  } finally {
+    importInProgress = false;
+    importDataBtn.disabled = false;
+    importDataFile.value = "";
+  }
 });
 
 closeSearchBtn.addEventListener("click", closeSearch);
