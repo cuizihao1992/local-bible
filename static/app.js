@@ -184,8 +184,13 @@ let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.32";
+const APP_VERSION = "1.9.33";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.33",
+    date: "2026-08-14",
+    items: ["关闭侧栏、目录、阅读设置、经文菜单、多选栏和内容面板后，顶部和底部工具栏会短暂保持可见", "新增阅读工具栏保持显示保护，减少刚关闭弹层就无法点击翻章或设置的情况", "smoke test 增加阅读工具栏保持显示覆盖断言"],
+  },
   {
     version: "1.9.32",
     date: "2026-08-14",
