@@ -95,6 +95,11 @@ assert(appJs.includes("let dictionaryRequestToken = 0;"), "Dictionary stale requ
 assert(appJs.includes("let strongRequestToken = 0;"), "Strong stale request token missing");
 assert(appJs.includes("let aiRequestToken = 0;"), "AI stale request token missing");
 assert(appJs.includes("let myPanelRequestToken = 0;"), "My panel stale request token missing");
+assert(appJs.includes("const markSavingKeys = new Set();"), "Verse mark save guard missing");
+assert(appJs.includes("markSavingKeys.has(key)") && appJs.includes("markSavingKeys.delete(key)"), "Verse mark save guard lifecycle missing");
+assert(appJs.includes("正在保存标注，请稍候"), "Duplicate verse mark save feedback missing");
+assert(appJs.includes("successMessage: mark.favorite ?") && appJs.includes("successMessage: mark.highlighted ?"), "Favorite/highlight save feedback missing");
+assert(appJs.includes('tool.textContent = "保存中"') && appJs.includes('tool.textContent = "已保存"'), "Note save busy feedback missing");
 assert(appJs.includes("let touchFallbackState = null;"), "Touch fallback gesture state missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
 assert(appJs.includes("function setSearchBusy") && appJs.includes('searchPanel.setAttribute("aria-busy"'), "Search busy feedback missing");
@@ -132,6 +137,7 @@ assert(stylesCss.includes(".mobileNav #voiceBtn::before") && stylesCss.includes(
 assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled style missing");
 assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style missing");
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
+assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style missing");
 assert(stylesCss.includes(".quickForm button.loading"), "Search button loading style missing");
 assert(stylesCss.includes(".searchMoreBtn:disabled"), "Search load-more disabled style missing");
 assert(stylesCss.includes(".sectionHeadingNo"), "Visible section heading style missing");

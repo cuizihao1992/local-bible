@@ -179,6 +179,7 @@ let dictionaryRequestToken = 0;
 let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
+const markSavingKeys = new Set();
 const APP_VERSION = "1.9.29";
 const RELEASE_NOTES = [
   {
@@ -1728,9 +1729,15 @@ async function runVerseAction(action, verseNo = state.activeVerse) {
   if (action === "select") {
     startVerseSelection(verseNo);
   } else if (action === "favorite") {
-    await saveVerseMark({ ...mark, favorite: !mark.favorite });
+    await saveVerseMark(
+      { ...mark, favorite: !mark.favorite },
+      { successMessage: mark.favorite ? "已取消收藏" : "已收藏" },
+    );
   } else if (action === "highlight") {
-    await saveVerseMark({ ...mark, highlighted: !mark.highlighted });
+    await saveVerseMark(
+      { ...mark, highlighted: !mark.highlighted },
+      { successMessage: mark.highlighted ? "已取消高亮" : "已高亮" },
+    );
   } else if (action === "note") {
     const editor = content.querySelector(`[data-note-editor="${verseNo}"]`);
     if (editor) editor.hidden = !editor.hidden;
@@ -2002,12 +2009,24 @@ function saveReadingHistory(snapshot = {}) {
   }).catch(() => {});
 }
 
-async function saveVerseMark(mark) {
-  const data = await postJson("/api/user/mark", mark);
-  state.marks.set(Number(data.mark.verse), data.mark);
-  updateVerseMarkDom(data.mark);
-  renderChrome();
-  loadDashboard().catch(() => {});
+async function saveVerseMark(mark, options = {}) {
+  const key = `${mark.version}:${mark.book}:${mark.chapter}:${mark.verse}`;
+  if (markSavingKeys.has(key)) {
+    showStatus("正在保存标注，请稍候");
+    return null;
+  }
+  markSavingKeys.add(key);
+  try {
+    const data = await postJson("/api/user/mark", mark);
+    state.marks.set(Number(data.mark.verse), data.mark);
+    updateVerseMarkDom(data.mark);
+    renderChrome();
+    if (options.successMessage) showStatus(options.successMessage, "success");
+    loadDashboard().catch(() => {});
+    return data.mark;
+  } finally {
+    markSavingKeys.delete(key);
+  }
 }
 
 async function loadCommentary(snapshot = {}, token = null) {
@@ -2759,7 +2778,23 @@ content.addEventListener("click", (event) => {
       const mark = markForVerse(verseNo);
       const note = content.querySelector(`[data-note-text="${verseNo}"]`)?.value || "";
       const tags = content.querySelector(`[data-note-tags="${verseNo}"]`)?.value || "";
-      saveVerseMark({ ...mark, note, tags }).catch(setError);
+      tool.disabled = true;
+      tool.textContent = "保存中";
+      saveVerseMark({ ...mark, note, tags }, { successMessage: "笔记已保存" })
+        .then((saved) => {
+          if (!saved) {
+            if (tool.isConnected) tool.textContent = "保存笔记";
+            return;
+          }
+          tool.textContent = "已保存";
+          window.setTimeout(() => {
+            if (tool.isConnected) tool.textContent = "保存笔记";
+          }, 900);
+        })
+        .catch(setError)
+        .finally(() => {
+          if (tool.isConnected) tool.disabled = false;
+        });
     } else {
       runVerseAction(action, verseNo).catch(setError);
     }

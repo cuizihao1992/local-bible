@@ -1625,6 +1625,12 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   color: var(--accent);
 }
 
+.verseTool:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.72;
+}
+
 .verseMenu {
   position: fixed;
   z-index: 20;
