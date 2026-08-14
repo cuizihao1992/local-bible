@@ -513,6 +513,12 @@ select {
   font-weight: 800;
 }
 
+.dataButtons button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.68;
+}
+
 .packagePanel {
   margin-top: 16px;
   padding: 12px;

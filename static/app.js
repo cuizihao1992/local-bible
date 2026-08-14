@@ -173,6 +173,7 @@ let statusTimer = null;
 let chapterLoadToken = 0;
 let chapterLoading = false;
 let progressSaving = false;
+let exportInProgress = false;
 let importInProgress = false;
 let packageInstallInProgress = false;
 let updateCheckInProgress = false;
@@ -3192,23 +3193,52 @@ document.addEventListener("keydown", (event) => {
 });
 
 exportDataBtn.addEventListener("click", async () => {
-  const data = await api("/api/user/export");
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `bible-reader-data-${new Date().toISOString().slice(0, 10)}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
+  if (exportInProgress) {
+    showStatus("正在导出数据，请稍候");
+    return;
+  }
+  exportInProgress = true;
+  exportDataBtn.disabled = true;
+  exportDataBtn.textContent = "导出中";
+  userDataHint.textContent = "正在准备导出数据...";
+  try {
+    const data = await api("/api/user/export");
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bible-reader-data-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    userDataHint.textContent = "导出文件已生成。";
+    showStatus("数据导出完成", "success");
+  } catch (error) {
+    userDataHint.textContent = `导出失败：${error.message || String(error)}`;
+    throw error;
+  } finally {
+    exportInProgress = false;
+    exportDataBtn.disabled = false;
+    exportDataBtn.textContent = "导出";
+  }
 });
 
-importDataBtn.addEventListener("click", () => importDataFile.click());
+importDataBtn.addEventListener("click", () => {
+  if (importInProgress) {
+    showStatus("正在导入数据，请稍候");
+    return;
+  }
+  importDataFile.click();
+});
 importDataFile.addEventListener("change", async () => {
-  if (importInProgress) return;
+  if (importInProgress) {
+    showStatus("正在导入数据，请稍候");
+    return;
+  }
   const file = importDataFile.files?.[0];
   if (!file) return;
   importInProgress = true;
   importDataBtn.disabled = true;
+  importDataBtn.textContent = "导入中";
   userDataHint.textContent = "正在导入数据...";
   try {
     const payload = JSON.parse(await file.text());
@@ -3226,6 +3256,7 @@ importDataFile.addEventListener("change", async () => {
   } finally {
     importInProgress = false;
     importDataBtn.disabled = false;
+    importDataBtn.textContent = "导入";
     importDataFile.value = "";
   }
 });
