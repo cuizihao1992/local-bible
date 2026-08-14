@@ -177,8 +177,13 @@ let dictionaryRequestToken = 0;
 let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
-const APP_VERSION = "1.9.25";
+const APP_VERSION = "1.9.26";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.26",
+    date: "2026-08-14",
+    items: ["搜索、词典、Strong、AI、我的面板增加请求序号，旧结果返回后不会覆盖新操作", "新关键词搜索可打断旧搜索，加载更多仍保留防连点保护", "关闭面板时会让对应未完成请求失效，避免关闭后又被旧响应打开或刷新", "smoke test 增加异步旧结果保护断言"],
+  },
   {
     version: "1.9.25",
     date: "2026-08-14",
