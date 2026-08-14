@@ -188,8 +188,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.39";
+const APP_VERSION = "1.9.40";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.40",
+    date: "2026-08-14",
+    items: ["420px 以下手机多选复制浮条改为两列弹性布局", "已选摘要和复制格式下拉框各自独占一行", "复制与取消按钮各占一列并限制文本溢出", "减少底部导航附近的挤压和误触", "smoke test 增加小屏多选复制布局断言"],
+  },
   {
     version: "1.9.39",
     date: "2026-08-14",
