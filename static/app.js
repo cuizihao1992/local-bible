@@ -185,8 +185,13 @@ let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.33";
+const APP_VERSION = "1.9.34";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.34",
+    date: "2026-08-14",
+    items: ["个人数据导出增加忙碌保护，避免连续点击重复生成文件", "导出中显示“导出中”，完成后提示“数据导出完成”", "导入重复触发时提示“正在导入数据，请稍候”", "导入中显示“导入中”，完成或失败后恢复按钮状态", "数据按钮增加 disabled 视觉样式"],
+  },
   {
     version: "1.9.33",
     date: "2026-08-14",
