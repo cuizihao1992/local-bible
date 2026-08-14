@@ -125,6 +125,11 @@ assert(appJs.includes("importDataBtn.disabled = true"), "Import button busy stat
 assert(appJs.includes("资源包正在下载，请稍候"), "Package install duplicate feedback missing");
 assert(appJs.includes("APK 正在下载，请稍候"), "APK duplicate download feedback missing");
 assert(appJs.includes("data-search-more"), "Search load more button missing");
+assert(appJs.includes("function chapterTitleInfo"), "Chapter title info helper missing");
+assert(appJs.includes("function renderNoChapterTitleNotice"), "No-title chapter notice missing");
+assert(appJs.includes("当前译本没有小标题数据"), "No-title version feedback missing");
+assert(appJs.includes("真实小标题") && appJs.includes("内置小标题"), "Chapter title source labels missing");
+assert(appJs.includes("titleLabel = Number(version.titleCount) > 0"), "Version title-count option label missing");
 assert(appJs.includes('class="sectionHeading" data-section-verse='), "Inline section heading renderer missing");
 assert(appJs.includes("sectionHeadingNo"), "Section heading verse marker missing");
 assert(androidApi.includes('int offset = Math.max(0, intQuery(uri, "offset", 0));'), "Android search offset support missing");
@@ -141,6 +146,8 @@ assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style mis
 assert(stylesCss.includes(".quickForm button.loading"), "Search button loading style missing");
 assert(stylesCss.includes(".searchMoreBtn:disabled"), "Search load-more disabled style missing");
 assert(stylesCss.includes(".sectionHeadingNo"), "Visible section heading style missing");
+assert(stylesCss.includes(".emptyTitleSummary"), "No-title notice style missing");
+assert(stylesCss.includes(".chapterTitleEmpty"), "No-title notice text style missing");
 assert(stylesCss.includes(".chapterError button"), "Chapter retry button style missing");
 
 console.log(

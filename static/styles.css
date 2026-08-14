@@ -1494,6 +1494,24 @@ mark {
   font-weight: 800;
 }
 
+.emptyTitleSummary {
+  border-bottom-style: dashed;
+}
+
+.chapterTitleEmpty {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.65;
+}
+
+.chapterTitleEmptyDetail {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .chapterTitlePills {
   display: flex;
   flex-wrap: wrap;

@@ -185,7 +185,7 @@ const RELEASE_NOTES = [
   {
     version: "1.9.30",
     date: "2026-08-14",
-    items: ["收藏、高亮、保存笔记增加同一节经文保存防重复保护", "重复保存时提示“正在保存标注，请稍候”", "收藏和高亮操作成功后显示轻提示", "保存笔记按钮显示“保存中/已保存”，并在重复点击后恢复按钮文字"],
+    items: ["收藏、高亮、保存笔记增加同一节经文保存防重复保护", "重复保存时提示“正在保存标注，请稍候”", "收藏和高亮操作成功后显示轻提示", "保存笔记按钮显示“保存中/已保存”，并在重复点击后恢复按钮文字", "确认本地 26 个译本中 7 个包含真实小标题数据", "版本选择和正文顶部会明确显示当前译本/章节的小标题状态"],
   },
   {
     version: "1.9.29",
@@ -367,25 +367,62 @@ const SECTION_HEADINGS = {
   "65:1": { 1: "问安", 3: "为真道竭力争辩", 17: "保守自己在神爱中", 24: "颂赞" },
 };
 
-function chapterTitleMap(chapter) {
+function titleItemsFromMap(map) {
+  return Object.entries(map)
+    .map(([verse, title]) => ({ verse: Number(verse), title: String(title || "").trim() }))
+    .filter((item) => item.verse > 0 && item.title)
+    .sort((a, b) => a.verse - b.verse);
+}
+
+function chapterTitleInfo(chapter) {
   const fromDb = Object.fromEntries(
     (chapter.titles || [])
       .map((title) => [Number(title.verse), String(title.text || "").trim()])
       .filter(([verse, text]) => verse > 0 && text),
   );
+  const dbItems = titleItemsFromMap(fromDb);
+  if (dbItems.length) return { headings: fromDb, items: dbItems, source: "db" };
+
   const fallback = SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {};
-  return Object.keys(fromDb).length ? fromDb : fallback;
+  const fallbackItems = titleItemsFromMap(fallback);
+  if (fallbackItems.length) return { headings: fallback, items: fallbackItems, source: "fallback" };
+
+  return { headings: {}, items: [], source: "none" };
 }
 
-function renderChapterTitleSummary(headings) {
-  const items = Object.entries(headings)
-    .map(([verse, title]) => ({ verse: Number(verse), title: String(title || "").trim() }))
-    .filter((item) => item.verse > 0 && item.title)
-    .sort((a, b) => a.verse - b.verse);
-  if (!items.length) return "";
+function versionsWithTitleData(limit = 3) {
+  return state.versions
+    .filter((version) => Number(version.titleCount) > 0)
+    .slice(0, limit)
+    .map((version) => version.name);
+}
+
+function renderNoChapterTitleNotice(chapter) {
+  const version = currentVersion();
+  const hasVersionTitles = Number(version?.titleCount) > 0;
+  const recommended = versionsWithTitleData().join("、");
+  const message = hasVersionTitles
+    ? "当前译本有小标题数据，但本章没有小标题。"
+    : recommended
+      ? `当前译本没有小标题数据，可切换到 ${recommended}。`
+      : "当前本地经文库没有可用的小标题数据。";
+  const detail = hasVersionTitles ? `${version.name} 共 ${version.titleCount} 条小标题。` : "小标题依赖经文 DB 的 Titles 表。";
+  return `
+    <section class="chapterTitleSummary emptyTitleSummary" aria-label="本章小标题">
+      <div class="chapterTitleSummaryLabel">本章小标题</div>
+      <div class="chapterTitleEmpty">${escapeHtml(message)}</div>
+      <div class="chapterTitleEmptyDetail">${escapeHtml(detail)}</div>
+    </section>
+  `;
+}
+
+function renderChapterTitleSummary(info, chapter) {
+  const items = info.items;
+  if (!items.length) return renderNoChapterTitleNotice(chapter);
+  const sourceLabel = info.source === "db" ? "真实小标题" : "内置小标题";
   return `
     <section class="chapterTitleSummary" aria-label="本章小标题">
-      <div class="chapterTitleSummaryLabel">本章小标题</div>
+      <div class="chapterTitleSummaryLabel">本章小标题 · ${sourceLabel} · ${items.length} 条</div>
       <div class="chapterTitlePills">
         ${items
           .map(
@@ -858,7 +895,10 @@ function saveState() {
 
 function renderVersions() {
   versionSelect.innerHTML = state.versions
-    .map((version) => `<option value="${escapeHtml(version.id)}">${escapeHtml(version.name)}</option>`)
+    .map((version) => {
+      const titleLabel = Number(version.titleCount) > 0 ? ` · 小标题 ${version.titleCount} 条` : " · 无小标题";
+      return `<option value="${escapeHtml(version.id)}">${escapeHtml(version.name)}${titleLabel}</option>`;
+    })
     .join("");
   versionSelect.value = state.version;
 }
@@ -1419,9 +1459,10 @@ function renderVerses(data) {
     verses: new Map(chapter.verses.map((verse) => [verse.verse, verse.text])),
   }));
 
-  const headings = chapterTitleMap(mainChapter);
+  const titleInfo = chapterTitleInfo(mainChapter);
+  const headings = titleInfo.headings;
   content.innerHTML =
-    renderChapterTitleSummary(headings) +
+    renderChapterTitleSummary(titleInfo, mainChapter) +
     mainChapter.verses
     .map(
       (verse) => {
