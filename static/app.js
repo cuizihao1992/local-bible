@@ -180,8 +180,13 @@ let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.29";
+const APP_VERSION = "1.9.30";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.30",
+    date: "2026-08-14",
+    items: ["收藏、高亮、保存笔记增加同一节经文保存防重复保护", "重复保存时提示“正在保存标注，请稍候”", "收藏和高亮操作成功后显示轻提示", "保存笔记按钮显示“保存中/已保存”，并在重复点击后恢复按钮文字"],
+  },
   {
     version: "1.9.29",
     date: "2026-08-14",
