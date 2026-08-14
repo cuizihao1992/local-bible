@@ -467,6 +467,10 @@
 - 缺少 `PointerEvent` 的旧 WebView 使用 `touchstart/touchend/touchcancel` 兜底
 - 语音结果、错误、取消和缺少 stop 接口时统一恢复按钮状态
 - smoke test 增加语音触摸兜底与防重复断言
+- 多选复制增加 `selectionCopyInProgress`，防止重复复制
+- 复制中禁用格式选择和复制按钮，按钮显示“复制中/已复制”
+- 复制完成或取消选择时清理系统文字选区
+- smoke test 增加多选复制忙碌状态和清理选区断言
 
 ## V1.9.30 标注保存反馈与防重复
 目标：让收藏、高亮、保存笔记这些高频经文操作有明确反馈，并避免同一节经文重复写入。

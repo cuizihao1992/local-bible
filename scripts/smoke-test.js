@@ -74,6 +74,7 @@ const androidApi = readFileSync("android/app/src/main/java/local/bible/reader/Of
 assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset helper missing");
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
 assert(appJs.includes("let chapterLoading = false;"), "Chapter loading state missing");
+assert(appJs.includes("let selectionCopyInProgress = false;"), "Selection copy busy state missing");
 assert(appJs.includes("chapterLoading = true;") && appJs.includes("chapterLoading = false;"), "Chapter loading lifecycle missing");
 assert(appJs.includes("prevBtn.disabled = chapterLoading || atFirstChapter"), "Desktop previous loading disabled state missing");
 assert(appJs.includes("nextBtn.disabled = chapterLoading || atLastChapter"), "Desktop next loading disabled state missing");
@@ -130,6 +131,10 @@ assert(appJs.includes("importDataBtn.disabled = true"), "Import button busy stat
 assert(appJs.includes("资源包正在下载，请稍候"), "Package install duplicate feedback missing");
 assert(appJs.includes("APK 正在下载，请稍候"), "APK duplicate download feedback missing");
 assert(appJs.includes("data-search-more"), "Search load more button missing");
+assert(appJs.includes("正在复制经文，请稍候"), "Selection duplicate copy feedback missing");
+assert(appJs.includes('copySelectionBtn.textContent = "复制中"') && appJs.includes('copySelectionBtn.textContent = "已复制"'), "Selection copy busy text missing");
+assert(appJs.includes("copyFormatSelect.disabled = selectionCopyInProgress"), "Selection format disabled state missing");
+assert(appJs.includes("window.getSelection()?.removeAllRanges();"), "Selection close should clear native selection");
 assert(appJs.includes("function chapterTitleInfo"), "Chapter title info helper missing");
 assert(appJs.includes("function renderNoChapterTitleNotice"), "No-title chapter notice missing");
 assert(appJs.includes("当前译本没有小标题数据"), "No-title version feedback missing");
@@ -148,6 +153,7 @@ assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled st
 assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style missing");
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
 assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style missing");
+assert(stylesCss.includes(".selectionBar button:disabled"), "Selection copy disabled style missing");
 assert(stylesCss.includes(".quickForm button.loading"), "Search button loading style missing");
 assert(stylesCss.includes(".searchMoreBtn:disabled"), "Search load-more disabled style missing");
 assert(stylesCss.includes(".sectionHeadingNo"), "Visible section heading style missing");

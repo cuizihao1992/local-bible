@@ -1755,6 +1755,12 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   white-space: nowrap;
 }
 
+.selectionBar button:disabled,
+.selectionBar select:disabled {
+  cursor: default;
+  opacity: 0.68;
+}
+
 .selectionBar #cancelSelectionBtn {
   background: var(--control);
   color: var(--muted);

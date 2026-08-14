@@ -163,6 +163,7 @@ let scrollFrame = 0;
 let selectedVerseNumbers = [];
 let verseSelectionMode = false;
 let selectionFrame = 0;
+let selectionCopyInProgress = false;
 let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
@@ -1584,7 +1585,9 @@ function updateManualSelectionBar() {
     selectedVerseNumbers.length === 1
       ? `${currentBook().longName} ${state.chapter}:${first} · 点击经文继续选择`
       : `${currentBook().longName} ${state.chapter}:${first}-${last} · ${selectedVerseNumbers.length} 节`;
-  copySelectionBtn.textContent = "复制所选";
+  copySelectionBtn.textContent = selectionCopyInProgress ? "复制中" : "复制所选";
+  copySelectionBtn.disabled = selectionCopyInProgress;
+  if (copyFormatSelect) copyFormatSelect.disabled = selectionCopyInProgress;
   selectionBar.hidden = false;
   renderVerseSelectionState();
 }
@@ -1606,6 +1609,11 @@ function toggleVerseSelection(verseNo) {
 }
 
 function closeSelectionBar() {
+  window.getSelection()?.removeAllRanges();
+  selectionCopyInProgress = false;
+  copySelectionBtn.disabled = false;
+  if (copyFormatSelect) copyFormatSelect.disabled = false;
+  copySelectionBtn.textContent = "复制所选";
   selectionBar.hidden = true;
   selectedVerseNumbers = [];
   verseSelectionMode = false;
@@ -1763,17 +1771,35 @@ function updateSelectionBar() {
     selectedVerseNumbers.length === 1
       ? `${currentBook().longName} ${state.chapter}:${first}`
       : `${currentBook().longName} ${state.chapter}:${first}-${last} · ${selectedVerseNumbers.length} 节`;
-  copySelectionBtn.textContent = "复制所选";
+  copySelectionBtn.textContent = selectionCopyInProgress ? "复制中" : "复制所选";
+  copySelectionBtn.disabled = selectionCopyInProgress;
+  if (copyFormatSelect) copyFormatSelect.disabled = selectionCopyInProgress;
   selectionBar.hidden = false;
 }
 
 async function copySelectedVerses() {
   if (!selectedVerseNumbers.length) updateSelectionBar();
   if (!selectedVerseNumbers.length) return;
-  await writeClipboard(formatVerseLines(selectedVerseNumbers, copyFormatSelect?.value || "reference"));
-  copySelectionBtn.textContent = "已复制";
-  showStatus(`已复制 ${selectedVerseNumbers.length} 节经文`, "success");
-  window.setTimeout(closeSelectionBar, 900);
+  if (selectionCopyInProgress) {
+    showStatus("正在复制经文，请稍候");
+    return;
+  }
+  selectionCopyInProgress = true;
+  copySelectionBtn.disabled = true;
+  if (copyFormatSelect) copyFormatSelect.disabled = true;
+  copySelectionBtn.textContent = "复制中";
+  try {
+    await writeClipboard(formatVerseLines(selectedVerseNumbers, copyFormatSelect?.value || "reference"));
+    copySelectionBtn.textContent = "已复制";
+    showStatus(`已复制 ${selectedVerseNumbers.length} 节经文`, "success");
+    window.setTimeout(closeSelectionBar, 700);
+  } catch (error) {
+    selectionCopyInProgress = false;
+    copySelectionBtn.disabled = false;
+    if (copyFormatSelect) copyFormatSelect.disabled = false;
+    copySelectionBtn.textContent = "复制所选";
+    throw error;
+  }
 }
 
 async function runVerseAction(action, verseNo = state.activeVerse) {
