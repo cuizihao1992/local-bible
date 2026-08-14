@@ -188,8 +188,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.43";
+const APP_VERSION = "1.9.44";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.44",
+    date: "2026-08-14",
+    items: ["资源包下载轮询失败或停止后会恢复按钮状态", "资源包下载失败后按钮显示“重试”", "下载停止时提示可重试或清理缓存", "资源包下载同步异常和轮询停止共用恢复逻辑", "smoke test 增加资源包失败恢复断言"],
+  },
   {
     version: "1.9.43",
     date: "2026-08-14",
