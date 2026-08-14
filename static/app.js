@@ -164,8 +164,13 @@ let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
 let statusTimer = null;
-const APP_VERSION = "1.9.19";
+const APP_VERSION = "1.9.20";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.20",
+    date: "2026-08-14",
+    items: ["滑到第一章或最后一章时显示边界提示", "复制经文、复制 APK 链接、清理下载缓存增加轻提示", "跳转经文时自动收起搜索、我的、词典、原文、AI 与经文菜单", "切章、切书、切版本统一清理经文级临时状态"],
+  },
   {
     version: "1.9.19",
     date: "2026-08-14",
