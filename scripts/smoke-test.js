@@ -17,6 +17,18 @@ assert(health.versionCount > 0, "No Bible versions detected");
 const chapter = await getJson("/api/chapters?version=KJV.db&book=1&chapter=1");
 assert(chapter.chapters[0].verses[0].strongs.length > 0, "KJV Strong numbers missing");
 
+const versions = await getJson("/api/versions");
+let titleSample = null;
+for (const version of versions.versions) {
+  const sample = await getJson(`/api/chapters?version=${encodeURIComponent(version.id)}&book=1&chapter=1`);
+  const titles = sample.chapters?.[0]?.titles || [];
+  if (titles.length) {
+    titleSample = { version: version.id, titles };
+    break;
+  }
+}
+assert(titleSample && titleSample.titles[0].text, "Bible title data missing from all title-enabled versions");
+
 const search = await getJson("/api/search?version=%E5%92%8C%E5%90%88%E6%9C%AC.db&q=%E6%B0%B8%E7%94%9F&scope=nt&limit=2");
 assert(search.results.length > 0, "Search returned no results");
 
@@ -42,6 +54,8 @@ console.log(
       dictionaries: health.dictionaryCount,
       audio: health.audioCount,
       sampleSearchResults: search.results.length,
+      titleVersion: titleSample.version,
+      titleCount: titleSample.titles.length,
       progress: `${progress.read}/${progress.total}`,
     },
     null,

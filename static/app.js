@@ -152,6 +152,9 @@ const releaseNotesPanel = document.querySelector("#releaseNotesPanel");
 const releaseNotesContent = document.querySelector("#releaseNotesContent");
 const closeReleaseNotesBtn = document.querySelector("#closeReleaseNotesBtn");
 let longPressTimer = null;
+let swipeState = null;
+let lastScrollY = 0;
+let scrollFrame = 0;
 let selectedVerseNumbers = [];
 let verseSelectionMode = false;
 let selectionFrame = 0;
@@ -476,6 +479,8 @@ function showSidebarPanel(name = "reading") {
 function openSidebar(panel = "reading") {
   toggleBookPicker(false);
   toggleReaderSettings(false);
+  closeVerseMenu();
+  closeSelectionBar();
   showSidebarPanel(panel);
   document.body.classList.add("sidebarOpen");
 }
@@ -486,6 +491,8 @@ function toggleBookPicker(show = bookPickerPanel.hidden) {
   if (show) {
     closeSidebar();
     toggleReaderSettings(false);
+    closeVerseMenu();
+    closeSelectionBar();
     renderBooks();
     renderChapterGrid();
   }
@@ -500,6 +507,48 @@ function closeTopPanels() {
   closeMyPanel();
   closeReleaseNotes();
   closeVerseMenu();
+}
+
+function hasBlockingOverlayOpen() {
+  return (
+    document.body.classList.contains("sidebarOpen") ||
+    !bookPickerPanel.hidden ||
+    !readerSettingsPanel.hidden ||
+    !searchPanel.hidden ||
+    !strongPanel.hidden ||
+    !dictionaryPanel.hidden ||
+    !aiResultPanel.hidden ||
+    !myPanel.hidden ||
+    !releaseNotesPanel.hidden ||
+    !verseMenu.hidden ||
+    !selectionBar.hidden ||
+    verseSelectionMode
+  );
+}
+
+function showReadingChrome() {
+  document.body.classList.remove("readingChromeHidden");
+}
+
+function updateReadingChromeVisibility() {
+  scrollFrame = 0;
+  if (window.innerWidth > 860 || hasBlockingOverlayOpen()) {
+    showReadingChrome();
+    lastScrollY = window.scrollY;
+    return;
+  }
+  const currentY = window.scrollY;
+  const delta = currentY - lastScrollY;
+  if (currentY < 120 || delta < -10) {
+    showReadingChrome();
+  } else if (delta > 12) {
+    document.body.classList.add("readingChromeHidden");
+  }
+  lastScrollY = currentY;
+}
+
+function isInteractiveTarget(target) {
+  return !!target.closest("button, input, textarea, select, a, audio, .verseMenu, .selectionBar, .noteEditor, .strongBtn, .verseTool");
 }
 
 function handleBackIntent() {
@@ -1290,6 +1339,11 @@ function closeSelectionBar() {
 
 function toggleReaderSettings(show = readerSettingsPanel.hidden) {
   readerSettingsPanel.hidden = !show;
+  if (show) {
+    closeSidebar();
+    toggleBookPicker(false);
+    closeVerseMenu();
+  }
 }
 
 function verseTextForNumber(verseNo) {
@@ -2301,6 +2355,7 @@ searchResults.addEventListener("click", async (event) => {
 });
 
 content.addEventListener("click", (event) => {
+  showReadingChrome();
   const strong = event.target.closest(".strongBtn");
   if (strong) {
     openStrong(strong.dataset.code).catch(setError);
@@ -2329,6 +2384,15 @@ content.addEventListener("click", (event) => {
   focusCommentaryForVerse(Number(verse.dataset.verse));
 });
 
+window.addEventListener(
+  "scroll",
+  () => {
+    if (scrollFrame) return;
+    scrollFrame = window.requestAnimationFrame(updateReadingChromeVisibility);
+  },
+  { passive: true },
+);
+
 content.addEventListener("contextmenu", (event) => {
   const verse = event.target.closest(".verse");
   if (!verse) return;
@@ -2338,19 +2402,52 @@ content.addEventListener("contextmenu", (event) => {
 
 content.addEventListener("pointerdown", (event) => {
   const verse = event.target.closest(".verse");
+  if (event.pointerType !== "mouse" && !hasBlockingOverlayOpen() && !isInteractiveTarget(event.target)) {
+    swipeState = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      time: Date.now(),
+      moved: false,
+    };
+  }
   if (!verse || event.pointerType === "mouse") return;
   longPressTimer = window.setTimeout(() => {
     openVerseMenu(Number(verse.dataset.verse), event.clientX, event.clientY);
   }, 520);
 });
 
-content.addEventListener("pointerup", () => {
+content.addEventListener("pointermove", (event) => {
+  if (longPressTimer) {
+    const dx = swipeState ? Math.abs(event.clientX - swipeState.x) : 0;
+    const dy = swipeState ? Math.abs(event.clientY - swipeState.y) : 0;
+    if (dx > 8 || dy > 8) clearTimeout(longPressTimer);
+  }
+  if (!swipeState || event.pointerId !== swipeState.id) return;
+  const dx = Math.abs(event.clientX - swipeState.x);
+  const dy = Math.abs(event.clientY - swipeState.y);
+  if (dx > 10 || dy > 10) swipeState.moved = true;
+});
+
+content.addEventListener("pointerup", (event) => {
   clearTimeout(longPressTimer);
+  if (swipeState && event.pointerId === swipeState.id) {
+    const dx = event.clientX - swipeState.x;
+    const dy = event.clientY - swipeState.y;
+    const elapsed = Date.now() - swipeState.time;
+    const horizontal = Math.abs(dx) >= 76 && Math.abs(dx) > Math.abs(dy) * 1.45;
+    if (horizontal && elapsed < 900 && !hasBlockingOverlayOpen()) {
+      state.targetVerse = null;
+      moveChapter(dx < 0 ? 1 : -1);
+    }
+    swipeState = null;
+  }
   window.setTimeout(updateSelectionBar, 0);
 });
 
 content.addEventListener("pointercancel", () => {
   clearTimeout(longPressTimer);
+  swipeState = null;
 });
 
 document.addEventListener("selectionchange", () => {
@@ -2507,6 +2604,10 @@ async function copyVerse(verseNo) {
 
 document.addEventListener("keydown", (event) => {
   const tag = event.target.tagName;
+  if (event.key === "Escape" && handleBackIntent()) {
+    event.preventDefault();
+    return;
+  }
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
   if (event.key === "/") {
     event.preventDefault();
@@ -2585,8 +2686,23 @@ copySelectionBtn.addEventListener("click", () => {
 cancelSelectionBtn.addEventListener("click", closeSelectionBar);
 
 document.addEventListener("click", (event) => {
-  if (verseMenu.hidden || verseMenu.contains(event.target)) return;
-  closeVerseMenu();
+  if (!verseMenu.hidden && !verseMenu.contains(event.target)) {
+    closeVerseMenu();
+  }
+  if (
+    !readerSettingsPanel.hidden &&
+    !readerSettingsPanel.contains(event.target) &&
+    !readerSettingsBtn.contains(event.target)
+  ) {
+    toggleReaderSettings(false);
+  }
+  if (
+    !bookPickerPanel.hidden &&
+    !bookPickerPanel.contains(event.target) &&
+    !chapterTitleBtn.contains(event.target)
+  ) {
+    toggleBookPicker(false);
+  }
 });
 
 strongContent.addEventListener("click", async (event) => {
