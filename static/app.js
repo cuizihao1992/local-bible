@@ -162,8 +162,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.18";
+const APP_VERSION = "1.9.19";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.19",
+    date: "2026-08-14",
+    items: ["版本列表显示当前译本小标题数量", "正文顶部增加本章小标题快捷列表", "经文小标题只使用真实 Titles 数据或已确认兜底数据", "测试固定覆盖和合本腓利门书小标题"],
+  },
   {
     version: "1.9.18",
     date: "2026-08-13",
