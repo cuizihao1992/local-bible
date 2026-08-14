@@ -160,6 +160,7 @@ let voiceInputActive = false;
 let voiceStopPending = false;
 let lastScrollY = 0;
 let scrollFrame = 0;
+let readingChromePinnedUntil = 0;
 let selectedVerseNumbers = [];
 let verseSelectionMode = false;
 let selectionFrame = 0;
@@ -641,8 +642,15 @@ async function fetchLatestRelease() {
   };
 }
 
+function keepReadingChromeVisible(ms = 1400) {
+  readingChromePinnedUntil = Math.max(readingChromePinnedUntil, Date.now() + ms);
+  showReadingChrome();
+}
+
 function closeSidebar() {
+  const wasOpen = document.body.classList.contains("sidebarOpen");
   document.body.classList.remove("sidebarOpen");
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function showSidebarPanel(name = "reading") {
@@ -674,6 +682,7 @@ function openSidebar(panel = "reading") {
 }
 
 function toggleBookPicker(show = bookPickerPanel.hidden) {
+  const wasOpen = !bookPickerPanel.hidden;
   bookPickerPanel.hidden = !show;
   chapterTitleBtn.setAttribute("aria-expanded", show ? "true" : "false");
   if (show) {
@@ -684,6 +693,8 @@ function toggleBookPicker(show = bookPickerPanel.hidden) {
     closeSelectionBar();
     renderBooks();
     renderChapterGrid();
+  } else if (wasOpen) {
+    keepReadingChromeVisible();
   }
 }
 
@@ -730,12 +741,12 @@ function showReadingChrome() {
 
 function updateReadingChromeVisibility() {
   scrollFrame = 0;
-  if (window.innerWidth > 860 || hasBlockingOverlayOpen()) {
+  const currentY = window.scrollY;
+  if (window.innerWidth > 860 || hasBlockingOverlayOpen() || Date.now() < readingChromePinnedUntil) {
     showReadingChrome();
-    lastScrollY = window.scrollY;
+    lastScrollY = currentY;
     return;
   }
-  const currentY = window.scrollY;
   const delta = currentY - lastScrollY;
   if (currentY < 120 || delta < -10) {
     showReadingChrome();
@@ -1567,7 +1578,9 @@ function openVerseMenu(verseNo, x, y) {
 }
 
 function closeVerseMenu() {
+  const wasOpen = !verseMenu.hidden;
   verseMenu.hidden = true;
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function renderVerseSelectionState() {
@@ -1614,6 +1627,7 @@ function toggleVerseSelection(verseNo) {
 }
 
 function closeSelectionBar() {
+  const wasOpen = !selectionBar.hidden || verseSelectionMode;
   window.getSelection()?.removeAllRanges();
   selectionCopyInProgress = false;
   copySelectionBtn.disabled = false;
@@ -1623,9 +1637,11 @@ function closeSelectionBar() {
   selectedVerseNumbers = [];
   verseSelectionMode = false;
   renderVerseSelectionState();
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function toggleReaderSettings(show = readerSettingsPanel.hidden) {
+  const wasOpen = !readerSettingsPanel.hidden;
   readerSettingsPanel.hidden = !show;
   if (show) {
     closeSidebar();
@@ -1633,6 +1649,8 @@ function toggleReaderSettings(show = readerSettingsPanel.hidden) {
     closeContentPanels();
     closeVerseMenu();
     closeSelectionBar();
+  } else if (wasOpen) {
+    keepReadingChromeVisible();
   }
 }
 
@@ -2348,35 +2366,47 @@ function highlightText(text, query) {
 }
 
 function closeSearch() {
+  const wasOpen = !searchPanel.hidden;
   searchRequestToken += 1;
   searchState.loading = false;
   setSearchBusy(false);
   searchPanel.hidden = true;
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function closeStrong() {
+  const wasOpen = !strongPanel.hidden;
   strongRequestToken += 1;
   strongPanel.hidden = true;
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function closeDictionary() {
+  const wasOpen = !dictionaryPanel.hidden;
   dictionaryRequestToken += 1;
   setDictionaryBusy(false);
   dictionaryPanel.hidden = true;
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function closeAiResult() {
+  const wasOpen = !aiResultPanel.hidden;
   aiRequestToken += 1;
   aiResultPanel.hidden = true;
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function closeMyPanel() {
+  const wasOpen = !myPanel.hidden;
   myPanelRequestToken += 1;
   myPanel.hidden = true;
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function closeReleaseNotes() {
+  const wasOpen = !releaseNotesPanel.hidden;
   releaseNotesPanel.hidden = true;
+  if (wasOpen) keepReadingChromeVisible();
 }
 
 function renderReleaseNotes(release = null) {

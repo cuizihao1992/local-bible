@@ -72,6 +72,9 @@ const indexHtml = await getText("/index.html");
 const stylesCss = await getText("/styles.css");
 const androidApi = readFileSync("android/app/src/main/java/local/bible/reader/OfflineApi.java", "utf8");
 assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset helper missing");
+assert(appJs.includes("let readingChromePinnedUntil = 0;"), "Reading chrome pin state missing");
+assert(appJs.includes("function keepReadingChromeVisible"), "Reading chrome pin helper missing");
+assert(appJs.includes("Date.now() < readingChromePinnedUntil"), "Reading chrome pin guard missing");
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
 assert(appJs.includes("let chapterLoading = false;"), "Chapter loading state missing");
 assert(appJs.includes("let selectionCopyInProgress = false;"), "Selection copy busy state missing");
@@ -111,6 +114,7 @@ assert(appJs.includes("moreButton.disabled = loading && append"), "Search load-m
 assert(appJs.includes("function setDictionaryBusy") && appJs.includes("dictionaryBtn.disabled = loading"), "Dictionary busy feedback missing");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
+assert((appJs.match(/keepReadingChromeVisible\(\);/g) || []).length >= 8, "Reading chrome keep-visible coverage missing");
 assert((appJs.match(/token !== .*RequestToken/g) || []).length >= 5, "Stale async result guards missing");
 assert(appJs.includes("searchRequestToken += 1;") && appJs.includes("searchState.loading = false;"), "Search close invalidation missing");
 assert(appJs.includes("function startSwipeGesture"), "Shared swipe gesture helper missing");
