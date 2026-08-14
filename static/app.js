@@ -162,8 +162,13 @@ let lastUpdateInfo = null;
 let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
-const APP_VERSION = "1.9.17";
+const APP_VERSION = "1.9.18";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.18",
+    date: "2026-08-13",
+    items: ["阅读正文支持左右滑切换上一章/下一章", "菜单、弹层、多选打开时禁用滑动切章避免误触", "手机阅读下滑隐藏顶部栏和底部栏，上滑恢复", "增加旧 WebView 的 color-mix 样式兜底"],
+  },
   {
     version: "1.9.17",
     date: "2026-08-13",
