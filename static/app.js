@@ -178,8 +178,13 @@ let dictionaryRequestToken = 0;
 let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
-const APP_VERSION = "1.9.26";
+const APP_VERSION = "1.9.27";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.27",
+    date: "2026-08-14",
+    items: ["搜索面板增加 aria-busy 状态，搜索按钮会显示“搜索中”", "搜索“加载更多”请求中会禁用按钮并显示“加载中”，避免连续点击", "词典搜索请求中禁用“查”按钮并显示“查找中”", "关闭搜索或词典面板时自动恢复按钮状态"],
+  },
   {
     version: "1.9.26",
     date: "2026-08-14",
