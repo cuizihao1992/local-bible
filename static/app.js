@@ -171,8 +171,13 @@ let packageInstallInProgress = false;
 let updateCheckInProgress = false;
 let apkDownloadInProgress = false;
 let searchState = { query: "", scope: "all", book: 1, results: [], nextOffset: 0, hasMore: false, loading: false };
-const APP_VERSION = "1.9.22";
+const APP_VERSION = "1.9.23";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.23",
+    date: "2026-08-14",
+    items: ["确认内置和合本、和合本修订版包含真实 Titles 小标题数据", "正文小标题改为带节号的醒目段落标题，手机端不再被左侧缩进弱化", "搜索结果改为分页加载，避免一次性返回过多结果", "Android 离线接口同步支持搜索分页，并加入 APK 校验"],
+  },
   {
     version: "1.9.22",
     date: "2026-08-14",
