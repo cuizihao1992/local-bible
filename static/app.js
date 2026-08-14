@@ -64,6 +64,7 @@ const closeReaderSettingsBtn = document.querySelector("#closeReaderSettingsBtn")
 const overlay = document.querySelector("#overlay");
 const quickForm = document.querySelector("#quickForm");
 const quickInput = document.querySelector("#quickInput");
+const quickSearchBtn = quickForm.querySelector('button[type="submit"]');
 const searchScope = document.querySelector("#searchScope");
 const searchPanel = document.querySelector("#searchPanel");
 const searchSummary = document.querySelector("#searchSummary");
@@ -2114,6 +2115,23 @@ window.handleAndroidVoice = (type, text) => {
   }
 };
 
+function setSearchBusy(loading, append = false) {
+  searchPanel.setAttribute("aria-busy", loading ? "true" : "false");
+  quickSearchBtn.textContent = loading && !append ? "搜索中" : "查找";
+  quickSearchBtn.classList.toggle("loading", loading && !append);
+  const moreButton = searchResults.querySelector("[data-search-more]");
+  if (moreButton) {
+    moreButton.disabled = loading && append;
+    moreButton.textContent = loading && append ? "加载中" : "加载更多";
+  }
+}
+
+function setDictionaryBusy(loading) {
+  dictionaryPanel.setAttribute("aria-busy", loading ? "true" : "false");
+  dictionaryBtn.disabled = loading;
+  dictionaryBtn.textContent = loading ? "查找中" : "查";
+}
+
 async function runSearch(query, options = {}) {
   const append = !!options.append;
   if (append && searchState.loading) return;
@@ -2123,6 +2141,7 @@ async function runSearch(query, options = {}) {
   const scope = append ? searchState.scope : searchScope.value;
   const book = append ? searchState.book : state.book;
   searchState.loading = true;
+  setSearchBusy(true, append);
   const params = new URLSearchParams({
     version: state.version,
     q: query,
@@ -2146,9 +2165,13 @@ async function runSearch(query, options = {}) {
       hasMore: !!data.hasMore,
       loading: false,
     };
+    setSearchBusy(false, append);
     renderSearchResults(data);
   } catch (error) {
-    if (token === searchRequestToken) searchState.loading = false;
+    if (token === searchRequestToken) {
+      searchState.loading = false;
+      setSearchBusy(false, append);
+    }
     throw error;
   }
 }
@@ -2187,6 +2210,7 @@ function highlightText(text, query) {
 function closeSearch() {
   searchRequestToken += 1;
   searchState.loading = false;
+  setSearchBusy(false);
   searchPanel.hidden = true;
 }
 
@@ -2197,6 +2221,7 @@ function closeStrong() {
 
 function closeDictionary() {
   dictionaryRequestToken += 1;
+  setDictionaryBusy(false);
   dictionaryPanel.hidden = true;
 }
 
@@ -2381,13 +2406,18 @@ async function searchDictionary() {
   if (!source || !query) return;
   closeContentPanels();
   const token = ++dictionaryRequestToken;
+  setDictionaryBusy(true);
   const params = new URLSearchParams({ source, q: query, limit: "30" });
   dictionarySummary.textContent = "正在搜索词条";
   dictionaryResults.innerHTML = "";
   dictionaryPanel.hidden = false;
-  const data = await api(`/api/dictionary/search?${params.toString()}`);
-  if (token !== dictionaryRequestToken) return;
-  renderDictionaryResults(data);
+  try {
+    const data = await api(`/api/dictionary/search?${params.toString()}`);
+    if (token !== dictionaryRequestToken) return;
+    renderDictionaryResults(data);
+  } finally {
+    if (token === dictionaryRequestToken) setDictionaryBusy(false);
+  }
 }
 
 function renderDictionaryResults(data) {

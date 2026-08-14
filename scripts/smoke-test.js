@@ -86,6 +86,10 @@ assert(appJs.includes("let aiRequestToken = 0;"), "AI stale request token missin
 assert(appJs.includes("let myPanelRequestToken = 0;"), "My panel stale request token missing");
 assert(appJs.includes("let touchFallbackState = null;"), "Touch fallback gesture state missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
+assert(appJs.includes("function setSearchBusy") && appJs.includes('searchPanel.setAttribute("aria-busy"'), "Search busy feedback missing");
+assert(appJs.includes("quickSearchBtn.textContent = loading && !append"), "Search button busy text missing");
+assert(appJs.includes("moreButton.disabled = loading && append"), "Search load-more busy guard missing");
+assert(appJs.includes("function setDictionaryBusy") && appJs.includes("dictionaryBtn.disabled = loading"), "Dictionary busy feedback missing");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
 assert((appJs.match(/token !== .*RequestToken/g) || []).length >= 5, "Stale async result guards missing");
@@ -116,6 +120,8 @@ assert(indexHtml.includes('role="status" aria-live="polite"'), "Status panel acc
 assert(stylesCss.includes(".mobileNav #voiceBtn::before") && stylesCss.includes("border-radius: 999px"), "Voice button indicator CSS missing");
 assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled style missing");
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
+assert(stylesCss.includes(".quickForm button.loading"), "Search button loading style missing");
+assert(stylesCss.includes(".searchMoreBtn:disabled"), "Search load-more disabled style missing");
 assert(stylesCss.includes(".sectionHeadingNo"), "Visible section heading style missing");
 
 console.log(
