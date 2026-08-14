@@ -1237,9 +1237,13 @@ function renderChrome() {
   const compareText = state.compareVersions.length ? ` · 对照 ${state.compareVersions.length} 个版本` : "";
   const titleText = version?.titleCount ? ` · 小标题 ${version.titleCount} 条` : " · 暂无小标题";
   versionTitle.textContent = version ? `${version.name}${compareText}${titleText}` : "";
-  prevBtn.disabled = state.book === 1 && state.chapter === 1;
+  const atFirstChapter = state.book === 1 && state.chapter === 1;
   const lastBook = state.books[state.books.length - 1];
-  nextBtn.disabled = !!lastBook && state.book === lastBook.id && state.chapter === lastBook.chapterCount;
+  const atLastChapter = !!lastBook && state.book === lastBook.id && state.chapter === lastBook.chapterCount;
+  prevBtn.disabled = atFirstChapter;
+  nextBtn.disabled = atLastChapter;
+  if (mobilePrevBtn) mobilePrevBtn.disabled = atFirstChapter;
+  if (mobileNextBtn) mobileNextBtn.disabled = atLastChapter;
   renderProgressChrome();
 }
 

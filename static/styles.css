@@ -2267,6 +2267,11 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     white-space: nowrap;
   }
 
+  .mobileNav button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
   .mobileNav button.active {
     border-color: var(--accent);
     background: var(--accent);

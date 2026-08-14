@@ -67,11 +67,14 @@ assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
 assert(appJs.includes("const snapshot = {"), "Chapter load snapshot missing");
+assert(appJs.includes("mobilePrevBtn.disabled = atFirstChapter"), "Mobile previous button boundary state missing");
+assert(appJs.includes("mobileNextBtn.disabled = atLastChapter"), "Mobile next button boundary state missing");
 assert(appJs.includes("showStatus(\"已经是第一章\")"), "First chapter boundary feedback missing");
 assert(appJs.includes("closeAiResult();"), "Top panel close flow does not include AI panel");
 assert(appJs.includes("overlay.addEventListener(\"click\", () => {\n  handleBackIntent();"), "Overlay does not use back intent close flow");
 assert(indexHtml.includes('role="status" aria-live="polite"'), "Status panel accessibility attributes missing");
 assert(stylesCss.includes(".mobileNav #voiceBtn::before") && stylesCss.includes("border-radius: 999px"), "Voice button indicator CSS missing");
+assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled style missing");
 
 console.log(
   JSON.stringify(
