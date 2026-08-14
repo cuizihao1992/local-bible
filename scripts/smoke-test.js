@@ -7,6 +7,13 @@ async function getJson(path) {
   return data;
 }
 
+async function getText(path) {
+  const response = await fetch(`${base}${path}`);
+  const text = await response.text();
+  if (!response.ok) throw new Error(`${path}: ${response.status}`);
+  return text;
+}
+
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
@@ -52,6 +59,11 @@ assert(Array.isArray(marks.marks), "Marks endpoint shape invalid");
 const progress = await getJson("/api/user/progress?version=KJV.db");
 assert(Number.isInteger(progress.total) && progress.total > 1000, "Progress total chapter count invalid");
 assert(Array.isArray(progress.readChapters), "Progress endpoint shape invalid");
+
+const appJs = await getText("/app.js");
+assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset helper missing");
+assert(appJs.includes("showStatus(\"已经是第一章\")"), "First chapter boundary feedback missing");
+assert(appJs.includes("closeAiResult();"), "Top panel close flow does not include AI panel");
 
 console.log(
   JSON.stringify(

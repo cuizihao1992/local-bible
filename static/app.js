@@ -547,9 +547,19 @@ function closeTopPanels() {
   closeSearch();
   closeStrong();
   closeDictionary();
+  closeAiResult();
   closeMyPanel();
   closeReleaseNotes();
   closeVerseMenu();
+  closeSelectionBar();
+}
+
+function resetVerseInteraction(targetVerse = null) {
+  state.targetVerse = targetVerse;
+  state.activeVerse = null;
+  closeVerseMenu();
+  closeSelectionBar();
+  showReadingChrome();
 }
 
 function hasBlockingOverlayOpen() {
@@ -595,6 +605,14 @@ function isInteractiveTarget(target) {
 }
 
 function handleBackIntent() {
+  if (!verseMenu.hidden) {
+    closeVerseMenu();
+    return true;
+  }
+  if (!selectionBar.hidden) {
+    closeSelectionBar();
+    return true;
+  }
   if (document.body.classList.contains("sidebarOpen")) {
     closeSidebar();
     return true;
@@ -625,14 +643,6 @@ function handleBackIntent() {
   }
   if (!searchPanel.hidden) {
     closeSearch();
-    return true;
-  }
-  if (!verseMenu.hidden) {
-    closeVerseMenu();
-    return true;
-  }
-  if (!selectionBar.hidden) {
-    closeSelectionBar();
     return true;
   }
   return false;
@@ -1889,17 +1899,10 @@ function parseReference(input) {
 async function jumpToReference(ref) {
   state.book = ref.book;
   state.chapter = ref.chapter;
-  state.targetVerse = ref.verse || null;
+  resetVerseInteraction(ref.verse || null);
   renderBooks();
   renderChapterGrid();
-  closeSearch();
-  closeMyPanel();
-  closeStrong();
-  closeDictionary();
-  closeAiResult();
-  closeVerseMenu();
-  closeSelectionBar();
-  showReadingChrome();
+  closeTopPanels();
   await loadChapter({ scrollTop: !state.targetVerse });
   const book = currentBook();
   if (book) showStatus(`${book.longName} ${state.chapter}${state.targetVerse ? `:${state.targetVerse}` : ""}`);
@@ -2287,6 +2290,7 @@ function moveChapter(delta) {
     showStatus("已经是最后一章");
     return false;
   }
+  resetVerseInteraction();
   state.chapter += delta;
   if (state.chapter < 1) {
     const index = state.books.findIndex((item) => item.id === state.book);
@@ -2307,7 +2311,6 @@ function moveChapter(delta) {
       state.chapter = book.chapterCount;
     }
   }
-  state.targetVerse = null;
   renderBooks();
   loadChapter({ scrollTop: true });
   const nextBook = currentBook();
@@ -2328,7 +2331,7 @@ versionSelect.addEventListener("change", async () => {
   state.version = versionSelect.value;
   state.compareVersions = state.compareVersions.filter((version) => version !== state.version);
   state.chapter = 1;
-  state.targetVerse = null;
+  resetVerseInteraction();
   renderCompareVersions();
   await loadBooks();
   await loadProgress();
@@ -2361,7 +2364,7 @@ commentarySelect.addEventListener("change", () => {
 bookSelect.addEventListener("change", () => {
   state.book = Number(bookSelect.value);
   state.chapter = 1;
-  state.targetVerse = null;
+  resetVerseInteraction();
   renderBooks();
   renderChapterGrid();
   loadChapter({ scrollTop: true });
@@ -2385,7 +2388,7 @@ bookGrid.addEventListener("click", (event) => {
   if (!button) return;
   state.book = Number(button.dataset.book);
   state.chapter = 1;
-  state.targetVerse = null;
+  resetVerseInteraction();
   renderBooks();
   renderChapterGrid();
   loadChapter({ scrollTop: true });
@@ -2395,7 +2398,7 @@ chapterGrid.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-chapter]");
   if (!button) return;
   state.chapter = Number(button.dataset.chapter);
-  state.targetVerse = null;
+  resetVerseInteraction();
   document.body.classList.remove("sidebarOpen");
   toggleBookPicker(false);
   loadChapter({ scrollTop: true });
@@ -2510,7 +2513,6 @@ content.addEventListener("pointerup", (event) => {
     const elapsed = Date.now() - swipeState.time;
     const horizontal = Math.abs(dx) >= 76 && Math.abs(dx) > Math.abs(dy) * 1.45;
     if (horizontal && elapsed < 900 && !hasBlockingOverlayOpen()) {
-      state.targetVerse = null;
       moveChapter(dx < 0 ? 1 : -1);
     }
     swipeState = null;
@@ -2613,9 +2615,9 @@ dashboardPanel.addEventListener("click", async (event) => {
     if (!nextUnread) return;
     state.book = nextUnread.book;
     state.chapter = nextUnread.chapter;
-    state.targetVerse = null;
+    resetVerseInteraction();
     renderBooks();
-    await loadChapter();
+    await loadChapter({ scrollTop: true });
     return;
   }
   if (event.target.closest("[data-mark-current-read]")) {
@@ -2630,9 +2632,9 @@ dashboardPanel.addEventListener("click", async (event) => {
   }
   state.book = Number(action.dataset.book);
   state.chapter = Number(action.dataset.chapter);
-  state.targetVerse = null;
+  resetVerseInteraction();
   await loadBooks();
-  await loadChapter();
+  await loadChapter({ scrollTop: true });
 });
 
 themeSelect.addEventListener("change", () => {
@@ -2789,11 +2791,9 @@ strongContent.addEventListener("click", async (event) => {
   });
 });
 prevBtn.addEventListener("click", () => {
-  state.targetVerse = null;
   moveChapter(-1);
 });
 nextBtn.addEventListener("click", () => {
-  state.targetVerse = null;
   moveChapter(1);
 });
 menuBtn.addEventListener("click", () => {
