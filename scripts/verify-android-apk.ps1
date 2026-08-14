@@ -69,6 +69,12 @@ try {
   if ($app -notmatch "AndroidBibleApi" -or $app -notmatch "getJson") {
     throw "APK frontend is not using the Android offline GET bridge"
   }
+  if ($app -notmatch "data-search-more" -or $app -notmatch "searchState") {
+    throw "APK frontend is missing search pagination"
+  }
+  if ($app -notmatch "data-section-verse" -or $app -notmatch "sectionHeadingNo") {
+    throw "APK frontend is missing visible section heading rendering"
+  }
   if ($app -match "D:\\\\bibleDownload") {
     throw "APK app.js still contains D:\bibleDownload runtime text"
   }

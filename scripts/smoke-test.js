@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 const base = process.env.BIBLE_READER_URL || "http://127.0.0.1:8765";
 
 async function getJson(path) {
@@ -46,6 +48,11 @@ assert(titleSample && titleSample.titles[0].text, "Bible title data missing from
 
 const search = await getJson("/api/search?version=%E5%92%8C%E5%90%88%E6%9C%AC.db&q=%E6%B0%B8%E7%94%9F&scope=nt&limit=2");
 assert(search.results.length > 0, "Search returned no results");
+assert(Number.isInteger(search.nextOffset) && typeof search.hasMore === "boolean", "Search pagination metadata missing");
+const searchNext = await getJson(
+  `/api/search?version=%E5%92%8C%E5%90%88%E6%9C%AC.db&q=%E6%B0%B8%E7%94%9F&scope=nt&limit=2&offset=${search.nextOffset}`,
+);
+assert(Array.isArray(searchNext.results), "Search pagination next page shape invalid");
 
 const strong = await getJson("/api/strong?code=H7225");
 assert(strong.definition && strong.occurrences.length > 0, "Strong lookup incomplete");
@@ -63,6 +70,7 @@ assert(Array.isArray(progress.readChapters), "Progress endpoint shape invalid");
 const appJs = await getText("/app.js");
 const indexHtml = await getText("/index.html");
 const stylesCss = await getText("/styles.css");
+const androidApi = readFileSync("android/app/src/main/java/local/bible/reader/OfflineApi.java", "utf8");
 assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset helper missing");
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
 assert(appJs.includes("let progressSaving = false;"), "Progress save busy guard missing");
@@ -70,6 +78,7 @@ assert(appJs.includes("let importInProgress = false;"), "Import busy guard missi
 assert(appJs.includes("let packageInstallInProgress = false;"), "Package install busy guard missing");
 assert(appJs.includes("let updateCheckInProgress = false;"), "Update check busy guard missing");
 assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy guard missing");
+assert(appJs.includes("let searchState ="), "Search pagination state missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
 assert(appJs.includes('function pollDownloadProgress(kind = "package", onDone = null, onStop = null)'), "Download polling stop callback missing");
 assert(appJs.includes("const snapshot = {"), "Chapter load snapshot missing");
@@ -78,12 +87,19 @@ assert(appJs.includes("mobileNextBtn.disabled = atLastChapter"), "Mobile next bu
 assert(appJs.includes("importDataBtn.disabled = true"), "Import button busy state missing");
 assert(appJs.includes("资源包正在下载，请稍候"), "Package install duplicate feedback missing");
 assert(appJs.includes("APK 正在下载，请稍候"), "APK duplicate download feedback missing");
+assert(appJs.includes("data-search-more"), "Search load more button missing");
+assert(appJs.includes('class="sectionHeading" data-section-verse='), "Inline section heading renderer missing");
+assert(appJs.includes("sectionHeadingNo"), "Section heading verse marker missing");
+assert(androidApi.includes('int offset = Math.max(0, intQuery(uri, "offset", 0));'), "Android search offset support missing");
+assert(androidApi.includes('"hasMore", hasMore'), "Android search hasMore metadata missing");
 assert(appJs.includes("showStatus(\"已经是第一章\")"), "First chapter boundary feedback missing");
 assert(appJs.includes("closeAiResult();"), "Top panel close flow does not include AI panel");
 assert(appJs.includes("overlay.addEventListener(\"click\", () => {\n  handleBackIntent();"), "Overlay does not use back intent close flow");
 assert(indexHtml.includes('role="status" aria-live="polite"'), "Status panel accessibility attributes missing");
 assert(stylesCss.includes(".mobileNav #voiceBtn::before") && stylesCss.includes("border-radius: 999px"), "Voice button indicator CSS missing");
 assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled style missing");
+assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
+assert(stylesCss.includes(".sectionHeadingNo"), "Visible section heading style missing");
 
 console.log(
   JSON.stringify(
@@ -94,6 +110,7 @@ console.log(
       dictionaries: health.dictionaryCount,
       audio: health.audioCount,
       sampleSearchResults: search.results.length,
+      searchHasMore: search.hasMore,
       titleVersion: titleSample.version,
       titleCount: titleSample.titles.length,
       philemonTitleCount: philemonTitles.length,

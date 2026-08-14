@@ -193,6 +193,12 @@ function clampPositiveInt(value, fallback, max) {
   return Math.min(number, max);
 }
 
+function clampNonNegativeInt(value, fallback = 0) {
+  const number = Number(value || fallback);
+  if (!Number.isInteger(number) || number < 0) return fallback;
+  return number;
+}
+
 function cleanText(value = "") {
   return String(value)
     .replace(/<br\s*\/?>/gi, "\n")
@@ -866,6 +872,7 @@ function searchBible(versionId, query, options = {}) {
   const scope = options.scope || "all";
   const currentBook = Number(options.book || 0);
   const limit = clampPositiveInt(options.limit, 40, MAX_SEARCH_RESULTS);
+  const offset = clampNonNegativeInt(options.offset, 0);
   const params = [`%${keyword}%`];
   const where = ["Scripture like ?"];
 
@@ -886,16 +893,20 @@ function searchBible(versionId, query, options = {}) {
          from Bible
          where ${where.join(" and ")}
          order by Book, Chapter, Verse
-         limit ?`,
+         limit ? offset ?`,
       )
-      .all(...params, limit);
+      .all(...params, limit + 1, offset);
     const books = getBooks(versionId);
+    const pageRows = rows.slice(0, limit);
     return {
       version: versionId,
       query: keyword,
       scope,
       limit,
-      results: rows.map((row) => {
+      offset,
+      nextOffset: offset + pageRows.length,
+      hasMore: rows.length > limit,
+      results: pageRows.map((row) => {
         const book = books.find((item) => item.id === Number(row.Book));
         return {
           book: Number(row.Book),
@@ -1097,7 +1108,8 @@ const server = createServer(async (req, res) => {
       const scope = url.searchParams.get("scope") || "all";
       const book = Number(url.searchParams.get("book") || 0);
       const limit = url.searchParams.get("limit") || 40;
-      sendJson(res, searchBible(version, query, { scope, book, limit }));
+      const offset = url.searchParams.get("offset") || 0;
+      sendJson(res, searchBible(version, query, { scope, book, limit, offset }));
       return;
     }
     if (url.pathname === "/api/commentaries") {

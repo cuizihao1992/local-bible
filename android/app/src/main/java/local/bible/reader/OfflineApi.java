@@ -432,11 +432,13 @@ public class OfflineApi {
     private JSONObject search(Uri uri) throws Exception {
         String version = query(uri, "version");
         String q = query(uri, "q");
-        int limit = intQuery(uri, "limit", 60);
+        int limit = Math.max(1, Math.min(intQuery(uri, "limit", 40), 80));
+        int offset = Math.max(0, intQuery(uri, "offset", 0));
         int currentBook = intQuery(uri, "book", 0);
         String scope = query(uri, "scope");
         SQLiteDatabase db = openBible(version);
         JSONArray results = new JSONArray();
+        boolean hasMore = false;
         String where = "Scripture like ?";
         List<String> args = new ArrayList<>();
         args.add("%" + q + "%");
@@ -446,9 +448,15 @@ public class OfflineApi {
             where += " and Book = ?";
             args.add(String.valueOf(currentBook));
         }
-        try (Cursor cursor = db.rawQuery("select Book, Chapter, Verse, Scripture from Bible where " + where + " order by Book, Chapter, Verse limit ?",
-                append(args, String.valueOf(Math.min(limit, 80))))) {
+        args.add(String.valueOf(limit + 1));
+        args.add(String.valueOf(offset));
+        try (Cursor cursor = db.rawQuery("select Book, Chapter, Verse, Scripture from Bible where " + where + " order by Book, Chapter, Verse limit ? offset ?",
+                args.toArray(new String[0]))) {
             while (cursor.moveToNext()) {
+                if (results.length() >= limit) {
+                    hasMore = true;
+                    break;
+                }
                 int book = cursor.getInt(0);
                 results.put(new JSONObject()
                         .put("book", book)
@@ -460,7 +468,14 @@ public class OfflineApi {
         } finally {
             db.close();
         }
-        return new JSONObject().put("query", q).put("results", results);
+        return new JSONObject()
+                .put("query", q)
+                .put("scope", scope)
+                .put("limit", limit)
+                .put("offset", offset)
+                .put("nextOffset", offset + results.length())
+                .put("hasMore", hasMore)
+                .put("results", results);
     }
 
     private JSONObject marks(Uri uri) throws Exception {

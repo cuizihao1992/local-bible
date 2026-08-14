@@ -1332,6 +1332,25 @@ select {
   outline: none;
 }
 
+.searchMoreBtn {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  background: var(--panel);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.searchMoreBtn:hover,
+.searchMoreBtn:focus-visible {
+  background: var(--soft);
+  outline: none;
+}
+
 .searchRef {
   color: var(--accent);
   font-size: 13px;
@@ -1416,15 +1435,34 @@ mark {
 }
 
 .sectionHeading {
-  margin: 24px 0 6px 58px;
-  color: #6f3f19;
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 26px 0 7px 58px;
+  padding: 8px 0 8px 12px;
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 82%);
+  color: var(--ink);
+  font-size: 17px;
   font-weight: 800;
   line-height: 1.5;
 }
 
 .sectionHeading:first-child {
   margin-top: 4px;
+}
+
+.sectionHeadingNo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--control);
+  font-size: 12px;
+  line-height: 1;
 }
 
 .chapterTitleSummary {
@@ -2173,8 +2211,9 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   }
 
   .sectionHeading {
-    margin: 18px 0 3px 42px;
-    font-size: 14px;
+    margin: 18px 0 5px 0;
+    padding: 8px 0 8px 10px;
+    font-size: 15px;
   }
 
   .verseText {

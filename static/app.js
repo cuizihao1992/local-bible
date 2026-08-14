@@ -170,6 +170,7 @@ let importInProgress = false;
 let packageInstallInProgress = false;
 let updateCheckInProgress = false;
 let apkDownloadInProgress = false;
+let searchState = { query: "", scope: "all", book: 1, results: [], nextOffset: 0, hasMore: false, loading: false };
 const APP_VERSION = "1.9.22";
 const RELEASE_NOTES = [
   {
@@ -1314,7 +1315,14 @@ function renderVerses(data) {
       (verse) => {
         const mark = markForVerse(verse.verse);
         return `
-        ${headings[verse.verse] ? `<div class="sectionHeading">${escapeHtml(headings[verse.verse])}</div>` : ""}
+        ${
+          headings[verse.verse]
+            ? `<div class="sectionHeading" data-section-verse="${verse.verse}">
+                <span class="sectionHeadingNo">${verse.verse}</span>
+                <span>${escapeHtml(headings[verse.verse])}</span>
+              </div>`
+            : ""
+        }
         <article class="verse ${verseMarkClasses(mark)}" data-verse="${verse.verse}">
           <div class="verseNo" id="v${verse.verse}">${verse.verse}</div>
           <div class="verseBody" data-verse="${verse.verse}">
@@ -2025,26 +2033,48 @@ window.handleAndroidVoice = (type, text) => {
   }
 };
 
-async function runSearch(query) {
+async function runSearch(query, options = {}) {
+  if (searchState.loading) return;
+  const append = !!options.append;
+  const offset = append ? searchState.nextOffset : 0;
+  const scope = append ? searchState.scope : searchScope.value;
+  const book = append ? searchState.book : state.book;
+  searchState.loading = true;
   const params = new URLSearchParams({
     version: state.version,
     q: query,
-    scope: searchScope.value,
-    book: String(state.book),
-    limit: "60",
+    scope,
+    book: String(book),
+    limit: "40",
+    offset: String(offset),
   });
-  searchSummary.textContent = "正在搜索";
-  searchResults.innerHTML = "";
+  searchSummary.textContent = append ? "正在加载更多" : "正在搜索";
+  if (!append) searchResults.innerHTML = "";
   searchPanel.hidden = false;
-  const data = await api(`/api/search?${params.toString()}`);
-  renderSearchResults(data);
+  try {
+    const data = await api(`/api/search?${params.toString()}`);
+    searchState = {
+      query,
+      scope,
+      book,
+      results: append ? [...searchState.results, ...(data.results || [])] : data.results || [],
+      nextOffset: Number(data.nextOffset || 0),
+      hasMore: !!data.hasMore,
+      loading: false,
+    };
+    renderSearchResults(data);
+  } catch (error) {
+    searchState.loading = false;
+    throw error;
+  }
 }
 
 function renderSearchResults(data) {
-  const count = data.results.length;
-  searchSummary.textContent = count ? `找到 ${count} 条结果：${data.query}` : `没有找到：${data.query}`;
+  const count = searchState.results.length;
+  const moreText = searchState.hasMore ? "，可继续加载" : "";
+  searchSummary.textContent = count ? `已显示 ${count} 条结果${moreText}：${data.query}` : `没有找到：${data.query}`;
   searchResults.innerHTML = count
-    ? data.results
+    ? `${searchState.results
         .map(
           (item) => `
             <button class="searchResult" type="button" data-book="${item.book}" data-chapter="${item.chapter}" data-verse="${item.verse}">
@@ -2053,7 +2083,12 @@ function renderSearchResults(data) {
             </button>
           `,
         )
-        .join("")
+        .join("")}
+        ${
+          searchState.hasMore
+            ? `<button class="searchMoreBtn" type="button" data-search-more>加载更多</button>`
+            : ""
+        }`
     : `<div class="empty">换一个关键词，或调整搜索范围。</div>`;
 }
 
@@ -2525,6 +2560,10 @@ quickForm.addEventListener("submit", async (event) => {
 });
 
 searchResults.addEventListener("click", async (event) => {
+  if (event.target.closest("[data-search-more]")) {
+    await runSearch(searchState.query, { append: true });
+    return;
+  }
   const result = event.target.closest(".searchResult");
   if (!result) return;
   await jumpToReference({
