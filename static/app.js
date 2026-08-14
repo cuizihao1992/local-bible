@@ -182,8 +182,13 @@ let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.30";
+const APP_VERSION = "1.9.31";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.31",
+    date: "2026-08-14",
+    items: ["语音按钮增加前端状态保护，避免重复开始或重复停止识别", "旧 WebView 或旧平板缺少 PointerEvent 时，语音按钮使用 touch 事件兜底", "松手上传、取消和错误回调后会统一恢复语音按钮状态", "smoke test 增加语音触摸兜底与防重复断言"],
+  },
   {
     version: "1.9.30",
     date: "2026-08-14",
