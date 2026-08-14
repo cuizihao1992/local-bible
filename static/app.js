@@ -172,6 +172,11 @@ let packageInstallInProgress = false;
 let updateCheckInProgress = false;
 let apkDownloadInProgress = false;
 let searchState = { query: "", scope: "all", book: 1, results: [], nextOffset: 0, hasMore: false, loading: false };
+let searchRequestToken = 0;
+let dictionaryRequestToken = 0;
+let strongRequestToken = 0;
+let aiRequestToken = 0;
+let myPanelRequestToken = 0;
 const APP_VERSION = "1.9.25";
 const RELEASE_NOTES = [
   {
@@ -1569,11 +1574,13 @@ function aiActionTitle(action, verseNo) {
 async function runVerseAiAction(action, verseNo) {
   saveAiConfig();
   closeContentPanels();
+  const token = ++aiRequestToken;
   aiResultPanel.hidden = false;
   aiResultTitle.textContent = aiActionTitle(action, verseNo);
   aiResultContent.innerHTML = `<div class="aiLoading">正在请求 ${escapeHtml(currentAiConfig().provider)}...</div>`;
   try {
     const text = await requestAiText(aiPromptForVerse(action, verseNo));
+    if (token !== aiRequestToken) return;
     aiResultContent.innerHTML = `
       <div class="aiResultText">${escapeHtml(text)}</div>
       <div class="aiResultActions">
@@ -1583,6 +1590,7 @@ async function runVerseAiAction(action, verseNo) {
     aiResultContent.dataset.aiResultText = text;
     aiResultPanel.scrollIntoView({ block: "start", behavior: "smooth" });
   } catch (error) {
+    if (token !== aiRequestToken) return;
     aiResultContent.innerHTML = `<div class="aiError">${escapeHtml(error.message || String(error))}</div>`;
   }
 }
@@ -2102,9 +2110,10 @@ window.handleAndroidVoice = (type, text) => {
 };
 
 async function runSearch(query, options = {}) {
-  if (searchState.loading) return;
   const append = !!options.append;
+  if (append && searchState.loading) return;
   if (!append) closeContentPanels();
+  const token = ++searchRequestToken;
   const offset = append ? searchState.nextOffset : 0;
   const scope = append ? searchState.scope : searchScope.value;
   const book = append ? searchState.book : state.book;
@@ -2122,6 +2131,7 @@ async function runSearch(query, options = {}) {
   searchPanel.hidden = false;
   try {
     const data = await api(`/api/search?${params.toString()}`);
+    if (token !== searchRequestToken) return;
     searchState = {
       query,
       scope,
@@ -2133,7 +2143,7 @@ async function runSearch(query, options = {}) {
     };
     renderSearchResults(data);
   } catch (error) {
-    searchState.loading = false;
+    if (token === searchRequestToken) searchState.loading = false;
     throw error;
   }
 }
@@ -2170,22 +2180,28 @@ function highlightText(text, query) {
 }
 
 function closeSearch() {
+  searchRequestToken += 1;
+  searchState.loading = false;
   searchPanel.hidden = true;
 }
 
 function closeStrong() {
+  strongRequestToken += 1;
   strongPanel.hidden = true;
 }
 
 function closeDictionary() {
+  dictionaryRequestToken += 1;
   dictionaryPanel.hidden = true;
 }
 
 function closeAiResult() {
+  aiRequestToken += 1;
   aiResultPanel.hidden = true;
 }
 
 function closeMyPanel() {
+  myPanelRequestToken += 1;
   myPanel.hidden = true;
 }
 
@@ -2329,8 +2345,10 @@ async function copyLatestApkLink() {
 
 async function openMyPanel(kind = "all") {
   closeContentPanels();
+  const token = ++myPanelRequestToken;
   const params = new URLSearchParams({ kind, tag: myTagFilter.value.trim(), limit: "300" });
   const data = await api(`/api/user/marks/all?${params.toString()}`);
+  if (token !== myPanelRequestToken) return;
   myPanel.hidden = false;
   renderMyResults(data.marks);
   myPanel.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -2357,11 +2375,13 @@ async function searchDictionary() {
   const query = dictionaryInput.value.trim();
   if (!source || !query) return;
   closeContentPanels();
+  const token = ++dictionaryRequestToken;
   const params = new URLSearchParams({ source, q: query, limit: "30" });
   dictionarySummary.textContent = "正在搜索词条";
   dictionaryResults.innerHTML = "";
   dictionaryPanel.hidden = false;
   const data = await api(`/api/dictionary/search?${params.toString()}`);
+  if (token !== dictionaryRequestToken) return;
   renderDictionaryResults(data);
 }
 
@@ -2394,10 +2414,12 @@ function renderDictionaryImages(images) {
 
 async function openStrong(code) {
   closeContentPanels();
+  const token = ++strongRequestToken;
   strongTitle.textContent = `Strong ${code}`;
   strongContent.innerHTML = `<div class="loading">正在读取原文释义</div>`;
   strongPanel.hidden = false;
   const data = await api(`/api/strong?code=${encodeURIComponent(code)}`);
+  if (token !== strongRequestToken) return;
   strongTitle.textContent = `Strong ${data.code}`;
   strongContent.innerHTML = `
     <div class="strongOriginal">${escapeHtml(data.original || data.code)}</div>

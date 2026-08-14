@@ -79,10 +79,17 @@ assert(appJs.includes("let packageInstallInProgress = false;"), "Package install
 assert(appJs.includes("let updateCheckInProgress = false;"), "Update check busy guard missing");
 assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy guard missing");
 assert(appJs.includes("let searchState ="), "Search pagination state missing");
+assert(appJs.includes("let searchRequestToken = 0;"), "Search stale request token missing");
+assert(appJs.includes("let dictionaryRequestToken = 0;"), "Dictionary stale request token missing");
+assert(appJs.includes("let strongRequestToken = 0;"), "Strong stale request token missing");
+assert(appJs.includes("let aiRequestToken = 0;"), "AI stale request token missing");
+assert(appJs.includes("let myPanelRequestToken = 0;"), "My panel stale request token missing");
 assert(appJs.includes("let touchFallbackState = null;"), "Touch fallback gesture state missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
+assert((appJs.match(/token !== .*RequestToken/g) || []).length >= 5, "Stale async result guards missing");
+assert(appJs.includes("searchRequestToken += 1;") && appJs.includes("searchState.loading = false;"), "Search close invalidation missing");
 assert(appJs.includes("function startSwipeGesture"), "Shared swipe gesture helper missing");
 assert(appJs.includes("function finishSwipeGesture"), "Shared swipe finish helper missing");
 assert(appJs.includes("if (!window.PointerEvent)"), "Legacy touch fallback gate missing");
