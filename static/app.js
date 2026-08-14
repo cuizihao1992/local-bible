@@ -188,8 +188,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.38";
+const APP_VERSION = "1.9.39";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.39",
+    date: "2026-08-14",
+    items: ["横滑手势记录最后一次触点坐标", "pointercancel 时如果已形成有效横滑也会完成翻章", "旧设备 touchcancel fallback 同步完成有效横滑", "横滑阈值降低到 54px，方向比例降低到 1.2", "smoke test 增加移动端横滑取消保护断言"],
+  },
   {
     version: "1.9.38",
     date: "2026-08-14",
