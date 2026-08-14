@@ -2029,11 +2029,13 @@ async function loadChapter(options = {}) {
   } catch (error) {
     if (token !== chapterLoadToken) return;
     setChapterError(error, snapshot);
+  } finally {
+    if (token === chapterLoadToken) {
+      chapterLoading = false;
+      renderChrome();
+      renderChapterGrid();
+    }
   }
-  if (token !== chapterLoadToken) return;
-  chapterLoading = false;
-  renderChrome();
-  renderChapterGrid();
 }
 
 async function loadDashboard() {

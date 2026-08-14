@@ -87,6 +87,7 @@ assert(appJs.includes("let chapterLoading = false;"), "Chapter loading state mis
 assert(appJs.includes("let referenceJumpInProgress = false;"), "Reference jump busy state missing");
 assert(appJs.includes("let selectionCopyInProgress = false;"), "Selection copy busy state missing");
 assert(appJs.includes("chapterLoading = true;") && appJs.includes("chapterLoading = false;"), "Chapter loading lifecycle missing");
+assert(appJs.includes("} finally {\n    if (token === chapterLoadToken) {\n      chapterLoading = false;"), "Chapter loading should recover in current-token finally block");
 assert(appJs.includes("prevBtn.disabled = chapterLoading || atFirstChapter"), "Desktop previous loading disabled state missing");
 assert(appJs.includes("nextBtn.disabled = chapterLoading || atLastChapter"), "Desktop next loading disabled state missing");
 assert(appJs.includes("mobilePrevBtn.disabled = chapterLoading || atFirstChapter"), "Mobile previous loading disabled state missing");
