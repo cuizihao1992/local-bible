@@ -1041,6 +1041,12 @@ select {
   font-weight: 800;
 }
 
+.myFilters button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.68;
+}
+
 .myResults {
   display: grid;
   max-height: 460px;

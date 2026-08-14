@@ -186,6 +186,7 @@ let dictionaryRequestToken = 0;
 let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
+let myPanelLoading = false;
 const markSavingKeys = new Set();
 const APP_VERSION = "1.9.36";
 const RELEASE_NOTES = [
@@ -2432,8 +2433,17 @@ function closeAiResult() {
 function closeMyPanel() {
   const wasOpen = !myPanel.hidden;
   myPanelRequestToken += 1;
+  setMyPanelBusy(false);
   myPanel.hidden = true;
   if (wasOpen) keepReadingChromeVisible();
+}
+
+function setMyPanelBusy(loading) {
+  myPanelLoading = loading;
+  myPanel.setAttribute("aria-busy", loading ? "true" : "false");
+  myPanel.querySelectorAll("[data-my-filter]").forEach((button) => {
+    button.disabled = loading;
+  });
 }
 
 function closeReleaseNotes() {
@@ -2577,14 +2587,24 @@ async function copyLatestApkLink() {
 }
 
 async function openMyPanel(kind = "all") {
+  if (myPanelLoading) {
+    showStatus("正在读取我的内容，请稍候");
+    return;
+  }
   closeContentPanels();
   const token = ++myPanelRequestToken;
-  const params = new URLSearchParams({ kind, tag: myTagFilter.value.trim(), limit: "300" });
-  const data = await api(`/api/user/marks/all?${params.toString()}`);
-  if (token !== myPanelRequestToken) return;
   myPanel.hidden = false;
-  renderMyResults(data.marks);
+  setMyPanelBusy(true);
+  myResults.innerHTML = `<div class="empty">正在读取我的收藏与笔记...</div>`;
   myPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+  try {
+    const params = new URLSearchParams({ kind, tag: myTagFilter.value.trim(), limit: "300" });
+    const data = await api(`/api/user/marks/all?${params.toString()}`);
+    if (token !== myPanelRequestToken) return;
+    renderMyResults(data.marks);
+  } finally {
+    if (token === myPanelRequestToken) setMyPanelBusy(false);
+  }
 }
 
 function renderMyResults(marks) {

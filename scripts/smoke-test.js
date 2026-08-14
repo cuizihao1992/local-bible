@@ -105,6 +105,7 @@ assert(appJs.includes("let dictionaryRequestToken = 0;"), "Dictionary stale requ
 assert(appJs.includes("let strongRequestToken = 0;"), "Strong stale request token missing");
 assert(appJs.includes("let aiRequestToken = 0;"), "AI stale request token missing");
 assert(appJs.includes("let myPanelRequestToken = 0;"), "My panel stale request token missing");
+assert(appJs.includes("let myPanelLoading = false;"), "My panel busy state missing");
 assert(appJs.includes("const markSavingKeys = new Set();"), "Verse mark save guard missing");
 assert(appJs.includes("markSavingKeys.has(key)") && appJs.includes("markSavingKeys.delete(key)"), "Verse mark save guard lifecycle missing");
 assert(appJs.includes("正在保存标注，请稍候"), "Duplicate verse mark save feedback missing");
@@ -118,6 +119,9 @@ assert(appJs.includes("function setSearchBusy") && appJs.includes('searchPanel.s
 assert(appJs.includes("quickSearchBtn.textContent = loading && !append"), "Search button busy text missing");
 assert(appJs.includes("moreButton.disabled = loading && append"), "Search load-more busy guard missing");
 assert(appJs.includes("function setDictionaryBusy") && appJs.includes("dictionaryBtn.disabled = loading"), "Dictionary busy feedback missing");
+assert(appJs.includes("function setMyPanelBusy") && appJs.includes('myPanel.setAttribute("aria-busy"'), "My panel busy feedback missing");
+assert(appJs.includes("正在读取我的内容，请稍候") && appJs.includes("正在读取我的收藏与笔记"), "My panel loading feedback missing");
+assert(appJs.includes('button.disabled = loading') && appJs.includes("[data-my-filter]"), "My panel filter disabled state missing");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
 assert((appJs.match(/keepReadingChromeVisible\(\);/g) || []).length >= 8, "Reading chrome keep-visible coverage missing");
@@ -167,6 +171,7 @@ assert(stylesCss.includes(".mobileNav #voiceBtn::before") && stylesCss.includes(
 assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled style missing");
 assert(stylesCss.includes(".dataButtons button:disabled"), "Data action disabled style missing");
 assert(stylesCss.includes(".aiResultActions button:disabled"), "AI result copy disabled style missing");
+assert(stylesCss.includes(".myFilters button:disabled"), "My panel filter disabled style missing");
 assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style missing");
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
 assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style missing");
