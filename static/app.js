@@ -188,8 +188,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.37";
+const APP_VERSION = "1.9.38";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.38",
+    date: "2026-08-14",
+    items: ["无小标题译本自动借用已安装的中文标题版本作为参考小标题", "章节 API 增加 titleSource、titleSourceName 等来源字段", "Android 离线后台同步支持参考小标题", "正文小标题摘要和段落标题取消过深缩进，手机端更容易看到", "侧栏关闭按钮和章节选择统一调用 closeSidebar()", "smoke test 增加 KJV 参考小标题与侧栏关闭路径断言"],
+  },
   {
     version: "1.9.37",
     date: "2026-08-14",
