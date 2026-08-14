@@ -426,12 +426,12 @@ function versionLabel(versionId) {
 }
 
 function setLoading(text = "加载中") {
-  content.innerHTML = `<div class="loading">${text}</div>`;
+  content.innerHTML = `<div class="loading">${escapeHtml(text)}</div>`;
 }
 
 function setError(error) {
   const message = error.message || String(error);
-  content.innerHTML = `<div class="error">${message}</div>`;
+  content.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
   showStatus(message, "error");
 }
 
