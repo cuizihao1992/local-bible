@@ -188,8 +188,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.42";
+const APP_VERSION = "1.9.43";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.43",
+    date: "2026-08-14",
+    items: ["章节加载改为 finally 统一恢复 loading 状态", "只有当前章节请求 token 才能恢复上一章/下一章和章节按钮状态", "章节加载成功、失败和中途返回都走统一收尾判断", "smoke test 增加当前 token finally 恢复断言"],
+  },
   {
     version: "1.9.42",
     date: "2026-08-14",
