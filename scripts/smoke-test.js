@@ -61,9 +61,14 @@ assert(Number.isInteger(progress.total) && progress.total > 1000, "Progress tota
 assert(Array.isArray(progress.readChapters), "Progress endpoint shape invalid");
 
 const appJs = await getText("/app.js");
+const indexHtml = await getText("/index.html");
+const stylesCss = await getText("/styles.css");
 assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset helper missing");
 assert(appJs.includes("showStatus(\"已经是第一章\")"), "First chapter boundary feedback missing");
 assert(appJs.includes("closeAiResult();"), "Top panel close flow does not include AI panel");
+assert(appJs.includes("overlay.addEventListener(\"click\", () => {\n  handleBackIntent();"), "Overlay does not use back intent close flow");
+assert(indexHtml.includes('role="status" aria-live="polite"'), "Status panel accessibility attributes missing");
+assert(stylesCss.includes(".mobileNav #voiceBtn::before") && stylesCss.includes("border-radius: 999px"), "Voice button indicator CSS missing");
 
 console.log(
   JSON.stringify(

@@ -2283,9 +2283,14 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   }
 
   .mobileNav #voiceBtn::before {
-    content: "●";
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
     margin-right: 3px;
-    font-size: 10px;
+    border-radius: 999px;
+    background: currentColor;
+    vertical-align: 1px;
   }
 
   .mobileNav #voiceBtn.active {

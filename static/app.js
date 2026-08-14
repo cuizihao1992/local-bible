@@ -2813,9 +2813,7 @@ sidebarTabs?.addEventListener("click", (event) => {
 readerSettingsBtn.addEventListener("click", () => toggleReaderSettings());
 closeReaderSettingsBtn.addEventListener("click", () => toggleReaderSettings(false));
 overlay.addEventListener("click", () => {
-  document.body.classList.remove("sidebarOpen");
-  toggleBookPicker(false);
-  toggleReaderSettings(false);
+  handleBackIntent();
 });
 mobilePrevBtn.addEventListener("click", () => moveChapter(-1));
 mobileNextBtn.addEventListener("click", () => moveChapter(1));
