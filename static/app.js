@@ -183,8 +183,13 @@ let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.31";
+const APP_VERSION = "1.9.32";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.32",
+    date: "2026-08-14",
+    items: ["多选复制增加忙碌保护，避免连续点击重复写入剪贴板", "复制中禁用格式选择和复制按钮，并显示“复制中/已复制”", "复制完成或取消选择时会清理系统文字选区", "smoke test 增加多选复制忙碌状态和清理选区断言"],
+  },
   {
     version: "1.9.31",
     date: "2026-08-14",
