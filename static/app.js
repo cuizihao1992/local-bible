@@ -172,6 +172,7 @@ let latestApkAsset = null;
 let statusTimer = null;
 let chapterLoadToken = 0;
 let chapterLoading = false;
+let referenceJumpInProgress = false;
 let progressSaving = false;
 let exportInProgress = false;
 let importInProgress = false;
@@ -2245,15 +2246,24 @@ function parseReference(input) {
 }
 
 async function jumpToReference(ref) {
-  state.book = ref.book;
-  state.chapter = ref.chapter;
-  resetVerseInteraction(ref.verse || null);
-  renderBooks();
-  renderChapterGrid();
-  closeTopPanels();
-  await loadChapter({ scrollTop: !state.targetVerse });
-  const book = currentBook();
-  if (book) showStatus(`${book.longName} ${state.chapter}${state.targetVerse ? `:${state.targetVerse}` : ""}`);
+  if (referenceJumpInProgress) {
+    showStatus("正在跳转经文，请稍候");
+    return;
+  }
+  referenceJumpInProgress = true;
+  try {
+    state.book = ref.book;
+    state.chapter = ref.chapter;
+    resetVerseInteraction(ref.verse || null);
+    renderBooks();
+    renderChapterGrid();
+    closeTopPanels();
+    await loadChapter({ scrollTop: !state.targetVerse });
+    const book = currentBook();
+    if (book) showStatus(`${book.longName} ${state.chapter}${state.targetVerse ? `:${state.targetVerse}` : ""}`);
+  } finally {
+    referenceJumpInProgress = false;
+  }
 }
 
 async function handleVoiceText(text) {

@@ -78,6 +78,7 @@ assert(appJs.includes("function keepReadingChromeVisible"), "Reading chrome pin 
 assert(appJs.includes("Date.now() < readingChromePinnedUntil"), "Reading chrome pin guard missing");
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
 assert(appJs.includes("let chapterLoading = false;"), "Chapter loading state missing");
+assert(appJs.includes("let referenceJumpInProgress = false;"), "Reference jump busy state missing");
 assert(appJs.includes("let selectionCopyInProgress = false;"), "Selection copy busy state missing");
 assert(appJs.includes("chapterLoading = true;") && appJs.includes("chapterLoading = false;"), "Chapter loading lifecycle missing");
 assert(appJs.includes("prevBtn.disabled = chapterLoading || atFirstChapter"), "Desktop previous loading disabled state missing");
@@ -86,6 +87,8 @@ assert(appJs.includes("mobilePrevBtn.disabled = chapterLoading || atFirstChapter
 assert(appJs.includes("mobileNextBtn.disabled = chapterLoading || atLastChapter"), "Mobile next loading disabled state missing");
 assert(appJs.includes('chapterLoading ? "disabled" : ""'), "Chapter grid loading disabled state missing");
 assert(appJs.includes('showStatus("正在读取经文，请稍候")'), "Chapter loading duplicate navigation feedback missing");
+assert(appJs.includes("referenceJumpInProgress = true;") && appJs.includes("referenceJumpInProgress = false;"), "Reference jump busy lifecycle missing");
+assert(appJs.includes("正在跳转经文，请稍候"), "Reference jump duplicate feedback missing");
 assert(appJs.includes("function setChapterError"), "Chapter retry error renderer missing");
 assert(appJs.includes("data-retry-chapter"), "Chapter retry button missing");
 assert(appJs.includes('loadChapter({ scrollTop: true });') && appJs.includes('[data-retry-chapter]'), "Chapter retry click handler missing");
