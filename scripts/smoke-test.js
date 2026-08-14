@@ -79,7 +79,15 @@ assert(appJs.includes("let packageInstallInProgress = false;"), "Package install
 assert(appJs.includes("let updateCheckInProgress = false;"), "Update check busy guard missing");
 assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy guard missing");
 assert(appJs.includes("let searchState ="), "Search pagination state missing");
+assert(appJs.includes("let touchFallbackState = null;"), "Touch fallback gesture state missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
+assert(appJs.includes("function startSwipeGesture"), "Shared swipe gesture helper missing");
+assert(appJs.includes("function finishSwipeGesture"), "Shared swipe finish helper missing");
+assert(appJs.includes("if (!window.PointerEvent)"), "Legacy touch fallback gate missing");
+assert(appJs.includes('"touchstart"') && appJs.includes("touchFallbackState = startSwipeGesture"), "Legacy touchstart fallback missing");
+assert(appJs.includes('"touchmove"') && appJs.includes("updateSwipeGesture(touchFallbackState"), "Legacy touchmove fallback missing");
+assert(appJs.includes('content.addEventListener("touchend"'), "Legacy touchend fallback missing");
+assert(appJs.includes('content.addEventListener("touchcancel"'), "Legacy touchcancel fallback missing");
 assert(appJs.includes('function pollDownloadProgress(kind = "package", onDone = null, onStop = null)'), "Download polling stop callback missing");
 assert(appJs.includes("const snapshot = {"), "Chapter load snapshot missing");
 assert(appJs.includes("mobilePrevBtn.disabled = atFirstChapter"), "Mobile previous button boundary state missing");

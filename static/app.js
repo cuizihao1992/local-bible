@@ -154,6 +154,7 @@ const releaseNotesContent = document.querySelector("#releaseNotesContent");
 const closeReleaseNotesBtn = document.querySelector("#closeReleaseNotesBtn");
 let longPressTimer = null;
 let swipeState = null;
+let touchFallbackState = null;
 let lastScrollY = 0;
 let scrollFrame = 0;
 let selectedVerseNumbers = [];
@@ -633,6 +634,49 @@ function updateReadingChromeVisibility() {
 
 function isInteractiveTarget(target) {
   return !!target.closest("button, input, textarea, select, a, audio, .verseMenu, .selectionBar, .noteEditor, .strongBtn, .verseTool");
+}
+
+function cancelLongPress() {
+  if (!longPressTimer) return;
+  clearTimeout(longPressTimer);
+  longPressTimer = null;
+}
+
+function startSwipeGesture(id, x, y, target) {
+  if (hasBlockingOverlayOpen() || isInteractiveTarget(target)) return null;
+  return {
+    id,
+    x,
+    y,
+    time: Date.now(),
+    moved: false,
+  };
+}
+
+function updateSwipeGesture(gesture, x, y) {
+  if (!gesture) return;
+  const dx = Math.abs(x - gesture.x);
+  const dy = Math.abs(y - gesture.y);
+  if (dx > 10 || dy > 10) gesture.moved = true;
+  if (longPressTimer && (dx > 8 || dy > 8)) cancelLongPress();
+}
+
+function finishSwipeGesture(gesture, x, y) {
+  if (!gesture) return;
+  const dx = x - gesture.x;
+  const dy = y - gesture.y;
+  const elapsed = Date.now() - gesture.time;
+  const horizontal = Math.abs(dx) >= 76 && Math.abs(dx) > Math.abs(dy) * 1.45;
+  if (horizontal && elapsed < 900 && !hasBlockingOverlayOpen()) {
+    moveChapter(dx < 0 ? 1 : -1);
+  }
+}
+
+function findTouchById(touches, id) {
+  for (let index = 0; index < touches.length; index += 1) {
+    if (touches[index].identifier === id) return touches[index];
+  }
+  return null;
 }
 
 function handleBackIntent() {
@@ -2627,13 +2671,7 @@ content.addEventListener("contextmenu", (event) => {
 content.addEventListener("pointerdown", (event) => {
   const verse = event.target.closest(".verse");
   if (event.pointerType !== "mouse" && !hasBlockingOverlayOpen() && !isInteractiveTarget(event.target)) {
-    swipeState = {
-      id: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-      time: Date.now(),
-      moved: false,
-    };
+    swipeState = startSwipeGesture(event.pointerId, event.clientX, event.clientY, event.target);
   }
   if (!verse || event.pointerType === "mouse") return;
   longPressTimer = window.setTimeout(() => {
@@ -2642,36 +2680,66 @@ content.addEventListener("pointerdown", (event) => {
 });
 
 content.addEventListener("pointermove", (event) => {
-  if (longPressTimer) {
-    const dx = swipeState ? Math.abs(event.clientX - swipeState.x) : 0;
-    const dy = swipeState ? Math.abs(event.clientY - swipeState.y) : 0;
-    if (dx > 8 || dy > 8) clearTimeout(longPressTimer);
-  }
   if (!swipeState || event.pointerId !== swipeState.id) return;
-  const dx = Math.abs(event.clientX - swipeState.x);
-  const dy = Math.abs(event.clientY - swipeState.y);
-  if (dx > 10 || dy > 10) swipeState.moved = true;
+  updateSwipeGesture(swipeState, event.clientX, event.clientY);
 });
 
 content.addEventListener("pointerup", (event) => {
-  clearTimeout(longPressTimer);
+  cancelLongPress();
   if (swipeState && event.pointerId === swipeState.id) {
-    const dx = event.clientX - swipeState.x;
-    const dy = event.clientY - swipeState.y;
-    const elapsed = Date.now() - swipeState.time;
-    const horizontal = Math.abs(dx) >= 76 && Math.abs(dx) > Math.abs(dy) * 1.45;
-    if (horizontal && elapsed < 900 && !hasBlockingOverlayOpen()) {
-      moveChapter(dx < 0 ? 1 : -1);
-    }
+    finishSwipeGesture(swipeState, event.clientX, event.clientY);
     swipeState = null;
   }
   window.setTimeout(updateSelectionBar, 0);
 });
 
 content.addEventListener("pointercancel", () => {
-  clearTimeout(longPressTimer);
+  cancelLongPress();
   swipeState = null;
 });
+
+if (!window.PointerEvent) {
+  content.addEventListener(
+    "touchstart",
+    (event) => {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const verse = event.target.closest(".verse");
+      touchFallbackState = startSwipeGesture(touch.identifier, touch.clientX, touch.clientY, event.target);
+      if (!verse) return;
+      longPressTimer = window.setTimeout(() => {
+        openVerseMenu(Number(verse.dataset.verse), touch.clientX, touch.clientY);
+      }, 520);
+    },
+    { passive: true },
+  );
+
+  content.addEventListener(
+    "touchmove",
+    (event) => {
+      if (!touchFallbackState) return;
+      const touch = findTouchById(event.touches, touchFallbackState.id);
+      if (!touch) return;
+      updateSwipeGesture(touchFallbackState, touch.clientX, touch.clientY);
+    },
+    { passive: true },
+  );
+
+  content.addEventListener("touchend", (event) => {
+    cancelLongPress();
+    if (touchFallbackState) {
+      const touch = findTouchById(event.changedTouches, touchFallbackState.id);
+      if (touch) finishSwipeGesture(touchFallbackState, touch.clientX, touch.clientY);
+      touchFallbackState = null;
+    }
+    window.setTimeout(updateSelectionBar, 0);
+  });
+
+  content.addEventListener("touchcancel", () => {
+    cancelLongPress();
+    touchFallbackState = null;
+  });
+}
 
 document.addEventListener("selectionchange", () => {
   if (selectionFrame) return;
