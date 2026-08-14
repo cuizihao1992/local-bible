@@ -134,6 +134,10 @@ assert((appJs.match(/token !== .*RequestToken/g) || []).length >= 5, "Stale asyn
 assert(appJs.includes("searchRequestToken += 1;") && appJs.includes("searchState.loading = false;"), "Search close invalidation missing");
 assert(appJs.includes("function startSwipeGesture"), "Shared swipe gesture helper missing");
 assert(appJs.includes("function finishSwipeGesture"), "Shared swipe finish helper missing");
+assert(appJs.includes("lastX: x") && appJs.includes("gesture.lastX = x"), "Swipe gesture last-position tracking missing");
+assert(appJs.includes("Math.abs(dx) >= 54") && appJs.includes("Math.abs(dx) > Math.abs(dy) * 1.2"), "Swipe threshold should be mobile-friendly");
+assert(appJs.includes("finishSwipeGesture(swipeState, swipeState.lastX, swipeState.lastY);"), "Pointer cancel should finish valid swipe");
+assert(appJs.includes("finishSwipeGesture(touchFallbackState, touchFallbackState.lastX, touchFallbackState.lastY);"), "Touch cancel should finish valid swipe");
 assert(appJs.includes("if (!window.PointerEvent)"), "Legacy touch fallback gate missing");
 assert(appJs.includes('"touchstart"') && appJs.includes("touchFallbackState = startSwipeGesture"), "Legacy touchstart fallback missing");
 assert(appJs.includes('"touchmove"') && appJs.includes("updateSwipeGesture(touchFallbackState"), "Legacy touchmove fallback missing");

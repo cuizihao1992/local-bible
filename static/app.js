@@ -817,6 +817,8 @@ function startSwipeGesture(id, x, y, target) {
     id,
     x,
     y,
+    lastX: x,
+    lastY: y,
     time: Date.now(),
     moved: false,
   };
@@ -824,6 +826,8 @@ function startSwipeGesture(id, x, y, target) {
 
 function updateSwipeGesture(gesture, x, y) {
   if (!gesture) return;
+  gesture.lastX = x;
+  gesture.lastY = y;
   const dx = Math.abs(x - gesture.x);
   const dy = Math.abs(y - gesture.y);
   if (dx > 10 || dy > 10) gesture.moved = true;
@@ -835,7 +839,7 @@ function finishSwipeGesture(gesture, x, y) {
   const dx = x - gesture.x;
   const dy = y - gesture.y;
   const elapsed = Date.now() - gesture.time;
-  const horizontal = Math.abs(dx) >= 76 && Math.abs(dx) > Math.abs(dy) * 1.45;
+  const horizontal = Math.abs(dx) >= 54 && Math.abs(dx) > Math.abs(dy) * 1.2;
   if (horizontal && elapsed < 900 && !hasBlockingOverlayOpen()) {
     moveChapter(dx < 0 ? 1 : -1);
   }
@@ -3044,6 +3048,9 @@ content.addEventListener("pointerup", (event) => {
 
 content.addEventListener("pointercancel", () => {
   cancelLongPress();
+  if (swipeState) {
+    finishSwipeGesture(swipeState, swipeState.lastX, swipeState.lastY);
+  }
   swipeState = null;
 });
 
@@ -3086,6 +3093,9 @@ if (!window.PointerEvent) {
 
   content.addEventListener("touchcancel", () => {
     cancelLongPress();
+    if (touchFallbackState) {
+      finishSwipeGesture(touchFallbackState, touchFallbackState.lastX, touchFallbackState.lastY);
+    }
     touchFallbackState = null;
   });
 }
