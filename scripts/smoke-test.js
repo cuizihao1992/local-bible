@@ -186,6 +186,9 @@ assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style 
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
 assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style missing");
 assert(stylesCss.includes(".selectionBar button:disabled"), "Selection copy disabled style missing");
+assert(stylesCss.includes("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);"), "Narrow mobile selection bar should use two flexible columns");
+assert(stylesCss.includes(".selectionBar select {\n    grid-column: 1 / -1;"), "Narrow mobile copy format should span full row");
+assert(stylesCss.includes(".selectionBar button {\n    width: 100%;\n    min-width: 0;"), "Narrow mobile selection buttons should fit available width");
 assert(stylesCss.includes(".quickForm button.loading"), "Search button loading style missing");
 assert(stylesCss.includes(".searchMoreBtn:disabled"), "Search load-more disabled style missing");
 assert(stylesCss.includes(".sectionHeadingNo"), "Visible section heading style missing");

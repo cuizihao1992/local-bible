@@ -2533,7 +2533,7 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     gap: 8px;
     padding: 8px 8px 8px 10px;
     font-size: 12px;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .selectionBar span {
@@ -2541,12 +2541,17 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   }
 
   .selectionBar select {
+    grid-column: 1 / -1;
     width: 100%;
     min-width: 0;
     font-size: 12px;
   }
 
   .selectionBar button {
+    width: 100%;
+    min-width: 0;
     padding: 0 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
