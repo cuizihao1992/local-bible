@@ -187,8 +187,13 @@ let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.35";
+const APP_VERSION = "1.9.36";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.36",
+    date: "2026-08-14",
+    items: ["搜索结果、Strong 出现位置、我的记录、语音和快捷输入跳转增加统一忙碌保护", "重复触发跳转时提示“正在跳转经文，请稍候”", "跳转成功、失败或章节加载异常后都会恢复跳转状态", "smoke test 增加经文跳转忙碌状态和重复触发反馈断言"],
+  },
   {
     version: "1.9.35",
     date: "2026-08-14",
