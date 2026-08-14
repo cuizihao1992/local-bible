@@ -167,6 +167,7 @@ let downloadProgressTimer = null;
 let latestApkAsset = null;
 let statusTimer = null;
 let chapterLoadToken = 0;
+let chapterLoading = false;
 let progressSaving = false;
 let importInProgress = false;
 let packageInstallInProgress = false;
@@ -1357,7 +1358,7 @@ function renderChapterGrid() {
     const chapter = index + 1;
     const active = chapter === state.chapter ? " active" : "";
     const read = readSet.has(`${state.book}:${chapter}`) ? " read" : "";
-    return `<button class="chapterBtn${active}${read}" data-chapter="${chapter}" title="${read ? "已读" : "未读"}">${chapter}</button>`;
+    return `<button class="chapterBtn${active}${read}" data-chapter="${chapter}" title="${read ? "已读" : "未读"}" ${chapterLoading ? "disabled" : ""}>${chapter}</button>`;
   }).join("");
 }
 
@@ -1371,10 +1372,10 @@ function renderChrome() {
   const atFirstChapter = state.book === 1 && state.chapter === 1;
   const lastBook = state.books[state.books.length - 1];
   const atLastChapter = !!lastBook && state.book === lastBook.id && state.chapter === lastBook.chapterCount;
-  prevBtn.disabled = atFirstChapter;
-  nextBtn.disabled = atLastChapter;
-  if (mobilePrevBtn) mobilePrevBtn.disabled = atFirstChapter;
-  if (mobileNextBtn) mobileNextBtn.disabled = atLastChapter;
+  prevBtn.disabled = chapterLoading || atFirstChapter;
+  nextBtn.disabled = chapterLoading || atLastChapter;
+  if (mobilePrevBtn) mobilePrevBtn.disabled = chapterLoading || atFirstChapter;
+  if (mobileNextBtn) mobileNextBtn.disabled = chapterLoading || atLastChapter;
   renderProgressChrome();
 }
 
@@ -1814,6 +1815,7 @@ async function loadBooks() {
 
 async function loadChapter(options = {}) {
   const token = (options.token ?? ++chapterLoadToken);
+  chapterLoading = true;
   const snapshot = {
     version: state.version,
     compareVersions: [...state.compareVersions],
@@ -1845,7 +1847,9 @@ async function loadChapter(options = {}) {
     setChapterError(error, snapshot);
   }
   if (token !== chapterLoadToken) return;
+  chapterLoading = false;
   renderChrome();
+  renderChapterGrid();
 }
 
 async function loadDashboard() {
@@ -2571,6 +2575,10 @@ async function init() {
 }
 
 function moveChapter(delta) {
+  if (chapterLoading) {
+    showStatus("正在读取经文，请稍候");
+    return false;
+  }
   const book = currentBook();
   if (!book) return false;
   const lastBook = state.books[state.books.length - 1];
@@ -2689,6 +2697,7 @@ bookGrid.addEventListener("click", (event) => {
 chapterGrid.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-chapter]");
   if (!button) return;
+  if (button.disabled || chapterLoading) return;
   state.chapter = Number(button.dataset.chapter);
   resetVerseInteraction();
   document.body.classList.remove("sidebarOpen");
