@@ -172,8 +172,13 @@ let packageInstallInProgress = false;
 let updateCheckInProgress = false;
 let apkDownloadInProgress = false;
 let searchState = { query: "", scope: "all", book: 1, results: [], nextOffset: 0, hasMore: false, loading: false };
-const APP_VERSION = "1.9.24";
+const APP_VERSION = "1.9.25";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.25",
+    date: "2026-08-14",
+    items: ["新增统一内容面板关闭逻辑，避免搜索、词典、Strong、AI、我的、更新说明互相叠加", "打开书卷选择、阅读设置或侧栏时自动收起其它内容面板", "打开搜索、词典、Strong、我的、AI 结果时保持单一内容面板视图", "smoke test 增加内容面板互斥断言"],
+  },
   {
     version: "1.9.24",
     date: "2026-08-14",
