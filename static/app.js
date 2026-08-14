@@ -156,6 +156,8 @@ const closeReleaseNotesBtn = document.querySelector("#closeReleaseNotesBtn");
 let longPressTimer = null;
 let swipeState = null;
 let touchFallbackState = null;
+let voiceInputActive = false;
+let voiceStopPending = false;
 let lastScrollY = 0;
 let scrollFrame = 0;
 let selectedVerseNumbers = [];
@@ -2196,6 +2198,8 @@ async function handleVoiceText(text) {
 window.handleAndroidVoice = (type, text) => {
   if (!voiceBtn) return;
   if (type === "start" || type === "ready" || type === "speech") {
+    voiceInputActive = true;
+    voiceStopPending = false;
     voiceBtn.classList.add("active");
     voiceBtn.textContent = "聆听";
     return;
@@ -2204,6 +2208,8 @@ window.handleAndroidVoice = (type, text) => {
     if (text) quickInput.value = text;
     return;
   }
+  voiceInputActive = false;
+  voiceStopPending = false;
   voiceBtn.classList.remove("active");
   voiceBtn.textContent = "语音";
   if (type === "result") {
@@ -3253,17 +3259,26 @@ mobileMyBtn.addEventListener("click", () => openMyPanel("all").catch(setError));
 
 function startVoiceInput(event) {
   event.preventDefault();
+  if (voiceInputActive) {
+    showStatus("语音识别正在进行，请先松开按钮");
+    return;
+  }
+  voiceInputActive = true;
+  voiceStopPending = false;
   saveAiConfig();
   if (state.speechProvider === "mimo") {
     if (!state.mimoKey) {
+      voiceInputActive = false;
       quickInput.value = "请先在 AI 配置里填写小米 MiMo Key。";
       return;
     }
     if (state.mimoKeyType === "codeplan" && !state.mimoBaseUrl.trim()) {
+      voiceInputActive = false;
       quickInput.value = "CodePlan / Token Plan 需要填写小米后台专属 Base URL。";
       return;
     }
     if (!window.AndroidVoiceApi?.startCloud) {
+      voiceInputActive = false;
       quickInput.value = "当前版本不支持 MiMo 录音上传，请安装最新版 APK。";
       return;
     }
@@ -3274,18 +3289,21 @@ function startVoiceInput(event) {
     return;
   }
   if (state.speechProvider === "openai") {
+    voiceInputActive = false;
     quickInput.value = state.openaiKey
       ? `已配置 OpenAI ${state.speechModel}。OpenAI 云端录音上传将在下一步接入。`
       : "请先在 AI 配置里填写 OpenAI Key。";
     return;
   }
   if (!window.AndroidVoiceApi?.start) {
+    voiceInputActive = false;
     quickInput.value = "当前环境不支持系统语音识别，可在 AI 配置里切换到 OpenAI 云端识别。";
     return;
   }
   if (window.AndroidVoiceApi?.isAvailable) {
     const availability = JSON.parse(window.AndroidVoiceApi.isAvailable());
     if (!availability.available) {
+      voiceInputActive = false;
       quickInput.value = "当前设备没有可用的系统语音识别服务，可在 AI 配置里切换到 OpenAI 云端识别。";
       return;
     }
@@ -3297,13 +3315,21 @@ function startVoiceInput(event) {
 
 function stopVoiceInput(event) {
   event.preventDefault();
+  if (!voiceInputActive || voiceStopPending) return;
+  voiceStopPending = true;
   if (state.speechProvider === "mimo" && window.AndroidVoiceApi?.stopCloud) {
     voiceBtn.textContent = "上传";
     quickInput.value = "正在上传语音并识别...";
     window.AndroidVoiceApi.stopCloud();
     return;
   }
-  if (!window.AndroidVoiceApi?.stop) return;
+  if (!window.AndroidVoiceApi?.stop) {
+    voiceInputActive = false;
+    voiceStopPending = false;
+    voiceBtn.classList.remove("active");
+    voiceBtn.textContent = "语音";
+    return;
+  }
   window.AndroidVoiceApi.stop();
 }
 
@@ -3313,5 +3339,17 @@ voiceBtn.addEventListener("pointercancel", stopVoiceInput);
 voiceBtn.addEventListener("pointerleave", (event) => {
   if (event.buttons) stopVoiceInput(event);
 });
+if (!window.PointerEvent) {
+  voiceBtn.addEventListener(
+    "touchstart",
+    (event) => {
+      if (event.touches.length !== 1) return;
+      startVoiceInput(event);
+    },
+    { passive: false },
+  );
+  voiceBtn.addEventListener("touchend", stopVoiceInput, { passive: false });
+  voiceBtn.addEventListener("touchcancel", stopVoiceInput, { passive: false });
+}
 
 init();

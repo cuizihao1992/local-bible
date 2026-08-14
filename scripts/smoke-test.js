@@ -101,6 +101,8 @@ assert(appJs.includes("正在保存标注，请稍候"), "Duplicate verse mark s
 assert(appJs.includes("successMessage: mark.favorite ?") && appJs.includes("successMessage: mark.highlighted ?"), "Favorite/highlight save feedback missing");
 assert(appJs.includes('tool.textContent = "保存中"') && appJs.includes('tool.textContent = "已保存"'), "Note save busy feedback missing");
 assert(appJs.includes("let touchFallbackState = null;"), "Touch fallback gesture state missing");
+assert(appJs.includes("let voiceInputActive = false;"), "Voice active state guard missing");
+assert(appJs.includes("let voiceStopPending = false;"), "Voice stop pending guard missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
 assert(appJs.includes("function setSearchBusy") && appJs.includes('searchPanel.setAttribute("aria-busy"'), "Search busy feedback missing");
 assert(appJs.includes("quickSearchBtn.textContent = loading && !append"), "Search button busy text missing");
@@ -117,6 +119,9 @@ assert(appJs.includes('"touchstart"') && appJs.includes("touchFallbackState = st
 assert(appJs.includes('"touchmove"') && appJs.includes("updateSwipeGesture(touchFallbackState"), "Legacy touchmove fallback missing");
 assert(appJs.includes('content.addEventListener("touchend"'), "Legacy touchend fallback missing");
 assert(appJs.includes('content.addEventListener("touchcancel"'), "Legacy touchcancel fallback missing");
+assert(/voiceBtn\.addEventListener\(\s*"touchstart"[\s\S]*startVoiceInput\(event\)/.test(appJs), "Legacy voice touchstart fallback missing");
+assert(/voiceBtn\.addEventListener\("touchend", stopVoiceInput/.test(appJs) && /voiceBtn\.addEventListener\("touchcancel", stopVoiceInput/.test(appJs), "Legacy voice touch stop fallback missing");
+assert(appJs.includes("语音识别正在进行，请先松开按钮"), "Voice duplicate start feedback missing");
 assert(appJs.includes('function pollDownloadProgress(kind = "package", onDone = null, onStop = null)'), "Download polling stop callback missing");
 assert(appJs.includes("const snapshot = {"), "Chapter load snapshot missing");
 assert(appJs.includes("mobilePrevBtn.disabled = chapterLoading || atFirstChapter"), "Mobile previous button boundary/loading state missing");
