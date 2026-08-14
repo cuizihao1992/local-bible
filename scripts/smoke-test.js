@@ -76,6 +76,8 @@ assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset
 assert(appJs.includes("let readingChromePinnedUntil = 0;"), "Reading chrome pin state missing");
 assert(appJs.includes("function keepReadingChromeVisible"), "Reading chrome pin helper missing");
 assert(appJs.includes("Date.now() < readingChromePinnedUntil"), "Reading chrome pin guard missing");
+assert(appJs.includes('closeSidebarBtn.addEventListener("click", closeSidebar);'), "Sidebar close button should use closeSidebar helper");
+assert(appJs.includes("state.chapter = Number(button.dataset.chapter);\n  resetVerseInteraction();\n  closeSidebar();"), "Chapter grid should use closeSidebar helper");
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
 assert(appJs.includes("let chapterLoading = false;"), "Chapter loading state missing");
 assert(appJs.includes("let referenceJumpInProgress = false;"), "Reference jump busy state missing");

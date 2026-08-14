@@ -2900,7 +2900,7 @@ chapterGrid.addEventListener("click", (event) => {
   if (button.disabled || chapterLoading) return;
   state.chapter = Number(button.dataset.chapter);
   resetVerseInteraction();
-  document.body.classList.remove("sidebarOpen");
+  closeSidebar();
   toggleBookPicker(false);
   loadChapter({ scrollTop: true });
 });
@@ -3414,7 +3414,7 @@ nextBtn.addEventListener("click", () => {
 menuBtn.addEventListener("click", () => {
   openSidebar("reading");
 });
-closeSidebarBtn.addEventListener("click", () => document.body.classList.remove("sidebarOpen"));
+closeSidebarBtn.addEventListener("click", closeSidebar);
 sidebarTabs?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-sidebar-target]");
   if (!button) return;
