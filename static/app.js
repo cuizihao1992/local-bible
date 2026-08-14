@@ -179,8 +179,13 @@ let dictionaryRequestToken = 0;
 let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
-const APP_VERSION = "1.9.28";
+const APP_VERSION = "1.9.29";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.29",
+    date: "2026-08-14",
+    items: ["章节读取期间禁用上一章、下一章和底部翻章按钮", "书卷选择面板里的章节按钮在加载中也会暂时禁用", "滑动或键盘在章节读取中触发翻章时显示“正在读取经文，请稍候”", "smoke test 增加章节导航忙碌状态断言"],
+  },
   {
     version: "1.9.28",
     date: "2026-08-14",
