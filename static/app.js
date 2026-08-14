@@ -188,8 +188,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.40";
+const APP_VERSION = "1.9.41";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.41",
+    date: "2026-08-14",
+    items: ["底部“标记/已读”保存中显示“保存中”", "保存阅读进度时禁用底部标记按钮和仪表盘标记按钮", "重复触发时提示“正在保存阅读进度，请稍候”", "保存失败时显示错误提示并恢复按钮文字", "smoke test 增加阅读进度保存 busy 断言"],
+  },
   {
     version: "1.9.40",
     date: "2026-08-14",
