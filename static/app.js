@@ -164,6 +164,7 @@ let bookFilter = "all";
 let downloadProgressTimer = null;
 let latestApkAsset = null;
 let statusTimer = null;
+let chapterLoadToken = 0;
 const APP_VERSION = "1.9.20";
 const RELEASE_NOTES = [
   {
@@ -565,6 +566,10 @@ function resetVerseInteraction(targetVerse = null) {
   closeVerseMenu();
   closeSelectionBar();
   showReadingChrome();
+}
+
+function isFreshChapterLoad(token) {
+  return token == null || token === chapterLoadToken;
 }
 
 function hasBlockingOverlayOpen() {
@@ -1655,24 +1660,38 @@ async function loadBooks() {
 }
 
 async function loadChapter(options = {}) {
+  const token = (options.token ?? ++chapterLoadToken);
+  const snapshot = {
+    version: state.version,
+    compareVersions: [...state.compareVersions],
+    book: state.book,
+    chapter: state.chapter,
+    commentary: state.commentary,
+  };
   setLoading("正在读取经文");
   rememberCurrentBook();
   renderChrome();
   renderChapterGrid();
   try {
-    const params = new URLSearchParams({ book: String(state.book), chapter: String(state.chapter) });
-    [state.version, ...state.compareVersions].forEach((version) => params.append("version", version));
+    const params = new URLSearchParams({ book: String(snapshot.book), chapter: String(snapshot.chapter) });
+    [snapshot.version, ...snapshot.compareVersions].forEach((version) => params.append("version", version));
     const data = await api(`/api/chapters?${params.toString()}`);
-    await Promise.all([loadMarks(), loadProgress()]);
+    if (token !== chapterLoadToken) return;
+    await Promise.all([loadMarks(snapshot, token), loadProgress(snapshot.version, token)]);
+    if (token !== chapterLoadToken) return;
     renderVerses(data);
     if (options.scrollTop && !state.targetVerse) scrollReaderToTop();
-    await loadCommentary();
-    await loadAudio();
-    saveReadingHistory();
+    await loadCommentary(snapshot, token);
+    if (token !== chapterLoadToken) return;
+    await loadAudio(snapshot, token);
+    if (token !== chapterLoadToken) return;
+    saveReadingHistory(snapshot);
     saveState();
   } catch (error) {
+    if (token !== chapterLoadToken) return;
     setError(error);
   }
+  if (token !== chapterLoadToken) return;
   renderChrome();
 }
 
@@ -1723,12 +1742,13 @@ function findNextUnreadChapter() {
   return ordered.find((item) => !readSet.has(`${item.book}:${item.chapter}`)) || null;
 }
 
-async function loadAudio() {
+async function loadAudio(snapshot = {}, token = null) {
   const params = new URLSearchParams({
-    book: String(state.book),
-    chapter: String(state.chapter),
+    book: String(snapshot.book ?? state.book),
+    chapter: String(snapshot.chapter ?? state.chapter),
   });
   const data = await api(`/api/audio?${params.toString()}`);
+  if (!isFreshChapterLoad(token)) return;
   renderAudio(data.audio || []);
 }
 
@@ -1764,19 +1784,22 @@ function renderAudio(items) {
   });
 }
 
-async function loadMarks() {
+async function loadMarks(snapshot = {}, token = null) {
   const params = new URLSearchParams({
-    version: state.version,
-    book: String(state.book),
-    chapter: String(state.chapter),
+    version: snapshot.version ?? state.version,
+    book: String(snapshot.book ?? state.book),
+    chapter: String(snapshot.chapter ?? state.chapter),
   });
   const data = await api(`/api/user/marks?${params.toString()}`);
+  if (!isFreshChapterLoad(token)) return;
   state.marks = new Map(data.marks.map((mark) => [Number(mark.verse), mark]));
 }
 
-async function loadProgress() {
-  if (!state.version) return;
-  state.progress = await api(`/api/user/progress?version=${encodeURIComponent(state.version)}`);
+async function loadProgress(version = state.version, token = null) {
+  if (!version) return;
+  const progress = await api(`/api/user/progress?version=${encodeURIComponent(version)}`);
+  if (!isFreshChapterLoad(token)) return;
+  state.progress = progress;
   renderProgressChrome();
   renderChapterGrid();
 }
@@ -1794,11 +1817,11 @@ async function setCurrentChapterRead(read) {
   await loadDashboard();
 }
 
-function saveReadingHistory() {
+function saveReadingHistory(snapshot = {}) {
   postJson("/api/user/history", {
-    version: state.version,
-    book: state.book,
-    chapter: state.chapter,
+    version: snapshot.version ?? state.version,
+    book: snapshot.book ?? state.book,
+    chapter: snapshot.chapter ?? state.chapter,
   }).catch(() => {});
 }
 
@@ -1810,21 +1833,26 @@ async function saveVerseMark(mark) {
   loadDashboard().catch(() => {});
 }
 
-async function loadCommentary() {
-  if (!state.commentary) {
+async function loadCommentary(snapshot = {}, token = null) {
+  const commentary = snapshot.commentary ?? state.commentary;
+  if (!commentary) {
+    if (!isFreshChapterLoad(token)) return;
     commentaryContent.innerHTML = "";
     return;
   }
+  if (!isFreshChapterLoad(token)) return;
   commentaryContent.innerHTML = `<div class="commentaryBlock"><div class="commentaryHeader"><div class="commentaryTitle">正在读取注释</div></div></div>`;
   try {
     const params = new URLSearchParams({
-      source: state.commentary,
-      book: String(state.book),
-      chapter: String(state.chapter),
+      source: commentary,
+      book: String(snapshot.book ?? state.book),
+      chapter: String(snapshot.chapter ?? state.chapter),
     });
     const data = await api(`/api/commentary?${params.toString()}`);
+    if (!isFreshChapterLoad(token)) return;
     renderCommentary(data);
   } catch (error) {
+    if (!isFreshChapterLoad(token)) return;
     commentaryContent.innerHTML = `<div class="commentaryBlock"><div class="commentaryEntry error">${escapeHtml(
       error.message || error,
     )}</div></div>`;
