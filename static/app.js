@@ -769,6 +769,7 @@ function closeTopPanels() {
 function resetVerseInteraction(targetVerse = null) {
   state.targetVerse = targetVerse;
   state.activeVerse = null;
+  closeContentPanels();
   closeVerseMenu();
   closeSelectionBar();
   showReadingChrome();

@@ -76,6 +76,7 @@ const stylesCss = await getText("/styles.css");
 const androidApi = readFileSync("android/app/src/main/java/local/bible/reader/OfflineApi.java", "utf8");
 const packageBuildScript = readFileSync("scripts/build-android-packages.ps1", "utf8");
 assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset helper missing");
+assert(appJs.includes("function resetVerseInteraction") && appJs.includes("state.activeVerse = null;\n  closeContentPanels();"), "Navigation reset should close stale content panels");
 assert(appJs.includes("let readingChromePinnedUntil = 0;"), "Reading chrome pin state missing");
 assert(appJs.includes("function keepReadingChromeVisible"), "Reading chrome pin helper missing");
 assert(appJs.includes("Date.now() < readingChromePinnedUntil"), "Reading chrome pin guard missing");
