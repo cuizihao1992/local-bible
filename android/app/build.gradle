@@ -75,11 +75,22 @@ tasks.register("syncOfflineAssets") {
         }
         exec {
             workingDir projectRoot
-            if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-                commandLine "cmd", "/c", "npx", "babel", "$buildDir/generated/offlineAssets/static/app.js", "--out-file", "$buildDir/generated/offlineAssets/static/app.js", "--config-file", "./babel.android.json"
-            } else {
-                commandLine "npx", "babel", "$buildDir/generated/offlineAssets/static/app.js", "--out-file", "$buildDir/generated/offlineAssets/static/app.js", "--config-file", "./babel.android.json"
+            def babelCli = new File(projectRoot, "node_modules/@babel/cli/bin/babel.js")
+            def appJs = file("$buildDir/generated/offlineAssets/static/app.js")
+            def appJsTranspiled = file("$buildDir/generated/offlineAssets/static/app.android.js")
+            if (!babelCli.exists()) {
+                throw new GradleException("Babel CLI not found. Run npm install before building Android assets.")
             }
+            if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+                commandLine "node", "--max-old-space-size=1024", babelCli.absolutePath, appJs.absolutePath, "--out-file", appJsTranspiled.absolutePath, "--config-file", "./babel.android.json"
+            } else {
+                commandLine "node", "--max-old-space-size=1024", babelCli.absolutePath, appJs.absolutePath, "--out-file", appJsTranspiled.absolutePath, "--config-file", "./babel.android.json"
+            }
+        }
+        def appJs = file("$buildDir/generated/offlineAssets/static/app.js")
+        def appJsTranspiled = file("$buildDir/generated/offlineAssets/static/app.android.js")
+        if (!appJs.delete() || !appJsTranspiled.renameTo(appJs)) {
+            throw new GradleException("Failed to replace Android app.js with transpiled output.")
         }
         copy {
             from(sourceDir)
