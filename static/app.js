@@ -552,9 +552,19 @@ function showSidebarPanel(name = "reading") {
   });
 }
 
+function closeContentPanels() {
+  closeSearch();
+  closeStrong();
+  closeDictionary();
+  closeAiResult();
+  closeMyPanel();
+  closeReleaseNotes();
+}
+
 function openSidebar(panel = "reading") {
   toggleBookPicker(false);
   toggleReaderSettings(false);
+  closeContentPanels();
   closeVerseMenu();
   closeSelectionBar();
   showSidebarPanel(panel);
@@ -567,6 +577,7 @@ function toggleBookPicker(show = bookPickerPanel.hidden) {
   if (show) {
     closeSidebar();
     toggleReaderSettings(false);
+    closeContentPanels();
     closeVerseMenu();
     closeSelectionBar();
     renderBooks();
@@ -577,12 +588,7 @@ function toggleBookPicker(show = bookPickerPanel.hidden) {
 function closeTopPanels() {
   toggleBookPicker(false);
   toggleReaderSettings(false);
-  closeSearch();
-  closeStrong();
-  closeDictionary();
-  closeAiResult();
-  closeMyPanel();
-  closeReleaseNotes();
+  closeContentPanels();
   closeVerseMenu();
   closeSelectionBar();
 }
@@ -1511,7 +1517,9 @@ function toggleReaderSettings(show = readerSettingsPanel.hidden) {
   if (show) {
     closeSidebar();
     toggleBookPicker(false);
+    closeContentPanels();
     closeVerseMenu();
+    closeSelectionBar();
   }
 }
 
@@ -1555,6 +1563,7 @@ function aiActionTitle(action, verseNo) {
 
 async function runVerseAiAction(action, verseNo) {
   saveAiConfig();
+  closeContentPanels();
   aiResultPanel.hidden = false;
   aiResultTitle.textContent = aiActionTitle(action, verseNo);
   aiResultContent.innerHTML = `<div class="aiLoading">正在请求 ${escapeHtml(currentAiConfig().provider)}...</div>`;
@@ -2090,6 +2099,7 @@ window.handleAndroidVoice = (type, text) => {
 async function runSearch(query, options = {}) {
   if (searchState.loading) return;
   const append = !!options.append;
+  if (!append) closeContentPanels();
   const offset = append ? searchState.nextOffset : 0;
   const scope = append ? searchState.scope : searchScope.value;
   const book = append ? searchState.book : state.book;
@@ -2313,6 +2323,7 @@ async function copyLatestApkLink() {
 }
 
 async function openMyPanel(kind = "all") {
+  closeContentPanels();
   const params = new URLSearchParams({ kind, tag: myTagFilter.value.trim(), limit: "300" });
   const data = await api(`/api/user/marks/all?${params.toString()}`);
   myPanel.hidden = false;
@@ -2340,6 +2351,7 @@ async function searchDictionary() {
   const source = dictionarySelect.value;
   const query = dictionaryInput.value.trim();
   if (!source || !query) return;
+  closeContentPanels();
   const params = new URLSearchParams({ source, q: query, limit: "30" });
   dictionarySummary.textContent = "正在搜索词条";
   dictionaryResults.innerHTML = "";
@@ -2376,6 +2388,7 @@ function renderDictionaryImages(images) {
 }
 
 async function openStrong(code) {
+  closeContentPanels();
   strongTitle.textContent = `Strong ${code}`;
   strongContent.innerHTML = `<div class="loading">正在读取原文释义</div>`;
   strongPanel.hidden = false;

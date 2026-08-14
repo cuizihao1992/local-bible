@@ -81,6 +81,8 @@ assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy 
 assert(appJs.includes("let searchState ="), "Search pagination state missing");
 assert(appJs.includes("let touchFallbackState = null;"), "Touch fallback gesture state missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
+assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
+assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
 assert(appJs.includes("function startSwipeGesture"), "Shared swipe gesture helper missing");
 assert(appJs.includes("function finishSwipeGesture"), "Shared swipe finish helper missing");
 assert(appJs.includes("if (!window.PointerEvent)"), "Legacy touch fallback gate missing");
