@@ -95,6 +95,7 @@ assert(appJs.includes("let importInProgress = false;"), "Import busy guard missi
 assert(appJs.includes("let packageInstallInProgress = false;"), "Package install busy guard missing");
 assert(appJs.includes("let updateCheckInProgress = false;"), "Update check busy guard missing");
 assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy guard missing");
+assert(appJs.includes("let aiCopyInProgress = false;"), "AI result copy busy guard missing");
 assert(appJs.includes("let searchState ="), "Search pagination state missing");
 assert(appJs.includes("let searchRequestToken = 0;"), "Search stale request token missing");
 assert(appJs.includes("let dictionaryRequestToken = 0;"), "Dictionary stale request token missing");
@@ -137,6 +138,8 @@ assert(appJs.includes("importDataBtn.disabled = true"), "Import button busy stat
 assert(appJs.includes("exportDataBtn.disabled = true") && appJs.includes('exportDataBtn.textContent = "导出中"'), "Export button busy feedback missing");
 assert(appJs.includes("正在导出数据，请稍候") && appJs.includes("数据导出完成"), "Export status feedback missing");
 assert(appJs.includes('importDataBtn.textContent = "导入中"') && appJs.includes("正在导入数据，请稍候"), "Import duplicate/busy feedback missing");
+assert(appJs.includes("正在复制 AI 结果，请稍候") && appJs.includes('button.textContent = "复制中"'), "AI result copy busy feedback missing");
+assert(appJs.includes("已复制 AI 结果") && appJs.includes('button.textContent = "复制结果"'), "AI result copy recovery feedback missing");
 assert(appJs.includes("资源包正在下载，请稍候"), "Package install duplicate feedback missing");
 assert(appJs.includes("APK 正在下载，请稍候"), "APK duplicate download feedback missing");
 assert(appJs.includes("data-search-more"), "Search load more button missing");
@@ -160,6 +163,7 @@ assert(indexHtml.includes('role="status" aria-live="polite"'), "Status panel acc
 assert(stylesCss.includes(".mobileNav #voiceBtn::before") && stylesCss.includes("border-radius: 999px"), "Voice button indicator CSS missing");
 assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled style missing");
 assert(stylesCss.includes(".dataButtons button:disabled"), "Data action disabled style missing");
+assert(stylesCss.includes(".aiResultActions button:disabled"), "AI result copy disabled style missing");
 assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style missing");
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
 assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style missing");

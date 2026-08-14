@@ -1002,6 +1002,12 @@ select {
   padding: 0 12px;
 }
 
+.aiResultActions button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.68;
+}
+
 .myPanel {
   width: min(860px, calc(100vw - 360px));
   margin: 18px auto 0;

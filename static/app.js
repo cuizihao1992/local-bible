@@ -178,6 +178,7 @@ let importInProgress = false;
 let packageInstallInProgress = false;
 let updateCheckInProgress = false;
 let apkDownloadInProgress = false;
+let aiCopyInProgress = false;
 let searchState = { query: "", scope: "all", book: 1, results: [], nextOffset: 0, hasMore: false, loading: false };
 let searchRequestToken = 0;
 let dictionaryRequestToken = 0;
@@ -2403,6 +2404,7 @@ function closeDictionary() {
 function closeAiResult() {
   const wasOpen = !aiResultPanel.hidden;
   aiRequestToken += 1;
+  aiCopyInProgress = false;
   aiResultPanel.hidden = true;
   if (wasOpen) keepReadingChromeVisible();
 }
@@ -3071,11 +3073,32 @@ clearDownloadCacheBtn?.addEventListener("click", clearDownloadCache);
 closeDictionaryBtn.addEventListener("click", closeDictionary);
 closeAiResultBtn.addEventListener("click", closeAiResult);
 aiResultContent.addEventListener("click", (event) => {
-  if (!event.target.closest("[data-copy-ai-result]")) return;
+  const button = event.target.closest("[data-copy-ai-result]");
+  if (!button) return;
+  if (aiCopyInProgress) {
+    showStatus("正在复制 AI 结果，请稍候");
+    return;
+  }
   const text = aiResultContent.dataset.aiResultText || aiResultContent.textContent.trim();
-  writeClipboard(text).then(() => {
-    event.target.textContent = "已复制";
-  }).catch(setError);
+  aiCopyInProgress = true;
+  button.disabled = true;
+  button.textContent = "复制中";
+  writeClipboard(text)
+    .then(() => {
+      button.textContent = "已复制";
+      showStatus("已复制 AI 结果", "success");
+      window.setTimeout(() => {
+        if (button.isConnected) button.textContent = "复制结果";
+      }, 900);
+    })
+    .catch((error) => {
+      if (button.isConnected) button.textContent = "复制结果";
+      setError(error);
+    })
+    .finally(() => {
+      aiCopyInProgress = false;
+      if (button.isConnected) button.disabled = false;
+    });
 });
 closeMyPanelBtn.addEventListener("click", closeMyPanel);
 
