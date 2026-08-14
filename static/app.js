@@ -170,8 +170,13 @@ let importInProgress = false;
 let packageInstallInProgress = false;
 let updateCheckInProgress = false;
 let apkDownloadInProgress = false;
-const APP_VERSION = "1.9.21";
+const APP_VERSION = "1.9.22";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.22",
+    date: "2026-08-14",
+    items: ["底部上一章/下一章按钮同步边界禁用状态", "标记已读和导入数据增加防重复提交", "资源包安装、更新检查、APK 下载增加忙碌保护", "下载轮询异常时自动释放忙碌状态"],
+  },
   {
     version: "1.9.21",
     date: "2026-08-14",
