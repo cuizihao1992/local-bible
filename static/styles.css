@@ -1934,6 +1934,23 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   color: #8b1f1f;
 }
 
+.chapterError p {
+  margin: 10px 0 16px;
+  line-height: 1.6;
+}
+
+.chapterError button {
+  min-width: 88px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
 @supports not (background: color-mix(in srgb, white 50%, black)) {
   .bookBtn.active,
   .chapterBtn.read:not(.active),

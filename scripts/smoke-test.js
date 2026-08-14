@@ -73,6 +73,9 @@ const stylesCss = await getText("/styles.css");
 const androidApi = readFileSync("android/app/src/main/java/local/bible/reader/OfflineApi.java", "utf8");
 assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset helper missing");
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
+assert(appJs.includes("function setChapterError"), "Chapter retry error renderer missing");
+assert(appJs.includes("data-retry-chapter"), "Chapter retry button missing");
+assert(appJs.includes('loadChapter({ scrollTop: true });') && appJs.includes('[data-retry-chapter]'), "Chapter retry click handler missing");
 assert(appJs.includes("let progressSaving = false;"), "Progress save busy guard missing");
 assert(appJs.includes("let importInProgress = false;"), "Import busy guard missing");
 assert(appJs.includes("let packageInstallInProgress = false;"), "Package install busy guard missing");
@@ -123,6 +126,7 @@ assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
 assert(stylesCss.includes(".quickForm button.loading"), "Search button loading style missing");
 assert(stylesCss.includes(".searchMoreBtn:disabled"), "Search load-more disabled style missing");
 assert(stylesCss.includes(".sectionHeadingNo"), "Visible section heading style missing");
+assert(stylesCss.includes(".chapterError button"), "Chapter retry button style missing");
 
 console.log(
   JSON.stringify(

@@ -489,6 +489,20 @@ function setError(error) {
   showStatus(message, "error");
 }
 
+function setChapterError(error, snapshot) {
+  const message = error.message || String(error);
+  const book = state.books.find((item) => item.id === snapshot.book);
+  const reference = book ? `${book.longName || book.shortName} ${snapshot.chapter}` : `第 ${snapshot.chapter} 章`;
+  content.innerHTML = `
+    <div class="error chapterError">
+      <div>${escapeHtml(reference)} 读取失败</div>
+      <p>${escapeHtml(message)}</p>
+      <button type="button" data-retry-chapter>重试</button>
+    </div>
+  `;
+  showStatus("章节读取失败，可重试", "error");
+}
+
 function showStatus(message, tone = "info") {
   if (!mobileStatusPanel || !message) return;
   mobileStatusPanel.textContent = message;
@@ -1823,7 +1837,7 @@ async function loadChapter(options = {}) {
     saveState();
   } catch (error) {
     if (token !== chapterLoadToken) return;
-    setError(error);
+    setChapterError(error, snapshot);
   }
   if (token !== chapterLoadToken) return;
   renderChrome();
@@ -2709,6 +2723,10 @@ searchResults.addEventListener("click", async (event) => {
 
 content.addEventListener("click", (event) => {
   showReadingChrome();
+  if (event.target.closest("[data-retry-chapter]")) {
+    loadChapter({ scrollTop: true });
+    return;
+  }
   const strong = event.target.closest(".strongBtn");
   if (strong) {
     openStrong(strong.dataset.code).catch(setError);
