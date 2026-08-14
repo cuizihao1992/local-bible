@@ -188,8 +188,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.36";
+const APP_VERSION = "1.9.37";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.37",
+    date: "2026-08-14",
+    items: ["我的收藏与笔记打开和筛选时增加读取中反馈", "读取中设置 aria-busy 并禁用筛选按钮", "重复触发时提示“正在读取我的内容，请稍候”", "关闭面板或请求完成后恢复 busy 状态", "smoke test 增加我的面板 busy、筛选禁用和读取反馈断言"],
+  },
   {
     version: "1.9.36",
     date: "2026-08-14",
