@@ -172,8 +172,13 @@ let packageInstallInProgress = false;
 let updateCheckInProgress = false;
 let apkDownloadInProgress = false;
 let searchState = { query: "", scope: "all", book: 1, results: [], nextOffset: 0, hasMore: false, loading: false };
-const APP_VERSION = "1.9.23";
+const APP_VERSION = "1.9.24";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.24",
+    date: "2026-08-14",
+    items: ["阅读区滑动切章抽出统一手势判断，减少后续交互回归风险", "旧 WebView 或旧平板缺少 PointerEvent 时，使用 touch 事件兜底支持左右滑切章", "长按经文菜单在旧触摸环境中同样可触发，并在移动时自动取消", "smoke test 增加触摸兜底结构断言"],
+  },
   {
     version: "1.9.23",
     date: "2026-08-14",
