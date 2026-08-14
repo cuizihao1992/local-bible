@@ -167,6 +167,9 @@ let statusTimer = null;
 let chapterLoadToken = 0;
 let progressSaving = false;
 let importInProgress = false;
+let packageInstallInProgress = false;
+let updateCheckInProgress = false;
+let apkDownloadInProgress = false;
 const APP_VERSION = "1.9.21";
 const RELEASE_NOTES = [
   {
@@ -1045,7 +1048,7 @@ function stopDownloadProgressPolling() {
   downloadProgressTimer = null;
 }
 
-function pollDownloadProgress(kind = "package", onDone = null) {
+function pollDownloadProgress(kind = "package", onDone = null, onStop = null) {
   stopDownloadProgressPolling();
   const getStatus = () => {
     if (kind === "update") return window.AndroidUpdateApi?.downloadStatus ? JSON.parse(window.AndroidUpdateApi.downloadStatus()) : {};
@@ -1062,10 +1065,12 @@ function pollDownloadProgress(kind = "package", onDone = null) {
         if (onDone) onDone(status);
       } else if (["error", "cleared"].includes(status.state)) {
         stopDownloadProgressPolling();
+        if (onStop) onStop(status);
       }
     } catch (error) {
       renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
       stopDownloadProgressPolling();
+      if (onStop) onStop({ state: "error", message: error.message || String(error) });
     }
   }, 500);
 }
@@ -1118,9 +1123,18 @@ async function refreshResourceLists() {
 
 async function installPackage(packageId) {
   if (!isAndroidOffline()) return;
+  if (packageInstallInProgress) {
+    showStatus("资源包正在下载，请稍候");
+    return;
+  }
+  packageInstallInProgress = true;
   const button = [...(packageList?.querySelectorAll("[data-package-id]") || [])].find(
     (item) => item.dataset.packageId === packageId,
   );
+  const packageButtons = [...(packageList?.querySelectorAll("[data-package-id]") || [])];
+  packageButtons.forEach((item) => {
+    item.disabled = true;
+  });
   if (button) {
     button.disabled = true;
     button.textContent = "下载中";
@@ -1131,6 +1145,9 @@ async function installPackage(packageId) {
     await loadBooks();
     await loadChapter();
     if (packageHint) packageHint.textContent = "资源包安装完成。";
+    packageInstallInProgress = false;
+  }, () => {
+    packageInstallInProgress = false;
   });
   if (packageHint) packageHint.textContent = "正在从 GitHub 下载资源包，请保持网络连接。";
   try {
@@ -1146,12 +1163,18 @@ async function installPackage(packageId) {
       await loadChapter();
       if (packageHint) packageHint.textContent = `已安装 ${data.installed || 0} 个资源文件。`;
       stopDownloadProgressPolling();
+      packageInstallInProgress = false;
     }
   } catch (error) {
+    packageInstallInProgress = false;
     if (button) {
       button.disabled = false;
       button.textContent = "重试";
     }
+    packageButtons.forEach((item) => {
+      if (!item.isConnected || item === button) return;
+      item.disabled = false;
+    });
     if (packageHint) packageHint.textContent = error.message || String(error);
     renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
   }
@@ -2102,6 +2125,11 @@ function setLatestApkAsset(asset) {
 }
 
 async function checkForUpdates() {
+  if (updateCheckInProgress) {
+    showStatus("正在检查更新，请稍候");
+    return;
+  }
+  updateCheckInProgress = true;
   checkUpdateBtn.disabled = true;
   setLatestApkAsset(null);
   setUpdateStatus("正在检查 GitHub Release...");
@@ -2125,11 +2153,16 @@ async function checkForUpdates() {
     setUpdateStatus(error.message || String(error));
     renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
   } finally {
+    updateCheckInProgress = false;
     checkUpdateBtn.disabled = false;
   }
 }
 
 async function downloadLatestApk() {
+  if (apkDownloadInProgress) {
+    showStatus("APK 正在下载，请稍候");
+    return;
+  }
   if (!latestApkAsset) {
     await checkForUpdates();
     if (!latestApkAsset) return;
@@ -2139,10 +2172,15 @@ async function downloadLatestApk() {
     setUpdateStatus(`已打开 APK 下载链接：${latestApkAsset.name}`);
     return;
   }
+  apkDownloadInProgress = true;
   downloadLatestApkBtn.disabled = true;
   setUpdateStatus(`正在下载 APK：${latestApkAsset.name}`);
   pollDownloadProgress("update", () => {
     setUpdateStatus("APK 已下载，请在系统安装界面确认更新。");
+    apkDownloadInProgress = false;
+    downloadLatestApkBtn.disabled = false;
+  }, () => {
+    apkDownloadInProgress = false;
     downloadLatestApkBtn.disabled = false;
   });
   try {
@@ -2151,6 +2189,7 @@ async function downloadLatestApk() {
     if (!result.started) {
       setUpdateStatus(result.message || "APK 已下载，请在系统安装界面确认更新。");
       stopDownloadProgressPolling();
+      apkDownloadInProgress = false;
       downloadLatestApkBtn.disabled = false;
     }
   } catch (error) {
@@ -2159,6 +2198,7 @@ async function downloadLatestApk() {
     renderDownloadProgress({ state: "error", message, percent: 0 });
     showStatus("下载失败，可复制 APK 链接", "error");
     stopDownloadProgressPolling();
+    apkDownloadInProgress = false;
     downloadLatestApkBtn.disabled = false;
     copyApkLinkBtn.disabled = false;
   }

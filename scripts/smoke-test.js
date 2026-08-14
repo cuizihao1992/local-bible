@@ -67,11 +67,17 @@ assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
 assert(appJs.includes("let progressSaving = false;"), "Progress save busy guard missing");
 assert(appJs.includes("let importInProgress = false;"), "Import busy guard missing");
+assert(appJs.includes("let packageInstallInProgress = false;"), "Package install busy guard missing");
+assert(appJs.includes("let updateCheckInProgress = false;"), "Update check busy guard missing");
+assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy guard missing");
 assert(appJs.includes("function isFreshChapterLoad"), "Stale chapter load guard missing");
+assert(appJs.includes('function pollDownloadProgress(kind = "package", onDone = null, onStop = null)'), "Download polling stop callback missing");
 assert(appJs.includes("const snapshot = {"), "Chapter load snapshot missing");
 assert(appJs.includes("mobilePrevBtn.disabled = atFirstChapter"), "Mobile previous button boundary state missing");
 assert(appJs.includes("mobileNextBtn.disabled = atLastChapter"), "Mobile next button boundary state missing");
 assert(appJs.includes("importDataBtn.disabled = true"), "Import button busy state missing");
+assert(appJs.includes("资源包正在下载，请稍候"), "Package install duplicate feedback missing");
+assert(appJs.includes("APK 正在下载，请稍候"), "APK duplicate download feedback missing");
 assert(appJs.includes("showStatus(\"已经是第一章\")"), "First chapter boundary feedback missing");
 assert(appJs.includes("closeAiResult();"), "Top panel close flow does not include AI panel");
 assert(appJs.includes("overlay.addEventListener(\"click\", () => {\n  handleBackIntent();"), "Overlay does not use back intent close flow");
