@@ -1472,10 +1472,11 @@ mark {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 26px 0 7px 58px;
-  padding: 8px 0 8px 12px;
+  margin: 26px 0 8px;
+  padding: 10px 12px;
   border-left: 3px solid var(--accent);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 82%);
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, var(--paper)), transparent 86%);
   color: var(--ink);
   font-size: 17px;
   font-weight: 800;
@@ -1500,16 +1501,27 @@ mark {
 }
 
 .chapterTitleSummary {
-  margin: 0 0 20px 58px;
-  padding: 12px 0 14px;
+  margin: 0 0 22px;
+  padding: 14px 0 16px;
   border-bottom: 1px solid rgba(230, 223, 212, 0.9);
 }
 
 .chapterTitleSummaryLabel {
-  margin-bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  margin-bottom: 12px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
+}
+
+.chapterTitleSummary[data-title-source="reference"] .chapterTitleSummaryLabel {
+  background: color-mix(in srgb, var(--accent-2) 12%, var(--paper));
+  color: var(--accent-2);
 }
 
 .emptyTitleSummary {

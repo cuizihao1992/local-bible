@@ -389,6 +389,9 @@ public class OfflineApi {
         SQLiteDatabase db = openBible(version);
         JSONArray verses = new JSONArray();
         JSONArray titles = new JSONArray();
+        String titleSource = "none";
+        String titleSourceVersion = "";
+        String titleSourceName = "";
         try (Cursor cursor = db.rawQuery("select Verse, Scripture from Bible where Book=? and Chapter=? order by Verse",
                 new String[]{String.valueOf(book), String.valueOf(chapter)})) {
             while (cursor.moveToNext()) {
@@ -410,6 +413,17 @@ public class OfflineApi {
                     }
                 }
             }
+            if (titles.length() > 0) {
+                titleSource = "db";
+                titleSourceVersion = version;
+                titleSourceName = version.replace(".db", "");
+            } else {
+                JSONObject fallback = fallbackChapterTitles(version, book, chapter);
+                titles = fallback.getJSONArray("titles");
+                titleSource = fallback.getString("titleSource");
+                titleSourceVersion = fallback.getString("titleSourceVersion");
+                titleSourceName = fallback.getString("titleSourceName");
+            }
         } finally {
             db.close();
         }
@@ -420,7 +434,55 @@ public class OfflineApi {
                 .put("book", book)
                 .put("chapter", chapter)
                 .put("titles", titles)
+                .put("titleSource", titleSource)
+                .put("titleSourceVersion", titleSourceVersion)
+                .put("titleSourceName", titleSourceName)
                 .put("verses", verses);
+    }
+
+    private JSONObject fallbackChapterTitles(String version, int book, int chapter) throws Exception {
+        File[] files = bibleDir.listFiles((dir, name) -> name.endsWith(".db") && !name.equals(version));
+        if (files == null) {
+            return new JSONObject()
+                    .put("titles", new JSONArray())
+                    .put("titleSource", "none")
+                    .put("titleSourceVersion", "")
+                    .put("titleSourceName", "");
+        }
+        List<File> sorted = new ArrayList<>();
+        for (File file : files) sorted.add(file);
+        sorted.sort(Comparator.comparing(File::getName));
+        for (File file : sorted) {
+            if (countTitles(file) <= 0) continue;
+            SQLiteDatabase fallbackDb = SQLiteDatabase.openDatabase(file.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
+            JSONArray fallbackTitles = new JSONArray();
+            try (Cursor titleCursor = fallbackDb.rawQuery("select Verse, Scripture from Titles where Book=? and Chapter=? order by Verse",
+                    new String[]{String.valueOf(book), String.valueOf(chapter)})) {
+                while (titleCursor.moveToNext()) {
+                    String title = cleanText(titleCursor.getString(1));
+                    if (!title.isEmpty()) {
+                        fallbackTitles.put(new JSONObject()
+                                .put("verse", titleCursor.getInt(0))
+                                .put("text", title));
+                    }
+                }
+            } finally {
+                fallbackDb.close();
+            }
+            if (fallbackTitles.length() > 0) {
+                String name = file.getName();
+                return new JSONObject()
+                        .put("titles", fallbackTitles)
+                        .put("titleSource", "reference")
+                        .put("titleSourceVersion", name)
+                        .put("titleSourceName", name.replace(".db", ""));
+            }
+        }
+        return new JSONObject()
+                .put("titles", new JSONArray())
+                .put("titleSource", "none")
+                .put("titleSourceVersion", "")
+                .put("titleSourceName", "");
     }
 
     private boolean hasTable(SQLiteDatabase db, String tableName) {

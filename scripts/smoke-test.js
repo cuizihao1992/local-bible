@@ -25,6 +25,9 @@ assert(health.versionCount > 0, "No Bible versions detected");
 
 const chapter = await getJson("/api/chapters?version=KJV.db&book=1&chapter=1");
 assert(chapter.chapters[0].verses[0].strongs.length > 0, "KJV Strong numbers missing");
+assert(chapter.chapters[0].titles.length > 0, "KJV should receive reference chapter titles");
+assert(chapter.chapters[0].titleSource === "reference", "KJV chapter title source should be reference");
+assert(chapter.chapters[0].titleSourceName, "KJV reference title source name missing");
 
 const versions = await getJson("/api/versions");
 const hhbVersion = versions.versions.find((version) => version.id === "和合本.db");
@@ -160,6 +163,7 @@ assert(appJs.includes("function chapterTitleInfo"), "Chapter title info helper m
 assert(appJs.includes("function renderNoChapterTitleNotice"), "No-title chapter notice missing");
 assert(appJs.includes("当前译本没有小标题数据"), "No-title version feedback missing");
 assert(appJs.includes("真实小标题") && appJs.includes("内置小标题"), "Chapter title source labels missing");
+assert(appJs.includes("参考小标题") && appJs.includes("data-title-source"), "Reference chapter title label missing");
 assert(appJs.includes("titleLabel = Number(version.titleCount) > 0"), "Version title-count option label missing");
 assert(appJs.includes('class="sectionHeading" data-section-verse='), "Inline section heading renderer missing");
 assert(appJs.includes("sectionHeadingNo"), "Section heading verse marker missing");

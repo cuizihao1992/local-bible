@@ -424,7 +424,16 @@ function chapterTitleInfo(chapter) {
       .filter(([verse, text]) => verse > 0 && text),
   );
   const dbItems = titleItemsFromMap(fromDb);
-  if (dbItems.length) return { headings: fromDb, items: dbItems, source: "db" };
+  if (dbItems.length) {
+    const source = chapter.titleSource === "reference" ? "reference" : "db";
+    return {
+      headings: fromDb,
+      items: dbItems,
+      source,
+      sourceVersion: chapter.titleSourceVersion || chapter.version || "",
+      sourceName: chapter.titleSourceName || chapter.versionName || "",
+    };
+  }
 
   const fallback = SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {};
   const fallbackItems = titleItemsFromMap(fallback);
@@ -462,10 +471,12 @@ function renderNoChapterTitleNotice(chapter) {
 function renderChapterTitleSummary(info, chapter) {
   const items = info.items;
   if (!items.length) return renderNoChapterTitleNotice(chapter);
-  const sourceLabel = info.source === "db" ? "真实小标题" : "内置小标题";
+  const sourceLabel = info.source === "db" ? "真实小标题" : info.source === "reference" ? "参考小标题" : "内置小标题";
+  const sourceDetail =
+    info.source === "reference" && info.sourceName ? ` · 来自 ${info.sourceName}` : info.source === "fallback" ? " · 本地补充" : "";
   return `
-    <section class="chapterTitleSummary" aria-label="本章小标题">
-      <div class="chapterTitleSummaryLabel">本章小标题 · ${sourceLabel} · ${items.length} 条</div>
+    <section class="chapterTitleSummary" data-title-source="${escapeHtml(info.source)}" aria-label="本章小标题">
+      <div class="chapterTitleSummaryLabel">本章小标题 · ${sourceLabel}${escapeHtml(sourceDetail)} · ${items.length} 条</div>
       <div class="chapterTitlePills">
         ${items
           .map(

@@ -257,6 +257,46 @@ function readChapterTitles(db, book, chapter) {
     .filter((item) => item.verse > 0 && item.text);
 }
 
+function fallbackTitleVersion(versionId) {
+  return bibleFiles().find((version) => version.id !== versionId && Number(version.titleCount) > 0);
+}
+
+function readChapterTitleInfo(versionId, db, book, chapter) {
+  const titles = readChapterTitles(db, book, chapter);
+  if (titles.length) {
+    return {
+      titles,
+      titleSource: "db",
+      titleSourceVersion: versionId,
+      titleSourceName: bibleFiles().find((version) => version.id === versionId)?.name || versionId,
+    };
+  }
+
+  const fallbackVersion = fallbackTitleVersion(versionId);
+  if (!fallbackVersion) return { titles: [], titleSource: "none", titleSourceVersion: "", titleSourceName: "" };
+
+  try {
+    const fallbackDb = new DatabaseSync(biblePath(fallbackVersion.id), { readOnly: true });
+    try {
+      const fallbackTitles = readChapterTitles(fallbackDb, book, chapter);
+      if (fallbackTitles.length) {
+        return {
+          titles: fallbackTitles,
+          titleSource: "reference",
+          titleSourceVersion: fallbackVersion.id,
+          titleSourceName: fallbackVersion.name,
+        };
+      }
+    } finally {
+      fallbackDb.close();
+    }
+  } catch {
+    return { titles: [], titleSource: "none", titleSourceVersion: "", titleSourceName: "" };
+  }
+
+  return { titles: [], titleSource: "none", titleSourceVersion: "", titleSourceName: "" };
+}
+
 function readMetadata(filePath) {
   const metadata = {};
   try {
@@ -475,7 +515,7 @@ function getChapter(versionId, book, chapter) {
     const rows = db
       .prepare("select Verse, Scripture from Bible where Book=? and Chapter=? order by Verse")
       .all(book, chapter);
-    const titles = readChapterTitles(db, book, chapter);
+    const titleInfo = readChapterTitleInfo(versionId, db, book, chapter);
     const books = getBooks(versionId);
     const bookInfo = books.find((item) => item.id === book);
     const versionInfo = bibleFiles().find((item) => item.id === versionId);
@@ -486,7 +526,10 @@ function getChapter(versionId, book, chapter) {
       book,
       bookName: bookInfo?.longName || `第 ${book} 卷`,
       chapter,
-      titles,
+      titles: titleInfo.titles,
+      titleSource: titleInfo.titleSource,
+      titleSourceVersion: titleInfo.titleSourceVersion,
+      titleSourceName: titleInfo.titleSourceName,
       verses: rows.map((row) => ({
         verse: Number(row.Verse),
         text: cleanText(row.Scripture),
