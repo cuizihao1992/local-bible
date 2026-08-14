@@ -188,8 +188,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.41";
+const APP_VERSION = "1.9.42";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.42",
+    date: "2026-08-14",
+    items: ["章节切换时统一关闭搜索、词典、AI、我的记录和更新说明等内容面板", "上一章/下一章、书卷章节跳转、搜索结果跳转和语音跳转共用清理逻辑", "避免旧章节结果残留在新章节下方", "smoke test 增加章节切换清理旧面板断言"],
+  },
   {
     version: "1.9.41",
     date: "2026-08-14",
