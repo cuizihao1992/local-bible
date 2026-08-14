@@ -107,6 +107,9 @@ assert(appJs.includes("delete button.dataset.previousText"), "Progress save butt
 assert(appJs.includes("let exportInProgress = false;"), "Export busy guard missing");
 assert(appJs.includes("let importInProgress = false;"), "Import busy guard missing");
 assert(appJs.includes("let packageInstallInProgress = false;"), "Package install busy guard missing");
+assert(appJs.includes('const restorePackageButtons = (label = "重试")'), "Package install button recovery helper missing");
+assert(appJs.includes("资源包下载已停止，可重试或清理缓存。"), "Package install stopped feedback missing");
+assert(appJs.includes('restorePackageButtons("重试");') && appJs.includes("packageHint.textContent = status.message"), "Package polling stop should restore buttons and show status");
 assert(appJs.includes("let updateCheckInProgress = false;"), "Update check busy guard missing");
 assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy guard missing");
 assert(appJs.includes("let aiCopyInProgress = false;"), "AI result copy busy guard missing");

@@ -1389,6 +1389,17 @@ async function installPackage(packageId) {
     (item) => item.dataset.packageId === packageId,
   );
   const packageButtons = [...(packageList?.querySelectorAll("[data-package-id]") || [])];
+  const restorePackageButtons = (label = "重试") => {
+    packageInstallInProgress = false;
+    if (button) {
+      button.disabled = false;
+      button.textContent = label;
+    }
+    packageButtons.forEach((item) => {
+      if (!item.isConnected || item === button) return;
+      item.disabled = false;
+    });
+  };
   packageButtons.forEach((item) => {
     item.disabled = true;
   });
@@ -1397,14 +1408,18 @@ async function installPackage(packageId) {
     button.textContent = "下载中";
   }
   pollDownloadProgress("package", async () => {
-    await loadPackages();
-    await refreshResourceLists();
-    await loadBooks();
-    await loadChapter();
-    if (packageHint) packageHint.textContent = "资源包安装完成。";
-    packageInstallInProgress = false;
-  }, () => {
-    packageInstallInProgress = false;
+    try {
+      await loadPackages();
+      await refreshResourceLists();
+      await loadBooks();
+      await loadChapter();
+      if (packageHint) packageHint.textContent = "资源包安装完成。";
+    } finally {
+      packageInstallInProgress = false;
+    }
+  }, (status = {}) => {
+    restorePackageButtons("重试");
+    if (packageHint) packageHint.textContent = status.message || "资源包下载已停止，可重试或清理缓存。";
   });
   if (packageHint) packageHint.textContent = "正在从 GitHub 下载资源包，请保持网络连接。";
   try {
@@ -1423,15 +1438,7 @@ async function installPackage(packageId) {
       packageInstallInProgress = false;
     }
   } catch (error) {
-    packageInstallInProgress = false;
-    if (button) {
-      button.disabled = false;
-      button.textContent = "重试";
-    }
-    packageButtons.forEach((item) => {
-      if (!item.isConnected || item === button) return;
-      item.disabled = false;
-    });
+    restorePackageButtons("重试");
     if (packageHint) packageHint.textContent = error.message || String(error);
     renderDownloadProgress({ state: "error", message: error.message || String(error), percent: 0 });
   }
