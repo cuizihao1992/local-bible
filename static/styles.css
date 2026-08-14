@@ -1387,15 +1387,54 @@ mark {
 }
 
 .sectionHeading {
-  margin: 22px 0 4px 58px;
-  color: var(--accent);
-  font-size: 15px;
+  margin: 24px 0 6px 58px;
+  color: #6f3f19;
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.5;
 }
 
 .sectionHeading:first-child {
   margin-top: 4px;
+}
+
+.chapterTitleSummary {
+  margin: 0 0 20px 58px;
+  padding: 12px 0 14px;
+  border-bottom: 1px solid rgba(230, 223, 212, 0.9);
+}
+
+.chapterTitleSummaryLabel {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chapterTitlePills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chapterTitlePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid rgba(30, 102, 83, 0.22);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--paper));
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.chapterTitlePill span {
+  color: var(--accent);
+  font-size: 12px;
 }
 
 .verse:hover {
@@ -2086,6 +2125,22 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     grid-template-columns: 32px 1fr;
     gap: 10px;
     padding: 11px 0;
+  }
+
+  .chapterTitleSummary {
+    margin-left: 42px;
+    margin-bottom: 14px;
+    padding-top: 8px;
+  }
+
+  .chapterTitlePills {
+    gap: 7px;
+  }
+
+  .chapterTitlePill {
+    max-width: 100%;
+    min-height: 30px;
+    font-size: 12px;
   }
 
   .sectionHeading {

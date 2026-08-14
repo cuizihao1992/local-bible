@@ -269,6 +269,9 @@ function readMetadata(filePath) {
           }
         }
       }
+      metadata.titleCount = hasTable(db, "Titles")
+        ? Number(db.prepare("select count(*) as count from Titles").get()?.count || 0)
+        : 0;
     } finally {
       db.close();
     }
@@ -295,6 +298,7 @@ function bibleFiles() {
         shortName,
         fileName: entry.name,
         sizeMb: Number((statSync(filePath).size / 1024 / 1024).toFixed(2)),
+        titleCount: Number(metadata.titleCount || 0),
       };
     });
   return versionCache;

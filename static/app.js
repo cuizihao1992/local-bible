@@ -289,20 +289,35 @@ const SECTION_HEADINGS = {
   "65:1": { 1: "问安", 3: "为真道竭力争辩", 17: "保守自己在神爱中", 24: "颂赞" },
 };
 
-function defaultSectionHeading() {
-  const book = currentBook();
-  if (!book) return "本章经文";
-  if (book.chapterCount === 1) return `${book.longName || book.shortName}正文`;
-  return `${book.longName || book.shortName}第 ${state.chapter} 章`;
-}
-
 function chapterTitleMap(chapter) {
   const fromDb = Object.fromEntries(
     (chapter.titles || [])
       .map((title) => [Number(title.verse), String(title.text || "").trim()])
       .filter(([verse, text]) => verse > 0 && text),
   );
-  return { 1: defaultSectionHeading(), ...(SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {}), ...fromDb };
+  const fallback = SECTION_HEADINGS[`${state.book}:${state.chapter}`] || {};
+  return Object.keys(fromDb).length ? fromDb : fallback;
+}
+
+function renderChapterTitleSummary(headings) {
+  const items = Object.entries(headings)
+    .map(([verse, title]) => ({ verse: Number(verse), title: String(title || "").trim() }))
+    .filter((item) => item.verse > 0 && item.title)
+    .sort((a, b) => a.verse - b.verse);
+  if (!items.length) return "";
+  return `
+    <section class="chapterTitleSummary" aria-label="本章小标题">
+      <div class="chapterTitleSummaryLabel">本章小标题</div>
+      <div class="chapterTitlePills">
+        ${items
+          .map(
+            (item) =>
+              `<a class="chapterTitlePill" href="#v${item.verse}"><span>${item.verse}</span>${escapeHtml(item.title)}</a>`,
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
 }
 
 async function readResponse(response) {
@@ -1170,7 +1185,8 @@ function renderChrome() {
   const version = currentVersion();
   chapterTitle.textContent = book ? `${book.longName} ${state.chapter}` : "本地圣经";
   const compareText = state.compareVersions.length ? ` · 对照 ${state.compareVersions.length} 个版本` : "";
-  versionTitle.textContent = version ? `${version.name}${compareText}` : "";
+  const titleText = version?.titleCount ? ` · 小标题 ${version.titleCount} 条` : " · 暂无小标题";
+  versionTitle.textContent = version ? `${version.name}${compareText}${titleText}` : "";
   prevBtn.disabled = state.book === 1 && state.chapter === 1;
   const lastBook = state.books[state.books.length - 1];
   nextBtn.disabled = !!lastBook && state.book === lastBook.id && state.chapter === lastBook.chapterCount;
@@ -1207,7 +1223,9 @@ function renderVerses(data) {
   }));
 
   const headings = chapterTitleMap(mainChapter);
-  content.innerHTML = mainChapter.verses
+  content.innerHTML =
+    renderChapterTitleSummary(headings) +
+    mainChapter.verses
     .map(
       (verse) => {
         const mark = markForVerse(verse.verse);

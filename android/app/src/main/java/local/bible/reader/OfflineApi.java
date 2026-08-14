@@ -287,9 +287,25 @@ public class OfflineApi {
                     .put("name", name.replace(".db", ""))
                     .put("shortName", name.replace(".db", ""))
                     .put("fileName", name)
-                    .put("sizeMb", Math.round(file.length() / 1024.0 / 1024.0 * 100.0) / 100.0));
+                    .put("sizeMb", Math.round(file.length() / 1024.0 / 1024.0 * 100.0) / 100.0)
+                    .put("titleCount", countTitles(file)));
         }
         return array;
+    }
+
+    private int countTitles(File file) {
+        SQLiteDatabase db = null;
+        try {
+            db = SQLiteDatabase.openDatabase(file.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
+            if (!hasTable(db, "Titles")) return 0;
+            try (Cursor cursor = db.rawQuery("select count(*) from Titles", null)) {
+                return cursor.moveToFirst() ? cursor.getInt(0) : 0;
+            }
+        } catch (Exception ignored) {
+            return 0;
+        } finally {
+            if (db != null) db.close();
+        }
     }
 
     private JSONArray commentaries() throws Exception {

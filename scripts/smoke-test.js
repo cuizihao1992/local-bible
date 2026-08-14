@@ -18,6 +18,14 @@ const chapter = await getJson("/api/chapters?version=KJV.db&book=1&chapter=1");
 assert(chapter.chapters[0].verses[0].strongs.length > 0, "KJV Strong numbers missing");
 
 const versions = await getJson("/api/versions");
+const hhbVersion = versions.versions.find((version) => version.id === "和合本.db");
+assert(hhbVersion?.titleCount > 0, "和合本 titleCount metadata missing");
+
+const philemon = await getJson("/api/chapters?version=%E5%92%8C%E5%90%88%E6%9C%AC.db&book=57&chapter=1");
+const philemonTitles = philemon.chapters?.[0]?.titles || [];
+assert(philemonTitles.length === 4, "和合本腓利门书 1 章小标题缺失");
+assert(philemonTitles.some((title) => title.verse === 8 && title.text.includes("阿尼西母")), "腓利门书小标题内容异常");
+
 let titleSample = null;
 for (const version of versions.versions) {
   const sample = await getJson(`/api/chapters?version=${encodeURIComponent(version.id)}&book=1&chapter=1`);
@@ -56,6 +64,7 @@ console.log(
       sampleSearchResults: search.results.length,
       titleVersion: titleSample.version,
       titleCount: titleSample.titles.length,
+      philemonTitleCount: philemonTitles.length,
       progress: `${progress.read}/${progress.total}`,
     },
     null,
