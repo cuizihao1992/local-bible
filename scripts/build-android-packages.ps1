@@ -5,6 +5,39 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+function New-ZipPackage {
+  param(
+    [System.IO.FileInfo[]]$Files,
+    [string]$DestinationPath
+  )
+
+  if (!$Files -or !$Files.Count) {
+    throw "No files to package: $DestinationPath"
+  }
+
+  $stream = [System.IO.File]::Open($DestinationPath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+  try {
+    $archive = [System.IO.Compression.ZipArchive]::new($stream, [System.IO.Compression.ZipArchiveMode]::Create, $false)
+    try {
+      foreach ($file in $Files) {
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+          $archive,
+          $file.FullName,
+          $file.Name,
+          [System.IO.Compression.CompressionLevel]::Optimal
+        ) | Out-Null
+      }
+    } finally {
+      $archive.Dispose()
+    }
+  } finally {
+    $stream.Dispose()
+  }
+}
+
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $outDir = Join-Path $root "dist\android"
 $biblesDir = Join-Path $DataRoot "bibles"
@@ -33,8 +66,8 @@ $commentariesZip = Join-Path $outDir "commentaries-v$Version.zip"
 if (Test-Path $biblesZip) { Remove-Item -LiteralPath $biblesZip -Force }
 if (Test-Path $commentariesZip) { Remove-Item -LiteralPath $commentariesZip -Force }
 
-Compress-Archive -LiteralPath $bibleFiles.FullName -DestinationPath $biblesZip -CompressionLevel Optimal
-Compress-Archive -LiteralPath $commentaryFiles.FullName -DestinationPath $commentariesZip -CompressionLevel Optimal
+New-ZipPackage -Files $bibleFiles -DestinationPath $biblesZip
+New-ZipPackage -Files $commentaryFiles -DestinationPath $commentariesZip
 
 Write-Host "Built package: $biblesZip ($($bibleFiles.Count) db files)"
 Write-Host "Built package: $commentariesZip ($($commentaryFiles.Count) db files)"

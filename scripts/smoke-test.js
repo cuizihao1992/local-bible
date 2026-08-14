@@ -71,6 +71,7 @@ const appJs = await getText("/app.js");
 const indexHtml = await getText("/index.html");
 const stylesCss = await getText("/styles.css");
 const androidApi = readFileSync("android/app/src/main/java/local/bible/reader/OfflineApi.java", "utf8");
+const packageBuildScript = readFileSync("scripts/build-android-packages.ps1", "utf8");
 assert(appJs.includes("function resetVerseInteraction"), "Navigation state reset helper missing");
 assert(appJs.includes("let readingChromePinnedUntil = 0;"), "Reading chrome pin state missing");
 assert(appJs.includes("function keepReadingChromeVisible"), "Reading chrome pin helper missing");
@@ -164,6 +165,8 @@ assert(stylesCss.includes(".sectionHeadingNo"), "Visible section heading style m
 assert(stylesCss.includes(".emptyTitleSummary"), "No-title notice style missing");
 assert(stylesCss.includes(".chapterTitleEmpty"), "No-title notice text style missing");
 assert(stylesCss.includes(".chapterError button"), "Chapter retry button style missing");
+assert(packageBuildScript.includes("function New-ZipPackage"), "Android package streaming zip helper missing");
+assert(!packageBuildScript.includes("Compress-Archive"), "Android package script should avoid Compress-Archive for large DB zips");
 
 console.log(
   JSON.stringify(

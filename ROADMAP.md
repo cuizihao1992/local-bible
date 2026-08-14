@@ -464,7 +464,8 @@
 
 - 关闭侧栏、目录、阅读设置、经文菜单、多选栏和内容面板后短暂保持工具栏可见
 - 新增 `readingChromePinnedUntil` 和 `keepReadingChromeVisible()`，避免刚关闭弹层就隐藏上下工具栏
-- smoke test 增加工具栏保持显示覆盖断言
+- Android 资源包构建改为流式 `ZipArchive`，避免大注释包触发 `Compress-Archive` 内存溢出
+- smoke test 增加工具栏保持显示和流式资源包构建断言
 
 ## V1.9.32 多选复制稳定性
 目标：让手机阅读时的多选复制更顺手，减少重复复制和残留文字选区。
