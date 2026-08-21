@@ -190,8 +190,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.44";
+const APP_VERSION = "1.9.45";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.45",
+    date: "2026-08-21",
+    items: ["经文菜单默认只显示常用动作，查词、注释和 AI 动作收进“更多”", "注释正文中的经文引用可点击跳转", "AI 结果中的经文引用可点击跳转", "更多菜单展开后会自动保持在屏幕内", "smoke test 增加菜单更多和引用链接断言"],
+  },
   {
     version: "1.9.44",
     date: "2026-08-14",
