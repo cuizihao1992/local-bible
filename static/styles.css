@@ -13,6 +13,8 @@
   --shadow: 0 14px 40px rgba(45, 38, 28, 0.12);
   --reader-font-size: 20px;
   --reader-line-height: 2.05;
+  --read-font: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+  --reader-page-margin: 18px;
   --mobile-nav-height: 72px;
 }
 
@@ -967,7 +969,7 @@ body.speaking .speakToggleBtn {
 .content {
   width: min(860px, calc(100vw - 360px));
   margin: 0 auto;
-  padding: 34px 18px 90px;
+  padding: 34px var(--reader-page-margin) 90px;
   overscroll-behavior-x: contain;
   touch-action: pan-y;
 }
@@ -1630,6 +1632,7 @@ mark {
 
 .chapterTitleEmpty {
   color: var(--ink);
+  font-family: var(--read-font);
   font-size: 14px;
   font-weight: 800;
   line-height: 1.65;
@@ -1992,6 +1995,7 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
 }
 
 .verseText {
+  font-family: var(--read-font);
   font-size: var(--reader-font-size);
   line-height: var(--reader-line-height);
   letter-spacing: 0;
@@ -2019,6 +2023,7 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
 
 .compareVerse {
   color: var(--ink);
+  font-family: var(--read-font);
   font-size: 16px;
   line-height: 1.8;
 }
@@ -2101,6 +2106,7 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
 
 .commentaryText {
   color: var(--ink);
+  font-family: var(--read-font);
   font-size: 15px;
   line-height: 1.8;
   white-space: pre-wrap;
@@ -2372,7 +2378,7 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
 
   .content {
     width: 100%;
-    padding: 18px 16px calc(var(--mobile-nav-height) + 42px + env(safe-area-inset-bottom));
+    padding: 18px max(12px, var(--reader-page-margin)) calc(var(--mobile-nav-height) + 42px + env(safe-area-inset-bottom));
   }
 
   .searchPanel,
@@ -2614,7 +2620,6 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     padding: 0 5px;
   }
 
-  .content,
   .searchPanel,
   .strongPanel,
   .dictionaryResultsPanel,
@@ -2624,6 +2629,11 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   .commentaryContent {
     padding-left: 12px;
     padding-right: 12px;
+  }
+
+  .content {
+    padding-left: max(10px, var(--reader-page-margin));
+    padding-right: max(10px, var(--reader-page-margin));
   }
 
   .audioPanel {

@@ -130,6 +130,12 @@ assert(appJs.includes('${linkVerseRefs(entry.text || "无文本内容")}'), "Com
 assert(appJs.includes("function handleReferenceLinkClick"), "Reference link click handler missing");
 assert(stylesCss.includes(".refLink"), "Reference link style missing");
 assert(indexHtml.includes('id="speakToggleBtn"'), "Chapter speak toggle missing");
+assert(indexHtml.includes('id="readFontSelect"') && indexHtml.includes('id="pageMarginRange"'), "Reader font and margin settings missing");
+assert(appJs.includes('readFont: "sans"') && appJs.includes("pageMargin: 18"), "Reader font and margin state defaults missing");
+assert(appJs.includes("function readFontValue") && appJs.includes("--read-font") && appJs.includes("--reader-page-margin"), "Reader font and margin settings application missing");
+assert(appJs.includes("state.pageMargin = Math.min(42, Math.max(10, saved.pageMargin))"), "Reader margin restore bounds missing");
+assert(stylesCss.includes("--read-font") && stylesCss.includes("--reader-page-margin"), "Reader font and margin CSS variables missing");
+assert(stylesCss.includes("font-family: var(--read-font)") && stylesCss.includes("padding: 34px var(--reader-page-margin) 90px"), "Reader font and margin CSS usage missing");
 assert(appJs.includes("function speakChapter"), "Chapter TTS speak helper missing");
 assert(appJs.includes("function setSpeakingVerse"), "TTS verse follow helper missing");
 assert(appJs.includes("window.handleAndroidTts"), "Android TTS callback missing");

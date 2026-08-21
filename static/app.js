@@ -17,6 +17,8 @@ const state = {
   scriptPreference: "auto",
   fontSize: 20,
   lineHeight: 2.05,
+  readFont: "sans",
+  pageMargin: 18,
   book: 1,
   chapter: 1,
   targetVerse: null,
@@ -107,6 +109,9 @@ const fontSizeRange = document.querySelector("#fontSizeRange");
 const lineHeightRange = document.querySelector("#lineHeightRange");
 const fontSizeValue = document.querySelector("#fontSizeValue");
 const lineHeightValue = document.querySelector("#lineHeightValue");
+const readFontSelect = document.querySelector("#readFontSelect");
+const pageMarginRange = document.querySelector("#pageMarginRange");
+const pageMarginValue = document.querySelector("#pageMarginValue");
 const exportDataBtn = document.querySelector("#exportDataBtn");
 const importDataBtn = document.querySelector("#importDataBtn");
 const importDataFile = document.querySelector("#importDataFile");
@@ -1028,6 +1033,8 @@ function restoreState() {
     if (saved.scriptPreference) state.scriptPreference = saved.scriptPreference;
     if (Number.isFinite(saved.fontSize)) state.fontSize = saved.fontSize;
     if (Number.isFinite(saved.lineHeight)) state.lineHeight = saved.lineHeight;
+    if (["sans", "serif"].includes(saved.readFont)) state.readFont = saved.readFont;
+    if (Number.isFinite(saved.pageMargin)) state.pageMargin = Math.min(42, Math.max(10, saved.pageMargin));
     if (saved.aiProvider) state.aiProvider = saved.aiProvider;
     if (saved.deepseekKey) state.deepseekKey = saved.deepseekKey;
     if (saved.deepseekModel) state.deepseekModel = saved.deepseekModel;
@@ -1063,6 +1070,8 @@ function saveState() {
       scriptPreference: state.scriptPreference,
       fontSize: state.fontSize,
       lineHeight: state.lineHeight,
+      readFont: state.readFont,
+      pageMargin: state.pageMargin,
       aiProvider: state.aiProvider,
       deepseekKey: state.deepseekKey,
       deepseekModel: state.deepseekModel,
@@ -1139,13 +1148,23 @@ function applySettings() {
   document.body.dataset.palette = state.palette;
   document.documentElement.style.setProperty("--reader-font-size", `${state.fontSize}px`);
   document.documentElement.style.setProperty("--reader-line-height", String(state.lineHeight));
+  document.documentElement.style.setProperty("--read-font", readFontValue(state.readFont));
+  document.documentElement.style.setProperty("--reader-page-margin", `${state.pageMargin}px`);
   themeSelect.value = state.theme;
   paletteSelect.value = state.palette;
   scriptPreference.value = state.scriptPreference;
   fontSizeRange.value = String(state.fontSize);
   lineHeightRange.value = String(state.lineHeight);
+  readFontSelect.value = state.readFont;
+  pageMarginRange.value = String(state.pageMargin);
   fontSizeValue.textContent = `${state.fontSize}px`;
   lineHeightValue.textContent = state.lineHeight.toFixed(1);
+  pageMarginValue.textContent = `${state.pageMargin}px`;
+}
+
+function readFontValue(mode) {
+  if (mode === "serif") return '"Noto Serif CJK SC", "Songti SC", SimSun, serif';
+  return '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif';
 }
 
 function renderDictionaries() {
@@ -3709,6 +3728,18 @@ fontSizeRange.addEventListener("input", () => {
 
 lineHeightRange.addEventListener("input", () => {
   state.lineHeight = Number(lineHeightRange.value);
+  applySettings();
+  saveState();
+});
+
+readFontSelect.addEventListener("change", () => {
+  state.readFont = readFontSelect.value;
+  applySettings();
+  saveState();
+});
+
+pageMarginRange.addEventListener("input", () => {
+  state.pageMargin = Number(pageMarginRange.value);
   applySettings();
   saveState();
 });
