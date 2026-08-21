@@ -196,8 +196,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.47";
+const APP_VERSION = "1.9.48";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.48",
+    date: "2026-08-21",
+    items: ["“我的”面板新增高亮筛选", "后端 marks/all 支持 kind=highlight", "个人资料仪表盘增加高亮数量统计", "筛选按钮增加当前选中态", "smoke test 增加高亮筛选入口和 API 断言"],
+  },
   {
     version: "1.9.47",
     date: "2026-08-21",
