@@ -1,7 +1,7 @@
 param(
-  [string]$ApkPath = "dist\android\local-bible-reader-offline-1.9.46-release.apk",
-  [string]$ExpectedVersion = "1.9.46",
-  [int]$ExpectedVersionCode = 50,
+  [string]$ApkPath = "dist\android\local-bible-reader-offline-1.9.47-release.apk",
+  [string]$ExpectedVersion = "1.9.47",
+  [int]$ExpectedVersionCode = 51,
   [int]$ExpectedDbCount = 4
 )
 

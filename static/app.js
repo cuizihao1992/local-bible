@@ -196,8 +196,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.46";
+const APP_VERSION = "1.9.47";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.47",
+    date: "2026-08-21",
+    items: ["朗读状态加入 body.speaking", "朗读期间手机端阅读栏不再自动隐藏", "开始朗读时主动唤出阅读栏并短暂固定", "朗读期间顶部停止按钮保持可见且更醒目", "smoke test 增加朗读时阅读栏保持显示断言"],
+  },
   {
     version: "1.9.46",
     date: "2026-08-21",
