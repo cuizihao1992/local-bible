@@ -148,6 +148,9 @@ assert(ttsBridge.includes("class TtsBridge") && ttsBridge.includes("speakQueue")
 assert(appJs.includes("let searchState ="), "Search pagination state missing");
 assert(indexHtml.includes('id="recentSearches"'), "Recent searches container missing");
 assert(appJs.includes("recentSearches: []") && appJs.includes("function rememberSearch"), "Recent searches state helper missing");
+assert(appJs.includes('searchScope: "all"') && appJs.includes('["all", "ot", "nt", "book"].includes(saved.searchScope)'), "Search scope persisted state missing");
+assert(appJs.includes("searchScope.value = state.searchScope") && appJs.includes("state.searchScope = searchScope.value"), "Search scope UI persistence missing");
+assert(appJs.includes("const scope = append ? searchState.scope : state.searchScope"), "Search should use persisted scope state");
 assert(appJs.includes("renderRecentSearches();") && appJs.includes("data-recent-search"), "Recent searches renderer missing");
 assert(appJs.includes("recentSearches?.addEventListener") && appJs.includes("await runSearch(query);"), "Recent search click handler missing");
 assert(stylesCss.includes(".recentSearches") && stylesCss.includes(".recentSearches:empty"), "Recent searches styles missing");

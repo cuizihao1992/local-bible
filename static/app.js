@@ -35,6 +35,7 @@ const state = {
   openaiKey: "",
   speechModel: "gpt-4o-mini-transcribe",
   aiResponseStyle: "concise",
+  searchScope: "all",
   recentBooks: [],
   recentSearches: [],
 };
@@ -1059,6 +1060,7 @@ function restoreState() {
     if (saved.openaiKey) state.openaiKey = saved.openaiKey;
     if (saved.speechModel) state.speechModel = saved.speechModel;
     if (saved.aiResponseStyle) state.aiResponseStyle = saved.aiResponseStyle;
+    if (["all", "ot", "nt", "book"].includes(saved.searchScope)) state.searchScope = saved.searchScope;
     if (Array.isArray(saved.recentBooks)) state.recentBooks = saved.recentBooks.filter(Number.isInteger).slice(0, 8);
     if (Array.isArray(saved.recentSearches)) {
       state.recentSearches = saved.recentSearches.filter((item) => typeof item === "string" && item.trim()).slice(0, 8);
@@ -1099,6 +1101,7 @@ function saveState() {
       openaiKey: state.openaiKey,
       speechModel: state.speechModel,
       aiResponseStyle: state.aiResponseStyle,
+      searchScope: state.searchScope,
       recentBooks: state.recentBooks,
       recentSearches: state.recentSearches,
       book: state.book,
@@ -1169,6 +1172,7 @@ function applySettings() {
   themeSelect.value = state.theme;
   paletteSelect.value = state.palette;
   scriptPreference.value = state.scriptPreference;
+  searchScope.value = state.searchScope;
   fontSizeRange.value = String(state.fontSize);
   lineHeightRange.value = String(state.lineHeight);
   readFontSelect.value = state.readFont;
@@ -2822,7 +2826,7 @@ async function runSearch(query, options = {}) {
   if (!append) closeContentPanels();
   const token = ++searchRequestToken;
   const offset = append ? searchState.nextOffset : 0;
-  const scope = append ? searchState.scope : searchScope.value;
+  const scope = append ? searchState.scope : state.searchScope;
   const book = append ? searchState.book : state.book;
   searchState.loading = true;
   setSearchBusy(true, append);
@@ -3764,6 +3768,11 @@ paletteSelect.addEventListener("change", () => {
 
 scriptPreference.addEventListener("change", () => {
   state.scriptPreference = scriptPreference.value;
+  saveState();
+});
+
+searchScope.addEventListener("change", () => {
+  state.searchScope = searchScope.value;
   saveState();
 });
 
