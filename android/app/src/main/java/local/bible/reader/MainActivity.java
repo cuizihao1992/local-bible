@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 public class MainActivity extends Activity {
     private OfflineApi offlineApi;
     private WebView webView;
+    private TtsBridge ttsBridge;
 
     @Override
     @SuppressLint("SetJavaScriptEnabled")
@@ -39,6 +40,8 @@ public class MainActivity extends Activity {
         settings.setAllowUniversalAccessFromFileURLs(true);
         webView.addJavascriptInterface(new AndroidBridge(offlineApi), "AndroidBibleApi");
         webView.addJavascriptInterface(new VoiceBridge(this, webView), "AndroidVoiceApi");
+        ttsBridge = new TtsBridge(this, webView);
+        webView.addJavascriptInterface(ttsBridge, "AndroidTtsApi");
         webView.addJavascriptInterface(new UpdateBridge(this), "AndroidUpdateApi");
 
         webView.setWebViewClient(new WebViewClient() {
@@ -67,6 +70,15 @@ public class MainActivity extends Activity {
                     if (!"\"handled\"".equals(value)) MainActivity.super.onBackPressed();
                 }
         );
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (ttsBridge != null) {
+            ttsBridge.shutdown();
+            ttsBridge = null;
+        }
+        super.onDestroy();
     }
 
     private WebResourceResponse jsonResponse(String json) {

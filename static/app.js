@@ -11,6 +11,7 @@ const state = {
   commentary: "",
   showStrong: false,
   audioAutoNext: false,
+  ttsRate: 1,
   theme: "light",
   palette: "classic",
   scriptPreference: "auto",
@@ -48,6 +49,7 @@ const chapterPanelMeta = document.querySelector("#chapterPanelMeta");
 const chapterTitleBtn = document.querySelector("#chapterTitleBtn");
 const chapterTitle = document.querySelector("#chapterTitle");
 const versionTitle = document.querySelector("#versionTitle");
+const speakToggleBtn = document.querySelector("#speakToggleBtn");
 const bookPickerPanel = document.querySelector("#bookPickerPanel");
 const bookPickerCurrent = document.querySelector("#bookPickerCurrent");
 const closeBookPickerBtn = document.querySelector("#closeBookPickerBtn");
@@ -182,6 +184,10 @@ let packageInstallInProgress = false;
 let updateCheckInProgress = false;
 let apkDownloadInProgress = false;
 let aiCopyInProgress = false;
+let currentAudioItems = [];
+let audioPanelPinned = false;
+let speaking = false;
+let speakingVerse = null;
 let searchState = { query: "", scope: "all", book: 1, results: [], nextOffset: 0, hasMore: false, loading: false };
 let searchRequestToken = 0;
 let dictionaryRequestToken = 0;
@@ -976,6 +982,7 @@ function restoreState() {
     if (saved.commentary) state.commentary = saved.commentary;
     state.showStrong = !!saved.showStrong;
     state.audioAutoNext = !!saved.audioAutoNext;
+    if (Number.isFinite(saved.ttsRate)) state.ttsRate = Math.min(1.8, Math.max(0.6, saved.ttsRate));
     if (saved.theme) state.theme = saved.theme;
     if (saved.palette) state.palette = saved.palette;
     if (saved.scriptPreference) state.scriptPreference = saved.scriptPreference;
@@ -1010,6 +1017,7 @@ function saveState() {
       commentary: state.commentary,
       showStrong: state.showStrong,
       audioAutoNext: state.audioAutoNext,
+      ttsRate: state.ttsRate,
       theme: state.theme,
       palette: state.palette,
       scriptPreference: state.scriptPreference,
@@ -2073,6 +2081,7 @@ async function loadBooks() {
 async function loadChapter(options = {}) {
   const token = (options.token ?? ++chapterLoadToken);
   chapterLoading = true;
+  if (speaking) stopSpeaking();
   const snapshot = {
     version: state.version,
     compareVersions: [...state.compareVersions],
@@ -2169,36 +2178,221 @@ async function loadAudio(snapshot = {}, token = null) {
 }
 
 function renderAudio(items) {
-  if (!items.length) {
+  currentAudioItems = items || [];
+  if (!currentAudioItems.length && !audioPanelPinned && !speaking) {
     audioPanel.hidden = true;
     audioPanel.innerHTML = "";
     return;
   }
   audioPanel.hidden = false;
+  const hasFiles = currentAudioItems.length > 0;
   audioPanel.innerHTML = `
     <div class="audioHeader">
       <div>
-        <div class="audioTitle">朗读音频</div>
-        <div class="audioMeta">${items.length} 个来源</div>
+        <div class="audioTitle">朗读本章</div>
+        <div id="ttsStatus" class="audioMeta">${speaking ? "正在朗读" : "可使用系统朗读；本地 MP3 会显示在下方"}</div>
       </div>
-      <select id="audioSourceSelect">
-        ${items
-          .map((item, index) => `<option value="${index}">${escapeHtml(item.source)} · ${escapeHtml(item.fileName)}</option>`)
-          .join("")}
-      </select>
+      <div class="ttsControls">
+        <button id="ttsPlayBtn" type="button">${speaking ? "停止" : "朗读本章"}</button>
+        <select id="ttsRateSelect" aria-label="朗读速度">
+          <option value="0.85">较慢</option>
+          <option value="1">正常</option>
+          <option value="1.2">较快</option>
+          <option value="1.45">很快</option>
+        </select>
+        <button id="closeAudioPanelBtn" type="button">关闭</button>
+      </div>
     </div>
-    <audio id="chapterAudio" controls src="${escapeHtml(items[0].url)}"></audio>
+    ${
+      hasFiles
+        ? `<div class="localAudioBlock">
+            <select id="audioSourceSelect">
+              ${currentAudioItems
+                .map((item, index) => `<option value="${index}">${escapeHtml(item.source)} · ${escapeHtml(item.fileName)}</option>`)
+                .join("")}
+            </select>
+            <audio id="chapterAudio" controls src="${escapeHtml(currentAudioItems[0].url)}"></audio>
+          </div>`
+        : `<div class="audioEmpty">当前章节没有本地 MP3，仍可使用系统朗读。</div>`
+    }
   `;
+  const playBtn = audioPanel.querySelector("#ttsPlayBtn");
+  const closeBtn = audioPanel.querySelector("#closeAudioPanelBtn");
+  const rateSelect = audioPanel.querySelector("#ttsRateSelect");
+  if (rateSelect) rateSelect.value = String(state.ttsRate || 1);
+  playBtn?.addEventListener("click", () => {
+    if (speaking) stopSpeaking();
+    else speakChapter();
+  });
+  closeBtn?.addEventListener("click", () => {
+    audioPanelPinned = false;
+    audioPanel.hidden = true;
+    if (!speaking) audioPanel.innerHTML = "";
+  });
+  rateSelect?.addEventListener("change", () => {
+    state.ttsRate = Number(rateSelect.value) || 1;
+    saveState();
+    applyTtsRate();
+  });
   const select = audioPanel.querySelector("#audioSourceSelect");
   const audio = audioPanel.querySelector("#chapterAudio");
-  select.addEventListener("change", () => {
-    audio.src = items[Number(select.value)].url;
+  select?.addEventListener("change", () => {
+    audio.src = currentAudioItems[Number(select.value)].url;
     audio.load();
   });
-  audio.addEventListener("ended", () => {
+  audio?.addEventListener("ended", () => {
     if (state.audioAutoNext) moveChapter(1);
   });
 }
+
+function setTtsStatus(message) {
+  const status = audioPanel.querySelector("#ttsStatus");
+  if (status) status.textContent = message;
+}
+
+function clearSpeakingVerse() {
+  if (speakingVerse != null) {
+    content.querySelector(`.verse[data-verse="${speakingVerse}"]`)?.classList.remove("speakingVerse");
+  }
+  speakingVerse = null;
+}
+
+function setSpeakingVerse(id) {
+  const verseNo = String(id || "").replace(/^v/, "");
+  if (!/^\d+$/.test(verseNo)) return;
+  clearSpeakingVerse();
+  speakingVerse = Number(verseNo);
+  const el = content.querySelector(`.verse[data-verse="${speakingVerse}"]`);
+  if (!el) return;
+  el.classList.add("speakingVerse");
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  rememberReadingPosition(speakingVerse);
+}
+
+function setSpeaking(on) {
+  speaking = !!on;
+  if (!speaking) clearSpeakingVerse();
+  if (speakToggleBtn) {
+    speakToggleBtn.textContent = speaking ? "停止" : "朗读";
+    speakToggleBtn.classList.toggle("active", speaking);
+    speakToggleBtn.setAttribute("aria-pressed", speaking ? "true" : "false");
+  }
+  const playBtn = audioPanel.querySelector("#ttsPlayBtn");
+  if (playBtn) playBtn.textContent = speaking ? "停止" : "朗读本章";
+}
+
+function chapterSpeakItems() {
+  return [...content.querySelectorAll(".verse[data-verse]")]
+    .map((el) => {
+      const verse = Number(el.dataset.verse);
+      const text = el.querySelector(".verseText")?.textContent.trim() || "";
+      return text ? { id: `v${verse}`, text } : null;
+    })
+    .filter(Boolean);
+}
+
+function applyTtsRate() {
+  if (window.AndroidTtsApi?.setRate) {
+    try {
+      window.AndroidTtsApi.setRate(String(state.ttsRate || 1));
+    } catch {}
+  }
+}
+
+function speakChapter() {
+  audioPanelPinned = true;
+  renderAudio(currentAudioItems);
+  const book = currentBook();
+  const items = chapterSpeakItems();
+  if (!items.length) {
+    setTtsStatus("这一章没有可朗读的经文");
+    showStatus("没有可朗读的经文", "error");
+    return;
+  }
+  applyTtsRate();
+  if (window.AndroidTtsApi?.speakQueue || window.AndroidTtsApi?.speak) {
+    let result = {};
+    try {
+      result = JSON.parse(
+        window.AndroidTtsApi.speakQueue
+          ? window.AndroidTtsApi.speakQueue(JSON.stringify(items))
+          : window.AndroidTtsApi.speak(`${book ? book.longName : ""} 第 ${state.chapter} 章。${items.map((item) => item.text).join("。")}`),
+      );
+    } catch {
+      result = { error: "朗读接口异常" };
+    }
+    if (result.error) {
+      setSpeaking(false);
+      setTtsStatus(result.error);
+      showStatus(result.error, "error");
+      return;
+    }
+    setSpeaking(true);
+    setTtsStatus(result.queued ? "正在启动朗读引擎..." : `正在朗读 ${book ? book.longName : ""} ${state.chapter} 章`);
+    showStatus(result.queued ? "正在启动朗读引擎" : "开始朗读本章");
+    return;
+  }
+  if (!window.speechSynthesis) {
+    setTtsStatus("当前环境不支持系统朗读");
+    showStatus("当前环境不支持系统朗读", "error");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  setSpeaking(true);
+  const speakNext = (index) => {
+    if (!speaking) return;
+    if (index >= items.length) {
+      setSpeaking(false);
+      setTtsStatus("朗读结束");
+      if (state.audioAutoNext) moveChapter(1);
+      return;
+    }
+    setSpeakingVerse(items[index].id);
+    setTtsStatus(`正在朗读第 ${String(items[index].id).replace(/^v/, "")} 节`);
+    const utterance = new SpeechSynthesisUtterance(items[index].text);
+    utterance.lang = "zh-CN";
+    utterance.rate = Number(state.ttsRate) || 1;
+    utterance.onend = () => speakNext(index + 1);
+    utterance.onerror = () => {
+      setSpeaking(false);
+      setTtsStatus("朗读失败");
+      showStatus("朗读失败", "error");
+    };
+    window.speechSynthesis.speak(utterance);
+  };
+  speakNext(0);
+}
+
+function stopSpeaking() {
+  if (window.AndroidTtsApi?.stop) window.AndroidTtsApi.stop();
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  setSpeaking(false);
+  setTtsStatus("已停止朗读");
+  showStatus("已停止朗读");
+}
+
+window.handleAndroidTts = function handleAndroidTts(type, text) {
+  if (type === "ready") {
+    setTtsStatus(speaking ? `正在朗读 ${currentBook()?.longName || ""} ${state.chapter} 章` : "朗读引擎已就绪，可以开始。");
+    return;
+  }
+  if (type === "start") {
+    setSpeaking(true);
+    setSpeakingVerse(text);
+    return;
+  }
+  if (type === "done") {
+    setSpeaking(false);
+    setTtsStatus("朗读结束");
+    if (state.audioAutoNext) moveChapter(1);
+    return;
+  }
+  if (type === "error") {
+    setSpeaking(false);
+    setTtsStatus(text || "朗读失败");
+    showStatus(text || "朗读失败", "error");
+  }
+};
 
 async function loadMarks(snapshot = {}, token = null) {
   const params = new URLSearchParams({
@@ -3578,6 +3772,10 @@ sidebarTabs?.addEventListener("click", (event) => {
 });
 readerSettingsBtn.addEventListener("click", () => toggleReaderSettings());
 closeReaderSettingsBtn.addEventListener("click", () => toggleReaderSettings(false));
+speakToggleBtn?.addEventListener("click", () => {
+  if (speaking) stopSpeaking();
+  else speakChapter();
+});
 overlay.addEventListener("click", () => {
   handleBackIntent();
 });

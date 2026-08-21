@@ -753,7 +753,7 @@ select {
   z-index: 3;
   min-height: 74px;
   display: grid;
-  grid-template-columns: auto auto 1fr minmax(260px, 420px) auto auto;
+  grid-template-columns: auto auto 1fr minmax(260px, 420px) auto auto auto;
   align-items: center;
   gap: 12px;
   padding: 14px clamp(16px, 4vw, 42px);
@@ -765,6 +765,21 @@ select {
 .readerSettingsBtn {
   display: inline-grid;
   place-items: center;
+}
+
+.speakToggleBtn {
+  width: auto;
+  min-width: 54px;
+  padding: 0 10px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.speakToggleBtn.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
 }
 
 .readerSettingsPanel {
@@ -943,6 +958,44 @@ select {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.ttsControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ttsControls button,
+.ttsControls select {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+.ttsControls #ttsPlayBtn {
+  border-color: rgba(45, 106, 95, 0.35);
+  background: var(--soft);
+  color: var(--accent);
+}
+
+.localAudioBlock {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.audioEmpty {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .dictionaryResultsPanel {
@@ -1466,6 +1519,12 @@ mark {
   padding: 13px 0;
   border-bottom: 1px solid rgba(230, 223, 212, 0.72);
   position: relative;
+}
+
+.verse.speakingVerse {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .sectionHeading {
@@ -2178,7 +2237,7 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   }
 
   .topbar {
-    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    grid-template-columns: 42px minmax(0, 1fr) 42px 42px;
     gap: 8px;
     padding: calc(10px + max(env(safe-area-inset-top), 28px)) 12px 8px;
     min-height: 0;
@@ -2197,7 +2256,14 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
 
   .readerSettingsBtn {
     display: inline-grid;
+    grid-column: 4;
+  }
+
+  .speakToggleBtn {
     grid-column: 3;
+    min-width: 42px;
+    padding: 0 4px;
+    font-size: 12px;
   }
 
   .readerSettingsPanel {
