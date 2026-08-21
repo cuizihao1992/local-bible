@@ -210,8 +210,13 @@ let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.51";
+const APP_VERSION = "1.9.52";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.52",
+    date: "2026-08-21",
+    items: ["阅读设置新增正文字体选择", "阅读设置新增页边距滑块并显示具体数值", "正文、对照、注释和我的摘要统一使用阅读字体", "手机端页边距跟随设置并保留最小安全边距", "smoke test 增加字体和页边距设置断言"],
+  },
   {
     version: "1.9.51",
     date: "2026-08-21",
