@@ -113,6 +113,13 @@ assert(appJs.includes('restorePackageButtons("重试");') && appJs.includes("pac
 assert(appJs.includes("let updateCheckInProgress = false;"), "Update check busy guard missing");
 assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy guard missing");
 assert(appJs.includes("let aiCopyInProgress = false;"), "AI result copy busy guard missing");
+assert(indexHtml.includes('id="verseMenuMoreBtn"'), "Verse menu more toggle missing");
+assert(indexHtml.includes('id="verseMenuMore"'), "Verse menu more section missing");
+assert(appJs.includes("function linkVerseRefs"), "Verse reference link helper missing");
+assert(appJs.includes("${linkVerseRefs(text)}"), "AI result should link verse references");
+assert(appJs.includes('${linkVerseRefs(entry.text || "无文本内容")}'), "Commentary text should link verse references");
+assert(appJs.includes("function handleReferenceLinkClick"), "Reference link click handler missing");
+assert(stylesCss.includes(".refLink"), "Reference link style missing");
 assert(appJs.includes("let searchState ="), "Search pagination state missing");
 assert(appJs.includes("let searchRequestToken = 0;"), "Search stale request token missing");
 assert(appJs.includes("let dictionaryRequestToken = 0;"), "Dictionary stale request token missing");

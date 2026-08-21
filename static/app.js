@@ -135,6 +135,8 @@ const dashboardPanel = document.querySelector("#dashboardPanel");
 const mobileStatusPanel = document.querySelector("#mobileStatusPanel");
 const verseMenu = document.querySelector("#verseMenu");
 const verseMenuTitle = document.querySelector("#verseMenuTitle");
+const verseMenuMore = document.querySelector("#verseMenuMore");
+const verseMenuMoreBtn = document.querySelector("#verseMenuMoreBtn");
 const selectionBar = document.querySelector("#selectionBar");
 const selectionSummary = document.querySelector("#selectionSummary");
 const copyFormatSelect = document.querySelector("#copyFormatSelect");
@@ -568,6 +570,36 @@ function bookAliases() {
     );
   });
   return [...aliases.entries()].sort((a, b) => b[0].length - a[0].length);
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function referenceLinkFromMatch(rawBook, rawChapter, rawVerse, label) {
+  const normalizedBook = String(rawBook || "").replace(/\s+/g, "");
+  const found = bookAliases().find(([alias, book]) => normalizedBook === alias || normalizedBook.endsWith(alias) || book.longName === normalizedBook);
+  const chapter = Number(rawChapter);
+  const verse = Number(rawVerse);
+  if (!found || !Number.isFinite(chapter) || !Number.isFinite(verse)) return escapeHtml(label);
+  return `<button class="refLink" type="button" data-ref-book="${found[1].id}" data-ref-chapter="${chapter}" data-ref-verse="${verse}">${escapeHtml(label)}</button>`;
+}
+
+function linkVerseRefs(text) {
+  const value = String(text || "");
+  const aliases = bookAliases().map(([alias]) => alias).filter((alias) => alias && alias.length >= 1);
+  if (!value || !aliases.length) return escapeHtml(value);
+  const aliasPattern = aliases.map(escapeRegExp).join("|");
+  const refPattern = new RegExp(`(${aliasPattern})\\s*([0-9]{1,3})\\s*[:：.．,，]\\s*([0-9]{1,3})(?:\\s*[-－—~～]\\s*[0-9]{1,3})?`, "g");
+  let html = "";
+  let lastIndex = 0;
+  for (const match of value.matchAll(refPattern)) {
+    html += escapeHtml(value.slice(lastIndex, match.index));
+    html += referenceLinkFromMatch(match[1], match[2], match[3], match[0]);
+    lastIndex = match.index + match[0].length;
+  }
+  html += escapeHtml(value.slice(lastIndex));
+  return html;
 }
 
 function normalizeVoiceText(input) {
@@ -1656,6 +1688,7 @@ function openVerseMenu(verseNo, x, y) {
   verseMenuTitle.textContent = `${currentBook().longName} ${state.chapter}:${verseNo}`;
   verseMenu.querySelector('[data-menu-action="favorite"]').textContent = mark.favorite ? "取消收藏" : "收藏";
   verseMenu.querySelector('[data-menu-action="highlight"]').textContent = mark.highlighted ? "取消高亮" : "高亮";
+  setVerseMenuMore(false);
   verseMenu.hidden = false;
   const rect = verseMenu.getBoundingClientRect();
   const maxX = window.innerWidth - rect.width - 10;
@@ -1664,10 +1697,28 @@ function openVerseMenu(verseNo, x, y) {
   verseMenu.style.top = `${Math.max(10, Math.min(y, maxY))}px`;
 }
 
+function clampVerseMenuPosition() {
+  if (!verseMenu || verseMenu.hidden) return;
+  const rect = verseMenu.getBoundingClientRect();
+  const maxX = window.innerWidth - rect.width - 10;
+  const maxY = window.innerHeight - rect.height - 10;
+  verseMenu.style.left = `${Math.max(10, Math.min(rect.left, maxX))}px`;
+  verseMenu.style.top = `${Math.max(10, Math.min(rect.top, maxY))}px`;
+}
+
 function closeVerseMenu() {
   const wasOpen = !verseMenu.hidden;
   verseMenu.hidden = true;
+  setVerseMenuMore(false);
   if (wasOpen) keepReadingChromeVisible();
+}
+
+function setVerseMenuMore(show) {
+  if (!verseMenuMore || !verseMenuMoreBtn) return;
+  verseMenuMore.hidden = !show;
+  verseMenuMoreBtn.textContent = show ? "收起" : "更多";
+  verseMenuMoreBtn.setAttribute("aria-expanded", show ? "true" : "false");
+  window.requestAnimationFrame(clampVerseMenuPosition);
 }
 
 function renderVerseSelectionState() {
@@ -1790,7 +1841,7 @@ async function runVerseAiAction(action, verseNo) {
     const text = await requestAiText(aiPromptForVerse(action, verseNo));
     if (token !== aiRequestToken) return;
     aiResultContent.innerHTML = `
-      <div class="aiResultText">${escapeHtml(text)}</div>
+      <div class="aiResultText">${linkVerseRefs(text)}</div>
       <div class="aiResultActions">
         <button type="button" data-copy-ai-result>复制结果</button>
       </div>
@@ -2302,7 +2353,7 @@ function renderCommentaryEntry(entry) {
   return `
     <article class="commentaryEntry" data-chapter="${entry.chapter}" data-from="${entry.fromVerse}" data-to="${entry.toVerse}">
       <div class="commentaryRef">${escapeHtml(formatCommentaryRef(entry))}</div>
-      <div class="commentaryText">${escapeHtml(entry.text || "无文本内容")}</div>
+      <div class="commentaryText">${linkVerseRefs(entry.text || "无文本内容")}</div>
       ${entry.hasImages ? `<div class="imageNote">包含图片资料，图片显示将在后续版本处理。</div>` : ""}
     </article>
   `;
@@ -2801,6 +2852,18 @@ function focusCommentaryForVerse(verseNo) {
   }
 }
 
+function handleReferenceLinkClick(event) {
+  const link = event.target.closest(".refLink");
+  if (!link) return false;
+  event.preventDefault();
+  jumpToReference({
+    book: Number(link.dataset.refBook),
+    chapter: Number(link.dataset.refChapter),
+    verse: Number(link.dataset.refVerse),
+  }).catch(setError);
+  return true;
+}
+
 async function init() {
   setLoading("正在扫描本地译本");
   try {
@@ -3197,6 +3260,7 @@ clearDownloadCacheBtn?.addEventListener("click", clearDownloadCache);
 closeDictionaryBtn.addEventListener("click", closeDictionary);
 closeAiResultBtn.addEventListener("click", closeAiResult);
 aiResultContent.addEventListener("click", (event) => {
+  if (handleReferenceLinkClick(event)) return;
   const button = event.target.closest("[data-copy-ai-result]");
   if (!button) return;
   if (aiCopyInProgress) {
@@ -3225,6 +3289,10 @@ aiResultContent.addEventListener("click", (event) => {
     });
 });
 closeMyPanelBtn.addEventListener("click", closeMyPanel);
+
+commentaryContent.addEventListener("click", (event) => {
+  handleReferenceLinkClick(event);
+});
 
 myPanel.addEventListener("click", async (event) => {
   const filter = event.target.closest("[data-my-filter]");
@@ -3442,6 +3510,10 @@ mimoKeyTypeSelect.addEventListener("change", () => {
 verseMenu.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-menu-action]");
   if (!button) return;
+  if (button.dataset.menuAction === "more") {
+    setVerseMenuMore(verseMenuMore ? verseMenuMore.hidden : true);
+    return;
+  }
   runVerseAction(button.dataset.menuAction).catch(setError);
   closeVerseMenu();
 });

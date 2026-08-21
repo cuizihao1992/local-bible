@@ -352,16 +352,19 @@
 
     <div id="verseMenu" class="verseMenu" hidden>
       <div id="verseMenuTitle" class="verseMenuTitle"></div>
-      <button type="button" data-menu-action="select">多选</button>
       <button type="button" data-menu-action="favorite">收藏</button>
       <button type="button" data-menu-action="highlight">高亮</button>
       <button type="button" data-menu-action="note">笔记</button>
       <button type="button" data-menu-action="copy">复制</button>
-      <button type="button" data-menu-action="dictionary">查词</button>
-      <button type="button" data-menu-action="commentary">注释</button>
-      <button type="button" data-menu-action="ai-explain">AI 解释</button>
-      <button type="button" data-menu-action="ai-context">AI 上下文</button>
-      <button type="button" data-menu-action="ai-note">AI 笔记</button>
+      <button type="button" data-menu-action="select">多选</button>
+      <button id="verseMenuMoreBtn" type="button" data-menu-action="more" aria-expanded="false">更多</button>
+      <div id="verseMenuMore" class="verseMenuMore" hidden>
+        <button type="button" data-menu-action="dictionary">查词</button>
+        <button type="button" data-menu-action="commentary">注释</button>
+        <button type="button" data-menu-action="ai-explain">AI 解释</button>
+        <button type="button" data-menu-action="ai-context">AI 上下文</button>
+        <button type="button" data-menu-action="ai-note">AI 笔记</button>
+      </div>
     </div>
 
     <div id="selectionBar" class="selectionBar" hidden>

@@ -1730,6 +1730,36 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   font-weight: 800;
 }
 
+.verseMenuMore {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--line);
+}
+
+.verseMenuMore[hidden] {
+  display: none;
+}
+
+.refLink {
+  display: inline;
+  margin: 0 1px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(45, 106, 95, 0.35);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.refLink:hover,
+.refLink:focus-visible {
+  color: var(--accent-strong);
+  border-bottom-color: currentColor;
+  outline: none;
+}
+
 .selectionBar {
   position: fixed;
   left: 50%;
