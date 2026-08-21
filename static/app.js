@@ -196,8 +196,13 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.45";
+const APP_VERSION = "1.9.46";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.46",
+    date: "2026-08-21",
+    items: ["顶部阅读栏新增“朗读/停止”按钮", "音频面板新增系统朗读控制和朗读速度", "Android APK 新增系统中文 TTS bridge，不依赖本地 MP3", "朗读时当前经节会自动高亮并滚动到可见区域", "切换章节时自动停止旧章节朗读"],
+  },
   {
     version: "1.9.45",
     date: "2026-08-21",
