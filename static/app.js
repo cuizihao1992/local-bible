@@ -213,8 +213,13 @@ let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.53";
+const APP_VERSION = "1.9.54";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.54",
+    date: "2026-08-21",
+    items: ["搜索范围会保存到本地偏好", "重开应用后自动恢复上次选择的全本/旧约/新约/本卷范围", "关键词搜索和最近搜索都会使用已保存的范围", "只接受合法范围值，避免异常偏好影响搜索", "smoke test 增加搜索范围持久化断言"],
+  },
   {
     version: "1.9.53",
     date: "2026-08-21",
