@@ -126,7 +126,10 @@ assert(indexHtml.includes('id="speakToggleBtn"'), "Chapter speak toggle missing"
 assert(appJs.includes("function speakChapter"), "Chapter TTS speak helper missing");
 assert(appJs.includes("function setSpeakingVerse"), "TTS verse follow helper missing");
 assert(appJs.includes("window.handleAndroidTts"), "Android TTS callback missing");
+assert(appJs.includes("window.innerWidth > 860 || speaking || hasBlockingOverlayOpen()"), "Speaking should keep reading chrome visible");
+assert(appJs.includes('document.body.classList.toggle("speaking", speaking)'), "Speaking body state missing");
 assert(stylesCss.includes(".verse.speakingVerse"), "Speaking verse highlight style missing");
+assert(stylesCss.includes("body.speaking .topbar"), "Speaking topbar visibility style missing");
 assert(mainActivity.includes('addJavascriptInterface(ttsBridge, "AndroidTtsApi")'), "Android TTS bridge registration missing");
 assert(ttsBridge.includes("class TtsBridge") && ttsBridge.includes("speakQueue"), "Android TTS bridge implementation missing");
 assert(appJs.includes("let searchState ="), "Search pagination state missing");

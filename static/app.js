@@ -866,7 +866,7 @@ function showReadingChrome() {
 function updateReadingChromeVisibility() {
   scrollFrame = 0;
   const currentY = window.scrollY;
-  if (window.innerWidth > 860 || hasBlockingOverlayOpen() || Date.now() < readingChromePinnedUntil) {
+  if (window.innerWidth > 860 || speaking || hasBlockingOverlayOpen() || Date.now() < readingChromePinnedUntil) {
     showReadingChrome();
     lastScrollY = currentY;
     return;
@@ -2276,7 +2276,13 @@ function setSpeakingVerse(id) {
 
 function setSpeaking(on) {
   speaking = !!on;
-  if (!speaking) clearSpeakingVerse();
+  document.body.classList.toggle("speaking", speaking);
+  if (speaking) {
+    keepReadingChromeVisible(4000);
+    showReadingChrome();
+  } else {
+    clearSpeakingVerse();
+  }
   if (speakToggleBtn) {
     speakToggleBtn.textContent = speaking ? "停止" : "朗读";
     speakToggleBtn.classList.toggle("active", speaking);

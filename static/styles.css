@@ -782,6 +782,12 @@ select {
   color: #fff;
 }
 
+body.speaking .speakToggleBtn {
+  border-color: var(--accent-2);
+  background: var(--accent-2);
+  color: #fff;
+}
+
 .readerSettingsPanel {
   position: fixed;
   top: 82px;
@@ -2248,6 +2254,12 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     opacity: 0;
     pointer-events: none;
     transform: translateY(calc(-100% - max(env(safe-area-inset-top), 28px)));
+  }
+
+  body.speaking .topbar {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
   }
 
   .topbar > .navBtn {
