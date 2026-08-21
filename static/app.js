@@ -205,8 +205,13 @@ let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.49";
+const APP_VERSION = "1.9.50";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.50",
+    date: "2026-08-21",
+    items: ["书卷选择面板新增经节选择步骤", "点章节后可继续点具体节号并居中跳转", "提供“返回章节”和“从第 1 节读”快捷操作", "手机端选节面板优化换行和按钮宽度", "smoke test 增加经节选择面板断言"],
+  },
   {
     version: "1.9.49",
     date: "2026-08-21",
