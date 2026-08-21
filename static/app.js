@@ -105,6 +105,10 @@ const aiResultPanel = document.querySelector("#aiResultPanel");
 const aiResultTitle = document.querySelector("#aiResultTitle");
 const aiResultContent = document.querySelector("#aiResultContent");
 const closeAiResultBtn = document.querySelector("#closeAiResultBtn");
+const voiceConfirmPanel = document.querySelector("#voiceConfirmPanel");
+const voiceConfirmHint = document.querySelector("#voiceConfirmHint");
+const voiceConfirmChoices = document.querySelector("#voiceConfirmChoices");
+const closeVoiceConfirmBtn = document.querySelector("#closeVoiceConfirmBtn");
 const themeSelect = document.querySelector("#themeSelect");
 const paletteSelect = document.querySelector("#paletteSelect");
 const scriptPreference = document.querySelector("#scriptPreference");
@@ -212,6 +216,7 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
+let pendingVoiceConfirm = null;
 const markSavingKeys = new Set();
 const APP_VERSION = "1.9.54";
 const RELEASE_NOTES = [
@@ -645,6 +650,70 @@ function bookAliases() {
   return [...aliases.entries()].sort((a, b) => b[0].length - a[0].length);
 }
 
+const VOICE_CONFUSABLE_BOOK_GROUPS = [
+  { triggers: ["以斯", "以司", "伊斯"], books: ["以斯拉记", "以斯帖记"] },
+  { triggers: ["腓利", "腓立", "腓力", "菲利"], books: ["腓立比书", "腓利门书"] },
+  { triggers: ["约书", "约苏", "约舒"], books: ["约书亚记", "约翰福音", "约翰一书", "约翰二书", "约翰三书"] },
+  { triggers: ["帖撒", "帖前", "帖后"], books: ["帖撒罗尼迦前书", "帖撒罗尼迦后书"] },
+  { triggers: ["提摩", "提前", "提后"], books: ["提摩太前书", "提摩太后书"] },
+  { triggers: ["彼得", "彼前", "彼后"], books: ["彼得前书", "彼得后书"] },
+  { triggers: ["哥林", "林前", "林后"], books: ["哥林多前书", "哥林多后书"] },
+];
+
+function bookByLongName(name) {
+  return state.books.find((book) => book.longName === name);
+}
+
+function findVoiceConfusableBooks(spoken, ref) {
+  const value = normalizeVoiceText(spoken);
+  if (!value || !ref) return null;
+  for (const group of VOICE_CONFUSABLE_BOOK_GROUPS) {
+    const candidates = group.books.map(bookByLongName).filter(Boolean);
+    if (candidates.length < 2 || !candidates.some((book) => book.id === ref.book)) continue;
+    if (candidates.some((book) => value.includes(book.longName))) continue;
+    if (!group.triggers.some((trigger) => value.includes(trigger))) continue;
+    return candidates;
+  }
+  return null;
+}
+
+function closeVoiceConfirm() {
+  if (!voiceConfirmPanel) return;
+  voiceConfirmPanel.hidden = true;
+  pendingVoiceConfirm = null;
+}
+
+function openVoiceConfirm(spoken, ref, candidates) {
+  if (!voiceConfirmPanel || !voiceConfirmHint || !voiceConfirmChoices) return false;
+  pendingVoiceConfirm = { spoken, ref };
+  const chapterVerse = `${ref.chapter || 1}${ref.verse ? `:${ref.verse}` : ""}`;
+  voiceConfirmHint.textContent = `听到“${spoken}”，请确认要跳到哪一卷 ${chapterVerse}`;
+  voiceConfirmChoices.innerHTML = candidates
+    .map(
+      (book) => `
+        <button type="button" data-voice-confirm-book="${book.id}">
+          <span>${escapeHtml(book.longName)}</span>
+          <small>${escapeHtml(book.shortName)} · ${book.chapterCount} 章</small>
+        </button>
+      `,
+    )
+    .join("");
+  closeSidebar();
+  toggleBookPicker(false);
+  toggleReaderSettings(false);
+  closeSearch();
+  closeStrong();
+  closeDictionary();
+  closeAiResult();
+  closeMyPanel();
+  closeReleaseNotes();
+  closeVerseMenu();
+  closeSelectionBar();
+  voiceConfirmPanel.hidden = false;
+  showStatus("请确认语音识别的书卷");
+  return true;
+}
+
 function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -843,6 +912,7 @@ function showSidebarPanel(name = "reading") {
 }
 
 function closeContentPanels() {
+  closeVoiceConfirm();
   closeSearch();
   closeStrong();
   closeDictionary();
@@ -909,6 +979,7 @@ function hasBlockingOverlayOpen() {
     !strongPanel.hidden ||
     !dictionaryPanel.hidden ||
     !aiResultPanel.hidden ||
+    !voiceConfirmPanel.hidden ||
     !myPanel.hidden ||
     !releaseNotesPanel.hidden ||
     !verseMenu.hidden ||
@@ -1008,6 +1079,10 @@ function handleBackIntent() {
   }
   if (!bookPickerPanel.hidden) {
     toggleBookPicker(false);
+    return true;
+  }
+  if (!voiceConfirmPanel.hidden) {
+    closeVoiceConfirm();
     return true;
   }
   if (!releaseNotesPanel.hidden) {
@@ -2764,6 +2839,8 @@ async function handleVoiceText(text) {
     quickInput.value = text ? `未识别经文：${text}` : "未识别到经文";
     return;
   }
+  const confusableBooks = findVoiceConfusableBooks(text, ref);
+  if (confusableBooks?.length && openVoiceConfirm(text, ref, confusableBooks)) return;
   await jumpToReference(ref);
 }
 
@@ -3664,6 +3741,14 @@ packageList?.addEventListener("click", (event) => {
 clearDownloadCacheBtn?.addEventListener("click", clearDownloadCache);
 closeDictionaryBtn.addEventListener("click", closeDictionary);
 closeAiResultBtn.addEventListener("click", closeAiResult);
+closeVoiceConfirmBtn?.addEventListener("click", closeVoiceConfirm);
+voiceConfirmChoices?.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-voice-confirm-book]");
+  if (!button || !pendingVoiceConfirm) return;
+  const ref = { ...pendingVoiceConfirm.ref, book: Number(button.dataset.voiceConfirmBook) };
+  closeVoiceConfirm();
+  await jumpToReference(ref);
+});
 aiResultContent.addEventListener("click", (event) => {
   if (handleReferenceLinkClick(event)) return;
   const button = event.target.closest("[data-copy-ai-result]");

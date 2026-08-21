@@ -205,6 +205,15 @@ assert(appJs.includes('content.addEventListener("touchcancel"'), "Legacy touchca
 assert(/voiceBtn\.addEventListener\(\s*"touchstart"[\s\S]*startVoiceInput\(event\)/.test(appJs), "Legacy voice touchstart fallback missing");
 assert(/voiceBtn\.addEventListener\("touchend", stopVoiceInput/.test(appJs) && /voiceBtn\.addEventListener\("touchcancel", stopVoiceInput/.test(appJs), "Legacy voice touch stop fallback missing");
 assert(appJs.includes("语音识别正在进行，请先松开按钮"), "Voice duplicate start feedback missing");
+assert(indexHtml.includes('id="voiceConfirmPanel"'), "Voice confirmation panel missing");
+assert(indexHtml.includes('id="voiceConfirmChoices"'), "Voice confirmation choices missing");
+assert(appJs.includes("VOICE_CONFUSABLE_BOOK_GROUPS"), "Voice confusable book groups missing");
+assert(appJs.includes("function findVoiceConfusableBooks"), "Voice confusable detector missing");
+assert(appJs.includes("function openVoiceConfirm"), "Voice confirmation opener missing");
+assert(appJs.includes("data-voice-confirm-book"), "Voice confirmation choice action missing");
+assert(appJs.includes("const confusableBooks = findVoiceConfusableBooks(text, ref);"), "Voice text should check confusable books before jumping");
+assert(appJs.includes("!voiceConfirmPanel.hidden"), "Voice confirmation should be part of back/blocking flow");
+assert(stylesCss.includes(".voiceConfirmPanel") && stylesCss.includes(".voiceConfirmChoices button"), "Voice confirmation styles missing");
 assert(appJs.includes('function pollDownloadProgress(kind = "package", onDone = null, onStop = null)'), "Download polling stop callback missing");
 assert(appJs.includes("const snapshot = {"), "Chapter load snapshot missing");
 assert(appJs.includes("mobilePrevBtn.disabled = chapterLoading || atFirstChapter"), "Mobile previous button boundary/loading state missing");

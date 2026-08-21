@@ -1072,6 +1072,12 @@ body.speaking .speakToggleBtn {
   padding: 0 18px;
 }
 
+.voiceConfirmPanel {
+  width: min(520px, calc(100vw - 360px));
+  margin: 18px auto 0;
+  padding: 0 18px;
+}
+
 .aiResultContent {
   display: grid;
   gap: 12px;
@@ -1121,6 +1127,50 @@ body.speaking .speakToggleBtn {
   color: var(--muted);
   cursor: default;
   opacity: 0.68;
+}
+
+.voiceConfirmHint,
+.voiceConfirmChoices {
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.voiceConfirmHint {
+  padding: 14px 16px 8px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.voiceConfirmChoices {
+  display: grid;
+  gap: 8px;
+  padding: 8px 16px 16px;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0 0 8px 8px;
+}
+
+.voiceConfirmChoices button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--ink);
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 800;
+}
+
+.voiceConfirmChoices small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .myPanel {
@@ -2430,7 +2480,8 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   }
 
   .dictionaryResultsPanel,
-  .aiResultPanel {
+  .aiResultPanel,
+  .voiceConfirmPanel {
     width: 100%;
     padding: 0 16px;
   }
@@ -2656,6 +2707,7 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   .strongPanel,
   .dictionaryResultsPanel,
   .aiResultPanel,
+  .voiceConfirmPanel,
   .myPanel,
   .dashboardPanel,
   .commentaryContent {
