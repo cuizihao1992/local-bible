@@ -36,6 +36,7 @@ const state = {
   speechModel: "gpt-4o-mini-transcribe",
   aiResponseStyle: "concise",
   recentBooks: [],
+  recentSearches: [],
 };
 const STORAGE_KEY = "localBibleReaderState";
 
@@ -76,6 +77,7 @@ const quickForm = document.querySelector("#quickForm");
 const quickInput = document.querySelector("#quickInput");
 const quickSearchBtn = quickForm.querySelector('button[type="submit"]');
 const searchScope = document.querySelector("#searchScope");
+const recentSearches = document.querySelector("#recentSearches");
 const searchPanel = document.querySelector("#searchPanel");
 const searchSummary = document.querySelector("#searchSummary");
 const searchResults = document.querySelector("#searchResults");
@@ -1053,6 +1055,9 @@ function restoreState() {
     if (saved.speechModel) state.speechModel = saved.speechModel;
     if (saved.aiResponseStyle) state.aiResponseStyle = saved.aiResponseStyle;
     if (Array.isArray(saved.recentBooks)) state.recentBooks = saved.recentBooks.filter(Number.isInteger).slice(0, 8);
+    if (Array.isArray(saved.recentSearches)) {
+      state.recentSearches = saved.recentSearches.filter((item) => typeof item === "string" && item.trim()).slice(0, 8);
+    }
     if (Number.isInteger(saved.book) && saved.book > 0) state.book = saved.book;
     if (Number.isInteger(saved.chapter) && saved.chapter > 0) state.chapter = saved.chapter;
   } catch {
@@ -1090,6 +1095,7 @@ function saveState() {
       speechModel: state.speechModel,
       aiResponseStyle: state.aiResponseStyle,
       recentBooks: state.recentBooks,
+      recentSearches: state.recentSearches,
       book: state.book,
       chapter: state.chapter,
     }),
@@ -2782,6 +2788,23 @@ function setSearchBusy(loading, append = false) {
   }
 }
 
+function rememberSearch(query) {
+  const value = String(query || "").trim();
+  if (!value) return;
+  state.recentSearches = [value, ...state.recentSearches.filter((item) => item !== value)].slice(0, 8);
+  renderRecentSearches();
+  saveState();
+}
+
+function renderRecentSearches() {
+  if (!recentSearches) return;
+  recentSearches.innerHTML = state.recentSearches.length
+    ? state.recentSearches
+        .map((item) => `<button type="button" data-recent-search="${escapeHtml(item)}">${escapeHtml(item)}</button>`)
+        .join("")
+    : "";
+}
+
 function setDictionaryBusy(loading) {
   dictionaryPanel.setAttribute("aria-busy", loading ? "true" : "false");
   dictionaryBtn.disabled = loading;
@@ -2822,6 +2845,7 @@ async function runSearch(query, options = {}) {
       loading: false,
     };
     setSearchBusy(false, append);
+    if (!append) rememberSearch(query);
     renderSearchResults(data);
   } catch (error) {
     if (token === searchRequestToken) {
@@ -3238,6 +3262,7 @@ async function init() {
     renderCommentaries();
     renderStrongToggle();
     renderDictionaries();
+    renderRecentSearches();
     renderAiConfig();
     setUpdateStatus(`当前版本 ${APP_VERSION}`);
     await loadPackages();
@@ -3406,6 +3431,18 @@ quickForm.addEventListener("submit", async (event) => {
     } else {
       await runSearch(query);
     }
+  } catch (error) {
+    setError(error);
+  }
+});
+
+recentSearches?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-recent-search]");
+  if (!button) return;
+  const query = button.dataset.recentSearch || "";
+  quickInput.value = query;
+  try {
+    await runSearch(query);
   } catch (error) {
     setError(error);
   }

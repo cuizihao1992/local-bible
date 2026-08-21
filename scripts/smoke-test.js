@@ -146,6 +146,11 @@ assert(stylesCss.includes("body.speaking .topbar"), "Speaking topbar visibility 
 assert(mainActivity.includes('addJavascriptInterface(ttsBridge, "AndroidTtsApi")'), "Android TTS bridge registration missing");
 assert(ttsBridge.includes("class TtsBridge") && ttsBridge.includes("speakQueue"), "Android TTS bridge implementation missing");
 assert(appJs.includes("let searchState ="), "Search pagination state missing");
+assert(indexHtml.includes('id="recentSearches"'), "Recent searches container missing");
+assert(appJs.includes("recentSearches: []") && appJs.includes("function rememberSearch"), "Recent searches state helper missing");
+assert(appJs.includes("renderRecentSearches();") && appJs.includes("data-recent-search"), "Recent searches renderer missing");
+assert(appJs.includes("recentSearches?.addEventListener") && appJs.includes("await runSearch(query);"), "Recent search click handler missing");
+assert(stylesCss.includes(".recentSearches") && stylesCss.includes(".recentSearches:empty"), "Recent searches styles missing");
 assert(appJs.includes("let searchRequestToken = 0;"), "Search stale request token missing");
 assert(appJs.includes("let dictionaryRequestToken = 0;"), "Dictionary stale request token missing");
 assert(appJs.includes("let strongRequestToken = 0;"), "Strong stale request token missing");
