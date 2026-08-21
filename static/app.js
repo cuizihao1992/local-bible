@@ -212,8 +212,13 @@ let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.52";
+const APP_VERSION = "1.9.53";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.53",
+    date: "2026-08-21",
+    items: ["搜索框下方新增最近搜索快捷入口", "最近 8 个关键词自动保存到本地偏好", "点击最近搜索可回填并按当前范围重新搜索", "最近搜索空状态自动隐藏，不占用阅读栏空间", "smoke test 增加最近搜索状态、渲染和点击断言"],
+  },
   {
     version: "1.9.52",
     date: "2026-08-21",
