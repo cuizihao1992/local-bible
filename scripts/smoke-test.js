@@ -141,6 +141,7 @@ assert(appJs.includes("let strongRequestToken = 0;"), "Strong stale request toke
 assert(appJs.includes("let aiRequestToken = 0;"), "AI stale request token missing");
 assert(appJs.includes("let myPanelRequestToken = 0;"), "My panel stale request token missing");
 assert(appJs.includes("let myPanelLoading = false;"), "My panel busy state missing");
+assert(appJs.includes('let currentMyFilter = "all";'), "My panel current filter state missing");
 assert(appJs.includes("const markSavingKeys = new Set();"), "Verse mark save guard missing");
 assert(appJs.includes("markSavingKeys.has(key)") && appJs.includes("markSavingKeys.delete(key)"), "Verse mark save guard lifecycle missing");
 assert(appJs.includes("正在保存标注，请稍候"), "Duplicate verse mark save feedback missing");
@@ -159,8 +160,10 @@ assert(appJs.includes("正在读取我的内容，请稍候") && appJs.includes(
 assert(appJs.includes('button.disabled = loading') && appJs.includes("[data-my-filter]"), "My panel filter disabled state missing");
 assert(indexHtml.includes('data-my-filter="highlight"'), "My panel highlight filter missing");
 assert(appJs.includes("mark.highlighted).length"), "Dashboard highlight count missing");
-assert(appJs.includes('button.classList.toggle("active", button.dataset.myFilter === kind)'), "My panel active filter state missing");
+assert(appJs.includes('button.classList.toggle("active", button.dataset.myFilter === currentMyFilter)'), "My panel active filter state missing");
 assert(stylesCss.includes(".myFilters button.active"), "My panel active filter style missing");
+assert(appJs.includes("openMyPanel(currentMyFilter).catch(setError);"), "My tag search should keep current filter");
+assert(appJs.includes("kind: currentMyFilter"), "My panel API should use current filter state");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
 assert((appJs.match(/keepReadingChromeVisible\(\);/g) || []).length >= 8, "Reading chrome keep-visible coverage missing");

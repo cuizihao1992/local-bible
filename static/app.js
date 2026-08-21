@@ -195,6 +195,7 @@ let strongRequestToken = 0;
 let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
+let currentMyFilter = "all";
 const markSavingKeys = new Set();
 const APP_VERSION = "1.9.48";
 const RELEASE_NOTES = [
@@ -2941,17 +2942,18 @@ async function openMyPanel(kind = "all") {
     showStatus("正在读取我的内容，请稍候");
     return;
   }
+  currentMyFilter = kind || "all";
   closeContentPanels();
   const token = ++myPanelRequestToken;
   myPanel.hidden = false;
   myPanel.querySelectorAll("[data-my-filter]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.myFilter === kind);
+    button.classList.toggle("active", button.dataset.myFilter === currentMyFilter);
   });
   setMyPanelBusy(true);
   myResults.innerHTML = `<div class="empty">正在读取我的收藏、高亮与笔记...</div>`;
   myPanel.scrollIntoView({ block: "start", behavior: "smooth" });
   try {
-    const params = new URLSearchParams({ kind, tag: myTagFilter.value.trim(), limit: "300" });
+    const params = new URLSearchParams({ kind: currentMyFilter, tag: myTagFilter.value.trim(), limit: "300" });
     const data = await api(`/api/user/marks/all?${params.toString()}`);
     if (token !== myPanelRequestToken) return;
     renderMyResults(data.marks);
@@ -3541,7 +3543,7 @@ myPanel.addEventListener("click", async (event) => {
 myTagFilter.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
-    openMyPanel("all").catch(setError);
+    openMyPanel(currentMyFilter).catch(setError);
   }
 });
 
