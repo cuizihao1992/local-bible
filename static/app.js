@@ -205,8 +205,13 @@ let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.50";
+const APP_VERSION = "1.9.51";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.51",
+    date: "2026-08-21",
+    items: ["“我的”收藏/高亮/笔记列表显示经文正文摘要", "Node 后台 marks/all 返回 text 字段", "Android 离线后台 marks/all 同步返回 text 字段", "列表样式增加正文摘要层级", "smoke test 增加经文摘要断言"],
+  },
   {
     version: "1.9.50",
     date: "2026-08-21",
