@@ -3054,6 +3054,7 @@ function renderMyResults(marks) {
           (mark) => `
             <button class="myResult" type="button" data-version="${escapeHtml(mark.version)}" data-book="${mark.book}" data-chapter="${mark.chapter}" data-verse="${mark.verse}">
               <span class="myRef">${escapeHtml(mark.bookName)} ${mark.chapter}:${mark.verse}</span>
+              ${mark.text ? `<span class="myVerseText">${escapeHtml(mark.text)}</span>` : ""}
               <span class="myBadges">${mark.favorite ? "收藏" : ""}${mark.highlighted ? " 高亮" : ""}${mark.tags ? ` #${escapeHtml(mark.tags)}` : ""}</span>
               ${mark.note ? `<span class="myNote">${escapeHtml(mark.note)}</span>` : ""}
             </button>

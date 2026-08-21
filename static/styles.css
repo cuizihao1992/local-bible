@@ -1170,6 +1170,13 @@ body.speaking .speakToggleBtn {
   font-weight: 800;
 }
 
+.myVerseText {
+  color: var(--ink);
+  font-family: var(--read-font);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
 .myNote {
   color: var(--ink);
   font-size: 14px;

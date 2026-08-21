@@ -65,6 +65,7 @@ assert(diagnostics.ok, "Diagnostics failed");
 
 const marks = await getJson("/api/user/marks/all?limit=5");
 assert(Array.isArray(marks.marks), "Marks endpoint shape invalid");
+if (marks.marks.length) assert(Object.hasOwn(marks.marks[0], "text"), "Marks endpoint should include verse text");
 const highlightedMarks = await getJson("/api/user/marks/all?kind=highlight&limit=5");
 assert(Array.isArray(highlightedMarks.marks), "Highlighted marks endpoint shape invalid");
 
@@ -75,6 +76,7 @@ assert(Array.isArray(progress.readChapters), "Progress endpoint shape invalid");
 const appJs = await getText("/app.js");
 const indexHtml = await getText("/index.html");
 const stylesCss = await getText("/styles.css");
+const serverJs = readFileSync("server.js", "utf8");
 const androidApi = readFileSync("android/app/src/main/java/local/bible/reader/OfflineApi.java", "utf8");
 const mainActivity = readFileSync("android/app/src/main/java/local/bible/reader/MainActivity.java", "utf8");
 const ttsBridge = readFileSync("android/app/src/main/java/local/bible/reader/TtsBridge.java", "utf8");
@@ -167,6 +169,9 @@ assert(appJs.includes('button.classList.toggle("active", button.dataset.myFilter
 assert(stylesCss.includes(".myFilters button.active"), "My panel active filter style missing");
 assert(appJs.includes("openMyPanel(currentMyFilter).catch(setError);"), "My tag search should keep current filter");
 assert(appJs.includes("kind: currentMyFilter"), "My panel API should use current filter state");
+assert(serverJs.includes("function readMarkedVerseText") && serverJs.includes("text: readMarkedVerseText(row, verseDbs)"), "Server marks verse text summary missing");
+assert(appJs.includes("myVerseText") && stylesCss.includes(".myVerseText"), "My panel verse text summary missing");
+assert(androidApi.includes("markedVerseText(mark)") && androidApi.includes("select Scripture from Bible where Book=? and Chapter=? and Verse=?"), "Android marks verse text summary missing");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
 assert((appJs.match(/keepReadingChromeVisible\(\);/g) || []).length >= 8, "Reading chrome keep-visible coverage missing");

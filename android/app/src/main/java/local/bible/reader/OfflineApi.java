@@ -557,6 +557,7 @@ public class OfflineApi {
                 JSONObject mark = markFromCursor(cursor);
                 int book = mark.getInt("book");
                 mark.put("bookName", BOOKS[book - 1][1]);
+                mark.put("text", markedVerseText(mark));
                 marks.put(mark);
             }
         }
@@ -695,6 +696,21 @@ public class OfflineApi {
                 .put("note", cursor.getString(6))
                 .put("tags", cursor.getString(7))
                 .put("updatedAt", cursor.getString(8));
+    }
+
+    private String markedVerseText(JSONObject mark) {
+        SQLiteDatabase db = null;
+        try {
+            db = openBible(mark.optString("version"));
+            try (Cursor cursor = db.rawQuery("select Scripture from Bible where Book=? and Chapter=? and Verse=?",
+                    new String[]{String.valueOf(mark.optInt("book")), String.valueOf(mark.optInt("chapter")), String.valueOf(mark.optInt("verse"))})) {
+                if (cursor.moveToNext()) return cleanText(cursor.getString(0));
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (db != null) db.close();
+        }
+        return "";
     }
 
     private SQLiteDatabase openBible(String version) {

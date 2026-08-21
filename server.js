@@ -589,6 +589,22 @@ function getMarks(version, book, chapter) {
   }
 }
 
+function readMarkedVerseText(row, verseDbs) {
+  try {
+    let db = verseDbs.get(row.version);
+    if (!db) {
+      db = new DatabaseSync(biblePath(row.version), { readOnly: true });
+      verseDbs.set(row.version, db);
+    }
+    const found = db
+      .prepare("select Scripture from Bible where Book=? and Chapter=? and Verse=?")
+      .get(row.book, row.chapter, row.verse);
+    return cleanText(found?.Scripture || "");
+  } catch {
+    return "";
+  }
+}
+
 function getAllMarks(filter = {}) {
   const db = new DatabaseSync(USER_DB);
   try {
@@ -611,15 +627,21 @@ function getAllMarks(filter = {}) {
       )
       .all(...params, clampPositiveInt(filter.limit, 200, 1000));
     const books = fallbackBooks();
-    return rows.map((row) => {
-      const book = books.find((item) => item.id === Number(row.book));
-      return {
-        ...row,
-        bookName: book?.longName || `第 ${row.book} 卷`,
-        favorite: !!row.favorite,
-        highlighted: !!row.highlighted,
-      };
-    });
+    const verseDbs = new Map();
+    try {
+      return rows.map((row) => {
+        const book = books.find((item) => item.id === Number(row.book));
+        return {
+          ...row,
+          bookName: book?.longName || `第 ${row.book} 卷`,
+          text: readMarkedVerseText(row, verseDbs),
+          favorite: !!row.favorite,
+          highlighted: !!row.highlighted,
+        };
+      });
+    } finally {
+      for (const verseDb of verseDbs.values()) verseDb.close();
+    }
   } finally {
     db.close();
   }
