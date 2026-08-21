@@ -218,8 +218,13 @@ let myPanelLoading = false;
 let currentMyFilter = "all";
 let pendingVoiceConfirm = null;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.54";
+const APP_VERSION = "1.9.55";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.55",
+    date: "2026-08-21",
+    items: ["语音跳转增加易混书卷确认", "以斯、腓利、约书、帖撒、提摩、彼得、哥林等口令会先弹出候选书卷", "确认后沿用识别出的章/节跳转", "返回键和遮罩关闭流程支持关闭确认面板", "smoke test 增加语音确认面板与歧义检测断言"],
+  },
   {
     version: "1.9.54",
     date: "2026-08-21",
