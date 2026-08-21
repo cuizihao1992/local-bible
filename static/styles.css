@@ -360,6 +360,11 @@ select {
   display: none;
 }
 
+.bookPickerPanel[data-step="verses"] .bookPicker,
+.bookPickerPanel[data-step="verses"] .chapterPanel {
+  display: none;
+}
+
 .bookPickerHeader {
   display: flex;
   align-items: center;
@@ -470,6 +475,23 @@ select {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
+}
+
+.versePickerPanel {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.versePickerPanel[hidden] {
+  display: none;
+}
+
+.versePickerPanel .textBtn {
+  width: auto;
+  min-width: 86px;
+  padding: 0 10px;
+  white-space: nowrap;
 }
 
 .commentaryPanel,
@@ -2299,6 +2321,12 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     max-height: calc(100dvh - var(--mobile-nav-height) - 108px - env(safe-area-inset-bottom));
   }
 
+  .versePickerPanel .chapterPanelHeader {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+
   .titleBlock {
     text-align: left;
     justify-self: start;
@@ -2639,6 +2667,19 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
 
   .verseMenu {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .versePickerPanel .chapterPanelHeader {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .versePickerPanel .chapterPanelHeader > div {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .versePickerPanel .chapterPanelHeader .textBtn {
+    min-width: 0;
   }
 
   .selectionBar {

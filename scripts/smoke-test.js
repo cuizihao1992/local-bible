@@ -85,7 +85,10 @@ assert(appJs.includes("let readingChromePinnedUntil = 0;"), "Reading chrome pin 
 assert(appJs.includes("function keepReadingChromeVisible"), "Reading chrome pin helper missing");
 assert(appJs.includes("Date.now() < readingChromePinnedUntil"), "Reading chrome pin guard missing");
 assert(appJs.includes('closeSidebarBtn.addEventListener("click", closeSidebar);'), "Sidebar close button should use closeSidebar helper");
-assert(appJs.includes("state.chapter = Number(button.dataset.chapter);\n  resetVerseInteraction();\n  closeSidebar();"), "Chapter grid should use closeSidebar helper");
+assert(indexHtml.includes('id="versePickerPanel"') && indexHtml.includes('id="verseGrid"'), "Verse picker panel missing");
+assert(appJs.includes("function openVersePicker") && appJs.includes("data-pick-verse"), "Chapter grid should open verse picker");
+assert(appJs.includes("function jumpFromBookPicker") && appJs.includes("toggleBookPicker(false);"), "Verse picker jump should close book picker");
+assert(stylesCss.includes('.bookPickerPanel[data-step="verses"] .bookPicker'), "Verse picker step CSS missing");
 assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing");
 assert(appJs.includes("let chapterLoading = false;"), "Chapter loading state missing");
 assert(appJs.includes("let referenceJumpInProgress = false;"), "Reference jump busy state missing");
