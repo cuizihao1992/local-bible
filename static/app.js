@@ -197,8 +197,13 @@ let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.48";
+const APP_VERSION = "1.9.49";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.49",
+    date: "2026-08-21",
+    items: ["新增 currentMyFilter 保存“我的”当前分类", "标签输入框按 Enter 时沿用当前分类重新查询", "“我的”筛选按钮选中态跟随当前分类", "marks/all 请求统一使用当前筛选状态", "smoke test 增加标签搜索保持分类断言"],
+  },
   {
     version: "1.9.48",
     date: "2026-08-21",
