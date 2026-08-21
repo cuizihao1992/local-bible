@@ -2138,6 +2138,7 @@ async function loadDashboard() {
   ]);
   if (progressData) state.progress = progressData;
   const favorites = exportData.marks.filter((mark) => mark.favorite).length;
+  const highlights = exportData.marks.filter((mark) => mark.highlighted).length;
   const notes = exportData.marks.filter((mark) => mark.note || mark.tags).length;
   const history = exportData.history;
   dashboardPanel.innerHTML = `
@@ -2151,7 +2152,7 @@ async function loadDashboard() {
     </div>
     <div class="dashboardItem">
       <div class="dashboardLabel">个人资料</div>
-      <button class="dashboardAction" type="button" data-open-my="all">${favorites} 收藏 · ${notes} 笔记</button>
+      <button class="dashboardAction" type="button" data-open-my="all">${favorites} 收藏 · ${highlights} 高亮 · ${notes} 笔记</button>
     </div>
     <div class="dashboardItem">
       <div class="dashboardLabel">阅读进度</div>
@@ -2938,8 +2939,11 @@ async function openMyPanel(kind = "all") {
   closeContentPanels();
   const token = ++myPanelRequestToken;
   myPanel.hidden = false;
+  myPanel.querySelectorAll("[data-my-filter]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.myFilter === kind);
+  });
   setMyPanelBusy(true);
-  myResults.innerHTML = `<div class="empty">正在读取我的收藏与笔记...</div>`;
+  myResults.innerHTML = `<div class="empty">正在读取我的收藏、高亮与笔记...</div>`;
   myPanel.scrollIntoView({ block: "start", behavior: "smooth" });
   try {
     const params = new URLSearchParams({ kind, tag: myTagFilter.value.trim(), limit: "300" });
@@ -2964,7 +2968,7 @@ function renderMyResults(marks) {
           `,
         )
         .join("")
-    : `<div class="empty">还没有匹配的收藏或笔记。</div>`;
+    : `<div class="empty">还没有匹配的收藏、高亮或笔记。</div>`;
 }
 
 async function searchDictionary() {

@@ -65,6 +65,8 @@ assert(diagnostics.ok, "Diagnostics failed");
 
 const marks = await getJson("/api/user/marks/all?limit=5");
 assert(Array.isArray(marks.marks), "Marks endpoint shape invalid");
+const highlightedMarks = await getJson("/api/user/marks/all?kind=highlight&limit=5");
+assert(Array.isArray(highlightedMarks.marks), "Highlighted marks endpoint shape invalid");
 
 const progress = await getJson("/api/user/progress?version=KJV.db");
 assert(Number.isInteger(progress.total) && progress.total > 1000, "Progress total chapter count invalid");
@@ -153,8 +155,12 @@ assert(appJs.includes("quickSearchBtn.textContent = loading && !append"), "Searc
 assert(appJs.includes("moreButton.disabled = loading && append"), "Search load-more busy guard missing");
 assert(appJs.includes("function setDictionaryBusy") && appJs.includes("dictionaryBtn.disabled = loading"), "Dictionary busy feedback missing");
 assert(appJs.includes("function setMyPanelBusy") && appJs.includes('myPanel.setAttribute("aria-busy"'), "My panel busy feedback missing");
-assert(appJs.includes("正在读取我的内容，请稍候") && appJs.includes("正在读取我的收藏与笔记"), "My panel loading feedback missing");
+assert(appJs.includes("正在读取我的内容，请稍候") && appJs.includes("正在读取我的收藏、高亮与笔记"), "My panel loading feedback missing");
 assert(appJs.includes('button.disabled = loading') && appJs.includes("[data-my-filter]"), "My panel filter disabled state missing");
+assert(indexHtml.includes('data-my-filter="highlight"'), "My panel highlight filter missing");
+assert(appJs.includes("mark.highlighted).length"), "Dashboard highlight count missing");
+assert(appJs.includes('button.classList.toggle("active", button.dataset.myFilter === kind)'), "My panel active filter state missing");
+assert(stylesCss.includes(".myFilters button.active"), "My panel active filter style missing");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
 assert((appJs.match(/keepReadingChromeVisible\(\);/g) || []).length >= 8, "Reading chrome keep-visible coverage missing");

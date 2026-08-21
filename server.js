@@ -595,6 +595,7 @@ function getAllMarks(filter = {}) {
     const where = [];
     const params = [];
     if (filter.kind === "favorite") where.push("favorite = 1");
+    if (filter.kind === "highlight") where.push("highlighted = 1");
     if (filter.kind === "note") where.push("(note <> '' or tags <> '')");
     if (filter.tag) {
       where.push("tags like ?");
