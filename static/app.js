@@ -4223,9 +4223,11 @@ content.addEventListener("click", (event) => {
           if (tool.isConnected) tool.disabled = false;
         });
     } else if (action === "copy-note") {
+      const note = content.querySelector(`[data-note-text="${verseNo}"]`)?.value;
+      const tags = content.querySelector(`[data-note-tags="${verseNo}"]`)?.value;
       tool.disabled = true;
       tool.textContent = "复制中";
-      copyVerseNote(verseNo)
+      copyVerseNote(verseNo, { note, tags })
         .then((copied) => {
           if (!tool.isConnected) return;
           if (!copied) {
@@ -4580,11 +4582,13 @@ async function copyVerse(verseNo) {
   showStatus("已复制经文", "success");
 }
 
-async function copyVerseNote(verseNo) {
+async function copyVerseNote(verseNo, draft = {}) {
   const mark = markForVerse(verseNo);
+  const note = draft.note ?? mark.note;
+  const tags = draft.tags ?? mark.tags;
   const parts = [];
-  if (mark.tags) parts.push(`标签：${mark.tags}`);
-  if (mark.note) parts.push(mark.note);
+  if (tags) parts.push(`标签：${tags}`);
+  if (note) parts.push(note);
   if (!parts.length) {
     showStatus("这节经文还没有笔记");
     return false;
