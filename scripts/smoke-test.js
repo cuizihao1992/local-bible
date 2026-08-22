@@ -139,7 +139,8 @@ assert(appJs.includes("function drawShareCanvas") && appJs.includes("function op
 assert(appJs.includes("function shareImage") && appJs.includes("function copyShareImage") && appJs.includes("function saveShareImage"), "Share image action handlers missing");
 assert(appJs.includes("function updateSelectedVerseMarks") && appJs.includes("function openSelectedVerseNote"), "Selection mark/note action handlers missing");
 assert(appJs.includes("const selectionCount = selectedVerseNumbers.length") && appJs.includes("closeSelectionBar();") && appJs.includes("selectionCount > 1"), "Selection note should close the selection bar after opening editor");
-assert(appJs.includes("function shareSelectedVerses") && appJs.includes("await openSharePanel([...selectedVerseNumbers]);"), "Selection share image handler missing");
+assert(appJs.includes("function shareSelectedVerses") && appJs.includes("const selected = [...selectedVerseNumbers];") && appJs.includes("await openSharePanel(selected);"), "Selection share image handler missing");
+assert(/function shareSelectedVerses\(\)[\s\S]*const selected = \[\.\.\.selectedVerseNumbers\];[\s\S]*closeSelectionBar\(\);[\s\S]*await openSharePanel\(selected\);/.test(appJs), "Selection share should close the selection bar after snapshotting verses");
 assert(appJs.includes("verseMenuTitle.innerHTML") && appJs.includes("verseMenuBadges"), "Verse menu status badges missing");
 assert(appJs.includes('} else if (action === "share")') && appJs.includes("await openSharePanel(verseNo);"), "Verse share action not wired");
 assert(appJs.includes("closeSharePanel();") && appJs.includes("!sharePanel.hidden"), "Share panel should participate in close/back flow");

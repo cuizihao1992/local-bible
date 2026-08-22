@@ -2599,7 +2599,9 @@ function openSelectedVerseNote() {
 async function shareSelectedVerses() {
   if (!selectedVerseNumbers.length) updateSelectionBar();
   if (!selectedVerseNumbers.length) return;
-  await openSharePanel([...selectedVerseNumbers]);
+  const selected = [...selectedVerseNumbers];
+  closeSelectionBar();
+  await openSharePanel(selected);
 }
 
 async function runVerseAction(action, verseNo = state.activeVerse) {
