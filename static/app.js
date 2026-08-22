@@ -244,8 +244,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.57";
+const APP_VERSION = "1.9.58";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.58",
+    date: "2026-08-23",
+    items: ["多选经文栏新增高亮、收藏、笔记和分享图入口", "批量高亮/收藏会根据所选状态自动添加或取消", "多节经文可直接生成分享图片", "长按经文菜单显示已收藏、已高亮和有笔记状态", "手机端多选操作栏按钮布局更稳定"],
+  },
   {
     version: "1.9.57",
     date: "2026-08-22",
