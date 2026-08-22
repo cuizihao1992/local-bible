@@ -248,8 +248,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.69";
+const APP_VERSION = "1.9.70";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.70",
+    date: "2026-08-23",
+    items: ["多选经文生成分享图前会先保存选区快照", "分享图打开前自动收起多选栏", "避免多选栏与分享面板在手机端叠加遮挡", "分享图继续使用原本选中的经节范围", "smoke test 增加多选分享收起断言"],
+  },
   {
     version: "1.9.69",
     date: "2026-08-23",
