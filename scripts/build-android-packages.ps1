@@ -1,6 +1,6 @@
 param(
   [string]$DataRoot = "D:\bibleDownload",
-  [string]$Version = "1.9.66"
+  [string]$Version = "1.9.67"
 )
 
 $ErrorActionPreference = "Stop"

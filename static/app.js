@@ -248,8 +248,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.66";
+const APP_VERSION = "1.9.67";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.67",
+    date: "2026-08-23",
+    items: ["复制笔记按钮新增复制中和已复制状态", "复制期间会暂时禁用按钮，避免重复点击", "没有笔记内容时按钮会恢复为复制笔记", "复制函数返回结果状态，方便交互层恢复 UI", "smoke test 增加复制笔记状态反馈断言"],
+  },
   {
     version: "1.9.66",
     date: "2026-08-23",
