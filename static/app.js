@@ -229,6 +229,7 @@ let aiRequestToken = 0;
 let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
+let currentMyMarks = [];
 let pendingVoiceConfirm = null;
 let currentShareImage = null;
 const markSavingKeys = new Set();
@@ -3009,8 +3010,10 @@ async function saveVerseMark(mark, options = {}) {
   markSavingKeys.add(key);
   try {
     const data = await postJson("/api/user/mark", mark);
-    state.marks.set(Number(data.mark.verse), data.mark);
-    updateVerseMarkDom(data.mark);
+    if (data.mark.version === state.version && Number(data.mark.book) === state.book && Number(data.mark.chapter) === state.chapter) {
+      state.marks.set(Number(data.mark.verse), data.mark);
+      updateVerseMarkDom(data.mark);
+    }
     renderChrome();
     if (options.successMessage) showStatus(options.successMessage, "success");
     loadDashboard().catch(() => {});
@@ -3319,6 +3322,7 @@ function closeMyPanel() {
   const wasOpen = !myPanel.hidden;
   myPanelRequestToken += 1;
   setMyPanelBusy(false);
+  currentMyMarks = [];
   myPanel.hidden = true;
   if (wasOpen) keepReadingChromeVisible();
 }
@@ -3497,20 +3501,67 @@ async function openMyPanel(kind = "all") {
 }
 
 function renderMyResults(marks) {
+  currentMyMarks = marks;
   myResults.innerHTML = marks.length
     ? marks
         .map(
           (mark) => `
-            <button class="myResult" type="button" data-version="${escapeHtml(mark.version)}" data-book="${mark.book}" data-chapter="${mark.chapter}" data-verse="${mark.verse}">
-              <span class="myRef">${escapeHtml(mark.bookName)} ${mark.chapter}:${mark.verse}</span>
-              ${mark.text ? `<span class="myVerseText">${escapeHtml(mark.text)}</span>` : ""}
-              <span class="myBadges">${mark.favorite ? "收藏" : ""}${mark.highlighted ? " 高亮" : ""}${mark.tags ? ` #${escapeHtml(mark.tags)}` : ""}</span>
-              ${mark.note ? `<span class="myNote">${escapeHtml(mark.note)}</span>` : ""}
-            </button>
+            <article class="myResult" data-my-key="${escapeHtml(myMarkKey(mark))}">
+              <button class="myResultMain" type="button" data-my-action="open">
+                <span class="myRef">${escapeHtml(mark.bookName)} ${mark.chapter}:${mark.verse}</span>
+                ${mark.text ? `<span class="myVerseText">${escapeHtml(mark.text)}</span>` : ""}
+                <span class="myBadges">${mark.favorite ? "收藏" : ""}${mark.highlighted ? " 高亮" : ""}${mark.tags ? ` #${escapeHtml(mark.tags)}` : ""}</span>
+                ${mark.note ? `<span class="myNote">${escapeHtml(mark.note)}</span>` : ""}
+              </button>
+              <div class="myResultActions">
+                <button type="button" data-my-action="copy">复制</button>
+                ${mark.favorite ? `<button type="button" data-my-action="unfavorite">取消收藏</button>` : ""}
+                ${mark.highlighted ? `<button type="button" data-my-action="unhighlight">取消高亮</button>` : ""}
+                ${mark.note || mark.tags ? `<button type="button" data-my-action="clear-note">清笔记</button>` : ""}
+              </div>
+            </article>
           `,
         )
         .join("")
     : `<div class="empty">还没有匹配的收藏、高亮或笔记。</div>`;
+}
+
+function myMarkKey(mark) {
+  return `${mark.version}|${mark.book}|${mark.chapter}|${mark.verse}`;
+}
+
+function currentMyMarkFromElement(element) {
+  const result = element.closest(".myResult");
+  if (!result) return null;
+  return currentMyMarks.find((mark) => myMarkKey(mark) === result.dataset.myKey) || null;
+}
+
+async function openMyMark(mark) {
+  if (!mark) return;
+  if (mark.version && state.versions.some((version) => version.id === mark.version)) {
+    state.version = mark.version;
+    renderVersions();
+    await loadBooks();
+  }
+  await jumpToReference({
+    book: Number(mark.book),
+    chapter: Number(mark.chapter),
+    verse: Number(mark.verse),
+  });
+}
+
+async function copyMyMark(mark) {
+  if (!mark) return;
+  const text = `${mark.bookName || `第 ${mark.book} 卷`} ${mark.chapter}:${mark.verse} ${mark.text || ""}`.trim();
+  await writeClipboard(text);
+  showStatus("已复制我的经文", "success");
+}
+
+async function updateMyMark(mark, patch, message) {
+  if (!mark) return;
+  const saved = await saveVerseMark({ ...mark, ...patch }, { successMessage: message });
+  if (!saved) return;
+  await openMyPanel(currentMyFilter);
 }
 
 async function searchDictionary() {
@@ -4095,18 +4146,21 @@ myPanel.addEventListener("click", async (event) => {
     await openMyPanel(filter.dataset.myFilter);
     return;
   }
-  const result = event.target.closest(".myResult");
-  if (!result) return;
-  if (result.dataset.version && state.versions.some((version) => version.id === result.dataset.version)) {
-    state.version = result.dataset.version;
-    renderVersions();
-    await loadBooks();
+  const action = event.target.closest("[data-my-action]");
+  if (!action) return;
+  const mark = currentMyMarkFromElement(action);
+  if (!mark) return;
+  if (action.dataset.myAction === "open") {
+    await openMyMark(mark);
+  } else if (action.dataset.myAction === "copy") {
+    await copyMyMark(mark);
+  } else if (action.dataset.myAction === "unfavorite") {
+    await updateMyMark(mark, { favorite: false }, "已取消收藏");
+  } else if (action.dataset.myAction === "unhighlight") {
+    await updateMyMark(mark, { highlighted: false }, "已取消高亮");
+  } else if (action.dataset.myAction === "clear-note") {
+    await updateMyMark(mark, { note: "", tags: "" }, "笔记已清除");
   }
-  await jumpToReference({
-    book: Number(result.dataset.book),
-    chapter: Number(result.dataset.chapter),
-    verse: Number(result.dataset.verse),
-  });
 });
 
 myTagFilter.addEventListener("keydown", (event) => {

@@ -175,6 +175,7 @@ assert(appJs.includes("let aiRequestToken = 0;"), "AI stale request token missin
 assert(appJs.includes("let myPanelRequestToken = 0;"), "My panel stale request token missing");
 assert(appJs.includes("let myPanelLoading = false;"), "My panel busy state missing");
 assert(appJs.includes('let currentMyFilter = "all";'), "My panel current filter state missing");
+assert(appJs.includes("let currentMyMarks = [];"), "My panel result cache missing");
 assert(appJs.includes("const markSavingKeys = new Set();"), "Verse mark save guard missing");
 assert(appJs.includes("markSavingKeys.has(key)") && appJs.includes("markSavingKeys.delete(key)"), "Verse mark save guard lifecycle missing");
 assert(appJs.includes("正在保存标注，请稍候"), "Duplicate verse mark save feedback missing");
@@ -197,9 +198,14 @@ assert(appJs.includes('button.classList.toggle("active", button.dataset.myFilter
 assert(stylesCss.includes(".myFilters button.active"), "My panel active filter style missing");
 assert(appJs.includes("openMyPanel(currentMyFilter).catch(setError);"), "My tag search should keep current filter");
 assert(appJs.includes("kind: currentMyFilter"), "My panel API should use current filter state");
+assert(appJs.includes("function copyMyMark") && appJs.includes("function updateMyMark"), "My panel item actions missing");
+assert(appJs.includes('data-my-action="copy"') && appJs.includes('data-my-action="unfavorite"') && appJs.includes('data-my-action="clear-note"'), "My panel action buttons missing");
+assert(stylesCss.includes(".myResultActions") && stylesCss.includes('.myResultActions button[data-my-action="clear-note"]'), "My panel action styles missing");
 assert(serverJs.includes("function readMarkedVerseText") && serverJs.includes("text: readMarkedVerseText(row, verseDbs)"), "Server marks verse text summary missing");
 assert(appJs.includes("myVerseText") && stylesCss.includes(".myVerseText"), "My panel verse text summary missing");
 assert(androidApi.includes("markedVerseText(mark)") && androidApi.includes("select Scripture from Bible where Book=? and Chapter=? and Verse=?"), "Android marks verse text summary missing");
+assert(androidApi.includes('"favorite".equals(kind)') && androidApi.includes('"highlight".equals(kind)') && androidApi.includes('"note".equals(kind)'), "Android marks/all kind filters missing");
+assert(androidApi.includes("tags like ?") && androidApi.includes("String.join(\" and \", where)"), "Android marks/all tag filter SQL missing");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
 assert(appJs.includes("const sheetPanels = [") && appJs.includes("function syncSheetOpen"), "Sheet open state sync missing");

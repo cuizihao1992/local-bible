@@ -1307,16 +1307,61 @@ button:active {
 
 .myResult {
   display: grid;
-  gap: 5px;
+  gap: 8px;
   width: 100%;
   padding: 13px 16px;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: var(--control);
   color: var(--ink);
+}
+
+.myResultMain {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
   font: inherit;
+  padding: 0;
   text-align: left;
+}
+
+.myResultMain:hover .myRef,
+.myResultMain:focus-visible .myRef {
+  color: var(--accent-strong);
+}
+
+.myResultActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.myResultActions button {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+.myResultActions button[data-my-action="clear-note"] {
+  color: var(--accent-2);
+}
+
+.myResultActions button:hover,
+.myResultActions button:focus-visible {
+  border-color: var(--accent);
+  background: var(--soft);
+  outline: none;
 }
 
 .myRef {
@@ -2731,6 +2776,17 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
 
   .notePreview {
     margin-top: 8px;
+  }
+
+  .myResultActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .myResultActions button {
+    width: 100%;
+    min-width: 0;
+    padding: 0 6px;
   }
 
   .verseMenu {

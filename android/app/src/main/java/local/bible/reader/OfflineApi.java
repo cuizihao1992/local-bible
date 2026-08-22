@@ -551,8 +551,22 @@ public class OfflineApi {
 
     private JSONObject allMarks(Uri uri) throws Exception {
         JSONArray marks = new JSONArray();
-        try (Cursor cursor = userDb.rawQuery("select version, book, chapter, verse, favorite, highlighted, note, tags, updated_at from verse_marks order by updated_at desc limit ?",
-                new String[]{String.valueOf(intQuery(uri, "limit", 200))})) {
+        String kind = query(uri, "kind");
+        String tag = query(uri, "tag");
+        List<String> where = new ArrayList<>();
+        List<String> args = new ArrayList<>();
+        if ("favorite".equals(kind)) where.add("favorite = 1");
+        if ("highlight".equals(kind)) where.add("highlighted = 1");
+        if ("note".equals(kind)) where.add("(note <> '' or tags <> '')");
+        if (tag != null && !tag.trim().isEmpty()) {
+            where.add("tags like ?");
+            args.add("%" + tag.trim() + "%");
+        }
+        String sql = "select version, book, chapter, verse, favorite, highlighted, note, tags, updated_at from verse_marks"
+                + (where.isEmpty() ? "" : " where " + String.join(" and ", where))
+                + " order by updated_at desc limit ?";
+        args.add(String.valueOf(intQuery(uri, "limit", 200)));
+        try (Cursor cursor = userDb.rawQuery(sql, args.toArray(new String[0]))) {
             while (cursor.moveToNext()) {
                 JSONObject mark = markFromCursor(cursor);
                 int book = mark.getInt("book");
