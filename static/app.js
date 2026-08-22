@@ -239,8 +239,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.56";
+const APP_VERSION = "1.9.57";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.57",
+    date: "2026-08-22",
+    items: ["移动端内容面板统一为底部弹层", "弹层打开时显示遮罩并锁定底层滚动", "弹层顶部关闭栏固定，长内容滚动时不再丢失关闭入口", "经文菜单更多区域和底部导航触控体验优化", "按钮增加按下反馈和更清晰的焦点状态"],
+  },
   {
     version: "1.9.56",
     date: "2026-08-22",
