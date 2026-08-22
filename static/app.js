@@ -2622,7 +2622,12 @@ function renderNoteEditor(verse) {
       <input data-note-tags="${verse}" type="text" placeholder="标签，用逗号分隔" value="${escapeHtml(mark.tags)}" />
       <div class="noteEditorActions">
         <button class="verseTool active" type="button" data-action="save-note" data-verse="${verse}">保存笔记</button>
-        ${hasContent ? `<button class="verseTool danger" type="button" data-action="clear-note" data-verse="${verse}">清空笔记</button>` : ""}
+        ${
+          hasContent
+            ? `<button class="verseTool" type="button" data-action="copy-note" data-verse="${verse}">复制笔记</button>
+        <button class="verseTool danger" type="button" data-action="clear-note" data-verse="${verse}">清空笔记</button>`
+            : ""
+        }
       </div>
     </div>
     ${
@@ -4207,6 +4212,8 @@ content.addEventListener("click", (event) => {
         .finally(() => {
           if (tool.isConnected) tool.disabled = false;
         });
+    } else if (action === "copy-note") {
+      copyVerseNote(verseNo).catch(setError);
     } else if (action === "clear-note") {
       const mark = markForVerse(verseNo);
       tool.disabled = true;
@@ -4544,6 +4551,20 @@ async function copyVerse(verseNo) {
   const text = `${book.longName} ${state.chapter}:${verseNo} ${verse}`;
   await writeClipboard(text);
   showStatus("已复制经文", "success");
+}
+
+async function copyVerseNote(verseNo) {
+  const mark = markForVerse(verseNo);
+  const parts = [];
+  if (mark.tags) parts.push(`标签：${mark.tags}`);
+  if (mark.note) parts.push(mark.note);
+  if (!parts.length) {
+    showStatus("这节经文还没有笔记");
+    return;
+  }
+  const book = currentBook();
+  await writeClipboard(`${book.longName} ${state.chapter}:${verseNo}\n${parts.join("\n")}`);
+  showStatus("已复制笔记", "success");
 }
 
 document.addEventListener("keydown", (event) => {
