@@ -246,8 +246,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.61";
+const APP_VERSION = "1.9.62";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.62",
+    date: "2026-08-23",
+    items: ["顶部标题下方显示本章已读状态和总阅读进度", "仪表盘阅读进度显示下一未读章节", "新增“标记并下一章”动作", "最近阅读改为显示书卷名而不是数字卷号", "进度动作增加忙碌保护和样式优化"],
+  },
   {
     version: "1.9.61",
     date: "2026-08-23",
