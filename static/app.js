@@ -248,8 +248,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.64";
+const APP_VERSION = "1.9.65";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.65",
+    date: "2026-08-23",
+    items: ["经文笔记编辑器新增清空笔记", "有内容的笔记会显示清空按钮", "清空会同步移除标签和笔记正文", "保存时复用标注保存保护和状态反馈", "smoke test 增加清空笔记入口和样式断言"],
+  },
   {
     version: "1.9.64",
     date: "2026-08-23",
