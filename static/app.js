@@ -233,6 +233,7 @@ let currentMyFilter = "all";
 let currentMyMarks = [];
 let pendingVoiceConfirm = null;
 let currentShareImage = null;
+let currentAiResultMeta = null;
 const markSavingKeys = new Set();
 const sheetPanels = [
   readerSettingsPanel,
@@ -2194,6 +2195,15 @@ async function runVerseAiAction(action, verseNo) {
   saveAiConfig();
   closeContentPanels();
   const token = ++aiRequestToken;
+  const meta = {
+    action,
+    version: state.version,
+    book: state.book,
+    chapter: state.chapter,
+    verse: Number(verseNo),
+    ref: verseReference(verseNo),
+  };
+  currentAiResultMeta = meta;
   aiResultPanel.hidden = false;
   aiResultTitle.textContent = aiActionTitle(action, verseNo);
   aiResultContent.innerHTML = `<div class="aiLoading">正在请求 ${escapeHtml(currentAiConfig().provider)}...</div>`;
@@ -2204,13 +2214,39 @@ async function runVerseAiAction(action, verseNo) {
       <div class="aiResultText">${linkVerseRefs(text)}</div>
       <div class="aiResultActions">
         <button type="button" data-copy-ai-result>复制结果</button>
+        ${action === "ai-note" ? `<button type="button" data-save-ai-note>存入笔记</button>` : ""}
       </div>
     `;
     aiResultContent.dataset.aiResultText = text;
+    aiResultContent.dataset.aiResultRef = meta.ref;
     aiResultPanel.scrollIntoView({ block: "start", behavior: "smooth" });
   } catch (error) {
     if (token !== aiRequestToken) return;
     aiResultContent.innerHTML = `<div class="aiError">${escapeHtml(error.message || String(error))}</div>`;
+  }
+}
+
+async function saveAiResultAsNote(button) {
+  const meta = currentAiResultMeta;
+  const text = aiResultContent.dataset.aiResultText || "";
+  if (!meta || meta.action !== "ai-note" || !text.trim()) return;
+  button.disabled = true;
+  button.textContent = "保存中";
+  try {
+    const existing = await markForReference(meta.version, meta.book, meta.chapter, meta.verse);
+    const note = existing.note?.trim()
+      ? `${existing.note.trim()}\n\n${meta.ref} · AI 笔记\n${text.trim()}`
+      : `${meta.ref} · AI 笔记\n${text.trim()}`;
+    await saveVerseMark({ ...existing, note }, { successMessage: "AI 笔记已保存" });
+    button.textContent = "已保存";
+    window.setTimeout(() => {
+      if (button.isConnected) button.textContent = "存入笔记";
+    }, 1200);
+  } catch (error) {
+    button.textContent = "存入笔记";
+    throw error;
+  } finally {
+    if (button.isConnected) button.disabled = false;
   }
 }
 
@@ -3468,6 +3504,7 @@ function closeAiResult() {
   const wasOpen = !aiResultPanel.hidden;
   aiRequestToken += 1;
   aiCopyInProgress = false;
+  currentAiResultMeta = null;
   aiResultPanel.hidden = true;
   if (wasOpen) keepReadingChromeVisible();
 }
@@ -4265,6 +4302,11 @@ voiceConfirmChoices?.addEventListener("click", async (event) => {
 });
 aiResultContent.addEventListener("click", (event) => {
   if (handleReferenceLinkClick(event)) return;
+  const saveNoteButton = event.target.closest("[data-save-ai-note]");
+  if (saveNoteButton) {
+    saveAiResultAsNote(saveNoteButton).catch(setError);
+    return;
+  }
   const button = event.target.closest("[data-copy-ai-result]");
   if (!button) return;
   if (aiCopyInProgress) {
