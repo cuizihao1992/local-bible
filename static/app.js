@@ -245,8 +245,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.58";
+const APP_VERSION = "1.9.59";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.59",
+    date: "2026-08-23",
+    items: ["我的列表新增复制、取消收藏、取消高亮和清笔记操作", "我的卡片正文点击仍可跳转到原经文", "整理收藏/高亮/笔记后会自动刷新列表和统计", "Android 离线后台补齐我的分类与标签筛选", "手机端我的卡片操作按钮改为双列布局"],
+  },
   {
     version: "1.9.58",
     date: "2026-08-23",
