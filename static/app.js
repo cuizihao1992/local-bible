@@ -2615,7 +2615,10 @@ function renderNoteEditor(verse) {
     <div class="noteEditor ${hasContent ? "hasContent" : ""}" data-note-editor="${verse}" hidden>
       <textarea data-note-text="${verse}" placeholder="写下这节经文的笔记">${escapeHtml(mark.note)}</textarea>
       <input data-note-tags="${verse}" type="text" placeholder="标签，用逗号分隔" value="${escapeHtml(mark.tags)}" />
-      <button class="verseTool active" type="button" data-action="save-note" data-verse="${verse}">保存笔记</button>
+      <div class="noteEditorActions">
+        <button class="verseTool active" type="button" data-action="save-note" data-verse="${verse}">保存笔记</button>
+        ${hasContent ? `<button class="verseTool danger" type="button" data-action="clear-note" data-verse="${verse}">清空笔记</button>` : ""}
+      </div>
     </div>
     ${
       hasContent
@@ -4194,6 +4197,18 @@ content.addEventListener("click", (event) => {
           window.setTimeout(() => {
             if (tool.isConnected) tool.textContent = "保存笔记";
           }, 900);
+        })
+        .catch(setError)
+        .finally(() => {
+          if (tool.isConnected) tool.disabled = false;
+        });
+    } else if (action === "clear-note") {
+      const mark = markForVerse(verseNo);
+      tool.disabled = true;
+      tool.textContent = "清空中";
+      saveVerseMark({ ...mark, note: "", tags: "" }, { successMessage: "笔记已清空" })
+        .then((saved) => {
+          if (!saved && tool.isConnected) tool.textContent = "清空笔记";
         })
         .catch(setError)
         .finally(() => {

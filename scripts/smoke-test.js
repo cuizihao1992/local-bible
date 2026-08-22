@@ -304,6 +304,9 @@ assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style 
 assert(stylesCss.includes(".dashboardMiniActions") && stylesCss.includes(".dashboardMiniAction.primary"), "Dashboard progress action styles missing");
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
 assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style missing");
+assert(appJs.includes('data-action="clear-note"') && appJs.includes('tool.textContent = "清空中"'), "Inline note clear action missing");
+assert(appJs.includes('successMessage: "笔记已清空"'), "Inline note clear success feedback missing");
+assert(stylesCss.includes(".noteEditorActions") && stylesCss.includes(".verseTool.danger"), "Inline note clear styles missing");
 assert(stylesCss.includes(".selectionBar button:disabled"), "Selection copy disabled style missing");
 assert(stylesCss.includes(".verseMenuBadges") && stylesCss.includes(".selectionBar #highlightSelectionBtn"), "Selection/menu polish styles missing");
 assert(stylesCss.includes("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);"), "Narrow mobile selection bar should use two flexible columns");

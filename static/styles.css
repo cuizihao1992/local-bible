@@ -2276,6 +2276,22 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   resize: vertical;
 }
 
+.noteEditorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.noteEditorActions .verseTool {
+  min-width: 0;
+}
+
+.verseTool.danger {
+  border-color: color-mix(in srgb, var(--accent-2) 32%, var(--line));
+  background: color-mix(in srgb, var(--accent-2) 10%, var(--control));
+  color: var(--accent-2);
+}
+
 .notePreview {
   display: grid;
   gap: 5px;
