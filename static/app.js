@@ -248,8 +248,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.63";
+const APP_VERSION = "1.9.64";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.64",
+    date: "2026-08-23",
+    items: ["注释条目新增复制注释和存入笔记操作", "存入笔记会写回对应经文，整章注释默认写入第 1 节", "已有笔记会追加保留，不会被覆盖", "注释条目操作增加保存中 / 已保存状态", "smoke test 增加注释操作和样式断言"],
+  },
   {
     version: "1.9.63",
     date: "2026-08-23",
