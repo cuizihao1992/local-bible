@@ -2579,14 +2579,16 @@ async function updateSelectedVerseMarks(kind) {
 function openSelectedVerseNote() {
   if (!selectedVerseNumbers.length) updateSelectionBar();
   if (!selectedVerseNumbers.length) return;
+  const selectionCount = selectedVerseNumbers.length;
   const verseNo = selectedVerseNumbers[0];
   const verse = content.querySelector(`.verse[data-verse="${verseNo}"]`);
   const editor = verse?.querySelector(`[data-note-editor="${verseNo}"]`);
   if (!verse || !editor) return;
   editor.hidden = false;
+  closeSelectionBar();
   verse.scrollIntoView({ block: "center", behavior: "smooth" });
   window.setTimeout(() => editor.querySelector("textarea")?.focus(), 180);
-  showStatus(selectedVerseNumbers.length > 1 ? "已打开第一节经文的笔记" : "已打开笔记", "info");
+  showStatus(selectionCount > 1 ? "已打开第一节经文的笔记" : "已打开笔记", "info");
 }
 
 async function shareSelectedVerses() {
