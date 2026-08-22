@@ -245,8 +245,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.59";
+const APP_VERSION = "1.9.60";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.60",
+    date: "2026-08-23",
+    items: ["顶部输入框支持更自然的经文格式", "支持马太福音3章11节、太3:11、约3、腓利门1等输入", "支持中文数字章节，如约翰三章十六节", "解析时按最长书卷别名匹配，减少约翰一书等书卷误判", "输入不符合经文格式时仍按关键词搜索"],
+  },
   {
     version: "1.9.59",
     date: "2026-08-23",
