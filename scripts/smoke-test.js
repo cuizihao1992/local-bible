@@ -110,10 +110,14 @@ assert(appJs.includes("function setChapterError"), "Chapter retry error renderer
 assert(appJs.includes("data-retry-chapter"), "Chapter retry button missing");
 assert(appJs.includes('loadChapter({ scrollTop: true });') && appJs.includes('[data-retry-chapter]'), "Chapter retry click handler missing");
 assert(appJs.includes("let progressSaving = false;"), "Progress save busy guard missing");
+assert(indexHtml.includes('id="progressSummary"'), "Topbar progress summary missing");
 assert(appJs.includes('mobileMarkReadBtn.textContent = progressSaving ? "保存中"'), "Mobile progress save busy text missing");
 assert(appJs.includes("正在保存阅读进度，请稍候"), "Duplicate progress save feedback missing");
 assert(appJs.includes("button.dataset.previousText = button.textContent") && appJs.includes('button.textContent = "保存中"'), "Progress dashboard save busy text missing");
 assert(appJs.includes("delete button.dataset.previousText"), "Progress save button text recovery missing");
+assert(appJs.includes("function formatBookChapter") && appJs.includes("function continueToNextUnread"), "Next unread progress helpers missing");
+assert(appJs.includes("function markReadAndContinue") && appJs.includes("data-mark-read-next"), "Mark-read-and-continue action missing");
+assert(appJs.includes("本章已读") && appJs.includes("本章未读"), "Progress summary read state missing");
 assert(appJs.includes("let exportInProgress = false;"), "Export busy guard missing");
 assert(appJs.includes("let importInProgress = false;"), "Import busy guard missing");
 assert(appJs.includes("let packageInstallInProgress = false;"), "Package install busy guard missing");
@@ -289,6 +293,7 @@ assert(stylesCss.includes(".dataButtons button:disabled"), "Data action disabled
 assert(stylesCss.includes(".aiResultActions button:disabled"), "AI result copy disabled style missing");
 assert(stylesCss.includes(".myFilters button:disabled"), "My panel filter disabled style missing");
 assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style missing");
+assert(stylesCss.includes(".dashboardMiniActions") && stylesCss.includes(".dashboardMiniAction.primary"), "Dashboard progress action styles missing");
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
 assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style missing");
 assert(stylesCss.includes(".selectionBar button:disabled"), "Selection copy disabled style missing");

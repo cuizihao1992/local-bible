@@ -1429,9 +1429,23 @@ button:active {
   text-align: left;
 }
 
-.dashboardMiniAction {
-  min-height: 28px;
+.dashboardAction span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dashboardMiniActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
   margin-top: 8px;
+}
+
+.dashboardMiniAction {
+  min-height: 30px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--control);
@@ -1441,6 +1455,11 @@ button:active {
   font-size: 12px;
   font-weight: 800;
   padding: 0 8px;
+}
+
+.dashboardMiniAction.primary {
+  border-color: var(--accent);
+  background: var(--soft);
 }
 
 .mobileStatusPanel {

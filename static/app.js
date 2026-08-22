@@ -1901,7 +1901,9 @@ function renderProgressChrome() {
     mobileMarkReadBtn.disabled = !state.version || progressSaving;
   }
   if (progressSummary) {
-    progressSummary.textContent = state.progress ? `${state.progress.read}/${state.progress.total} 章 · ${state.progress.percent}%` : "";
+    progressSummary.textContent = state.progress
+      ? `${read ? "本章已读" : "本章未读"} · ${state.progress.read}/${state.progress.total} 章 · ${state.progress.percent}%`
+      : "";
   }
 }
 
@@ -2678,13 +2680,15 @@ async function loadDashboard() {
   const highlights = exportData.marks.filter((mark) => mark.highlighted).length;
   const notes = exportData.marks.filter((mark) => mark.note || mark.tags).length;
   const history = exportData.history;
+  const nextUnread = findNextUnreadChapter();
+  const nextUnreadText = nextUnread ? formatBookChapter(nextUnread.book, nextUnread.chapter) : "全部已读";
   dashboardPanel.innerHTML = `
     <div class="dashboardItem">
       <div class="dashboardLabel">最近阅读</div>
       <button class="dashboardAction" type="button" ${
         history ? `data-book="${history.book}" data-chapter="${history.chapter}" data-version="${escapeHtml(history.version)}"` : "disabled"
       }>
-        ${history ? `${escapeHtml(versionLabel(history.version))} · ${history.book}:${history.chapter}` : "暂无记录"}
+        ${history ? `${escapeHtml(versionLabel(history.version))} · ${escapeHtml(formatBookChapter(history.book, history.chapter))}` : "暂无记录"}
       </button>
     </div>
     <div class="dashboardItem">
@@ -2695,14 +2699,23 @@ async function loadDashboard() {
       <div class="dashboardLabel">阅读进度</div>
       <button class="dashboardAction" type="button" data-continue-unread>
         ${progressData ? `${progressData.read}/${progressData.total} 章 · ${progressData.percent}%` : "暂无进度"}
+        <span>${escapeHtml(nextUnreadText)}</span>
       </button>
-      <button class="dashboardMiniAction" type="button" data-mark-current-read>${isCurrentChapterRead() ? "取消本章已读" : "标记本章已读"}</button>
+      <div class="dashboardMiniActions">
+        <button class="dashboardMiniAction" type="button" data-mark-current-read>${isCurrentChapterRead() ? "取消本章已读" : "标记本章已读"}</button>
+        <button class="dashboardMiniAction primary" type="button" data-mark-read-next>标记并下一章</button>
+      </div>
     </div>
     <div class="dashboardItem">
       <div class="dashboardLabel">数据状态</div>
       <div class="dashboardValue">${diagnosticData.ok ? "正常" : "需检查"}</div>
     </div>
   `;
+}
+
+function formatBookChapter(bookId, chapter) {
+  const book = state.books.find((item) => item.id === Number(bookId));
+  return book ? `${book.longName || book.shortName} ${chapter}` : `第 ${bookId} 卷 ${chapter}`;
 }
 
 function findNextUnreadChapter() {
@@ -2713,6 +2726,24 @@ function findNextUnreadChapter() {
   const currentIndex = chapters.findIndex((item) => item.book === state.book && item.chapter === state.chapter);
   const ordered = [...chapters.slice(Math.max(0, currentIndex + 1)), ...chapters.slice(0, Math.max(0, currentIndex + 1))];
   return ordered.find((item) => !readSet.has(`${item.book}:${item.chapter}`)) || null;
+}
+
+async function continueToNextUnread() {
+  const nextUnread = findNextUnreadChapter();
+  if (!nextUnread) {
+    showStatus("当前译本所有章节都已标记已读", "success");
+    return;
+  }
+  state.book = nextUnread.book;
+  state.chapter = nextUnread.chapter;
+  resetVerseInteraction();
+  renderBooks();
+  await loadChapter({ scrollTop: true });
+}
+
+async function markReadAndContinue() {
+  if (!isCurrentChapterRead()) await setCurrentChapterRead(true);
+  await continueToNextUnread();
 }
 
 async function loadAudio(snapshot = {}, token = null) {
@@ -2974,7 +3005,7 @@ async function setCurrentChapterRead(read) {
     return;
   }
   progressSaving = true;
-  const buttons = [mobileMarkReadBtn, ...dashboardPanel.querySelectorAll("[data-mark-current-read]")].filter(Boolean);
+  const buttons = [mobileMarkReadBtn, ...dashboardPanel.querySelectorAll("[data-mark-current-read], [data-mark-read-next]")].filter(Boolean);
   buttons.forEach((button) => {
     button.disabled = true;
     button.dataset.previousText = button.textContent;
@@ -4299,17 +4330,15 @@ dashboardPanel.addEventListener("click", async (event) => {
     return;
   }
   if (event.target.closest("[data-continue-unread]")) {
-    const nextUnread = findNextUnreadChapter();
-    if (!nextUnread) return;
-    state.book = nextUnread.book;
-    state.chapter = nextUnread.chapter;
-    resetVerseInteraction();
-    renderBooks();
-    await loadChapter({ scrollTop: true });
+    await continueToNextUnread();
     return;
   }
   if (event.target.closest("[data-mark-current-read]")) {
     await setCurrentChapterRead(!isCurrentChapterRead());
+    return;
+  }
+  if (event.target.closest("[data-mark-read-next]")) {
+    await markReadAndContinue();
     return;
   }
   const action = event.target.closest(".dashboardAction");
