@@ -248,8 +248,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.68";
+const APP_VERSION = "1.9.69";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.69",
+    date: "2026-08-23",
+    items: ["多选经文打开笔记后会自动收起多选栏", "打开笔记前会保留所选经文数量用于提示", "减少手机端多选栏遮挡笔记输入框", "打开后仍会滚动并聚焦到笔记编辑器", "smoke test 增加多选笔记收起断言"],
+  },
   {
     version: "1.9.68",
     date: "2026-08-23",
