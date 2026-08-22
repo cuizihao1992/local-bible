@@ -1,4 +1,4 @@
-﻿package local.bible.reader;
+package local.bible.reader;
 
 import android.content.ContentValues;
 import android.content.Context;
