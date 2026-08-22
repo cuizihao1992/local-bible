@@ -379,6 +379,22 @@
         <div id="releaseNotesContent" class="releaseNotesContent"></div>
       </section>
 
+      <section id="sharePanel" class="sharePanel" hidden>
+        <div class="searchHeader">
+          <div id="sharePanelTitle">经文图片</div>
+          <button id="closeSharePanelBtn" class="textBtn" type="button">关闭</button>
+        </div>
+        <div class="sharePreviewWrap">
+          <canvas id="shareCanvas" width="1080" height="1350"></canvas>
+        </div>
+        <div class="shareActions">
+          <button id="shareImageBtn" type="button">分享</button>
+          <button id="copyShareImageBtn" type="button">复制图片</button>
+          <button id="saveShareImageBtn" type="button">保存图片</button>
+        </div>
+        <div id="shareHint" class="panelHint"></div>
+      </section>
+
       <section id="content" class="content" aria-live="polite"></section>
 
       <section id="commentaryContent" class="commentaryContent"></section>
@@ -395,6 +411,7 @@
       <div id="verseMenuMore" class="verseMenuMore" hidden>
         <button type="button" data-menu-action="dictionary">查词</button>
         <button type="button" data-menu-action="commentary">注释</button>
+        <button type="button" data-menu-action="share">分享图</button>
         <button type="button" data-menu-action="ai-explain">AI 解释</button>
         <button type="button" data-menu-action="ai-context">AI 上下文</button>
         <button type="button" data-menu-action="ai-note">AI 笔记</button>

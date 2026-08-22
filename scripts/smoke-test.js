@@ -124,6 +124,14 @@ assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy 
 assert(appJs.includes("let aiCopyInProgress = false;"), "AI result copy busy guard missing");
 assert(indexHtml.includes('id="verseMenuMoreBtn"'), "Verse menu more toggle missing");
 assert(indexHtml.includes('id="verseMenuMore"'), "Verse menu more section missing");
+assert(indexHtml.includes('data-menu-action="share"'), "Verse share image menu action missing");
+assert(indexHtml.includes('id="sharePanel"') && indexHtml.includes('id="shareCanvas"'), "Share image panel/canvas missing");
+assert(indexHtml.includes('id="shareImageBtn"') && indexHtml.includes('id="saveShareImageBtn"') && indexHtml.includes('id="copyShareImageBtn"'), "Share image action buttons missing");
+assert(appJs.includes("function drawShareCanvas") && appJs.includes("function openSharePanel"), "Share image canvas renderer missing");
+assert(appJs.includes("function shareImage") && appJs.includes("function copyShareImage") && appJs.includes("function saveShareImage"), "Share image action handlers missing");
+assert(appJs.includes('} else if (action === "share")') && appJs.includes("await openSharePanel(verseNo);"), "Verse share action not wired");
+assert(appJs.includes("closeSharePanel();") && appJs.includes("!sharePanel.hidden"), "Share panel should participate in close/back flow");
+assert(stylesCss.includes(".sharePanel") && stylesCss.includes("#shareCanvas") && stylesCss.includes(".shareActions"), "Share image styles missing");
 assert(appJs.includes("function linkVerseRefs"), "Verse reference link helper missing");
 assert(appJs.includes("${linkVerseRefs(text)}"), "AI result should link verse references");
 assert(appJs.includes('${linkVerseRefs(entry.text || "无文本内容")}'), "Commentary text should link verse references");

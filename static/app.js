@@ -175,6 +175,14 @@ const closeMyPanelBtn = document.querySelector("#closeMyPanelBtn");
 const releaseNotesPanel = document.querySelector("#releaseNotesPanel");
 const releaseNotesContent = document.querySelector("#releaseNotesContent");
 const closeReleaseNotesBtn = document.querySelector("#closeReleaseNotesBtn");
+const sharePanel = document.querySelector("#sharePanel");
+const sharePanelTitle = document.querySelector("#sharePanelTitle");
+const shareCanvas = document.querySelector("#shareCanvas");
+const shareImageBtn = document.querySelector("#shareImageBtn");
+const copyShareImageBtn = document.querySelector("#copyShareImageBtn");
+const saveShareImageBtn = document.querySelector("#saveShareImageBtn");
+const closeSharePanelBtn = document.querySelector("#closeSharePanelBtn");
+const shareHint = document.querySelector("#shareHint");
 let longPressTimer = null;
 let swipeState = null;
 let touchFallbackState = null;
@@ -217,6 +225,7 @@ let myPanelRequestToken = 0;
 let myPanelLoading = false;
 let currentMyFilter = "all";
 let pendingVoiceConfirm = null;
+let currentShareImage = null;
 const markSavingKeys = new Set();
 const APP_VERSION = "1.9.55";
 const RELEASE_NOTES = [
@@ -924,6 +933,7 @@ function closeContentPanels() {
   closeAiResult();
   closeMyPanel();
   closeReleaseNotes();
+  closeSharePanel();
 }
 
 function openSidebar(panel = "reading") {
@@ -987,6 +997,7 @@ function hasBlockingOverlayOpen() {
     !voiceConfirmPanel.hidden ||
     !myPanel.hidden ||
     !releaseNotesPanel.hidden ||
+    !sharePanel.hidden ||
     !verseMenu.hidden ||
     !selectionBar.hidden ||
     verseSelectionMode
@@ -1092,6 +1103,10 @@ function handleBackIntent() {
   }
   if (!releaseNotesPanel.hidden) {
     closeReleaseNotes();
+    return true;
+  }
+  if (!sharePanel.hidden) {
+    closeSharePanel();
     return true;
   }
   if (!myPanel.hidden) {
@@ -2133,6 +2148,174 @@ async function writeClipboard(text) {
   area.remove();
 }
 
+function shareFileName(ref) {
+  return `local-bible-${ref.replace(/[^\p{L}\p{N}]+/gu, "-")}.png`;
+}
+
+function wrapCanvasText(ctx, text, maxWidth) {
+  const tokens = String(text || "")
+    .replace(/\s+/g, " ")
+    .split(/(\s+|[\u4e00-\u9fff])/)
+    .filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const token of tokens) {
+    const next = line ? `${line}${token}` : token;
+    if (ctx.measureText(next).width <= maxWidth || !line) {
+      line = next;
+    } else {
+      lines.push(line.trimEnd());
+      line = token.trimStart();
+    }
+  }
+  if (line) lines.push(line.trimEnd());
+  return lines;
+}
+
+function fitShareLines(ctx, text, maxWidth, maxHeight) {
+  let size = 56;
+  let lineHeight = 86;
+  let lines = [];
+  while (size >= 38) {
+    ctx.font = `600 ${size}px ${getComputedStyle(document.documentElement).getPropertyValue("--read-font") || "serif"}`;
+    lineHeight = Math.round(size * 1.55);
+    lines = wrapCanvasText(ctx, text, maxWidth);
+    if (lines.length * lineHeight <= maxHeight) break;
+    size -= 3;
+  }
+  const maxLines = Math.max(3, Math.floor(maxHeight / lineHeight));
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    lines[lines.length - 1] = `${lines[lines.length - 1].replace(/[，。；、,.!?！？;:：\s]*$/u, "")}…`;
+  }
+  return { lines, size, lineHeight };
+}
+
+function drawShareCanvas(ref, text) {
+  if (!shareCanvas) return;
+  const ctx = shareCanvas.getContext("2d");
+  const width = shareCanvas.width;
+  const height = shareCanvas.height;
+  const styles = getComputedStyle(document.documentElement);
+  const paper = styles.getPropertyValue("--paper").trim() || "#f7f3ea";
+  const ink = styles.getPropertyValue("--ink").trim() || "#2a251e";
+  const muted = styles.getPropertyValue("--muted").trim() || "#7a7268";
+  const accent = styles.getPropertyValue("--accent").trim() || "#3d6b5c";
+  const accent2 = styles.getPropertyValue("--accent-2").trim() || "#8a5a32";
+  const uiFont = styles.getPropertyValue("--ui-font").trim() || "sans-serif";
+  const readFont = styles.getPropertyValue("--read-font").trim() || "serif";
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(255,255,255,0.36)";
+  ctx.fillRect(54, 54, width - 108, height - 108);
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(118, 132);
+  ctx.lineTo(118, height - 132);
+  ctx.stroke();
+  ctx.strokeStyle = accent2;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(74, 74, width - 148, height - 148);
+
+  ctx.fillStyle = accent;
+  ctx.font = `800 48px ${uiFont}`;
+  ctx.fillText("本地圣经", 152, 178);
+  ctx.fillStyle = muted;
+  ctx.font = `600 34px ${uiFont}`;
+  ctx.fillText(ref, 152, 236);
+
+  const maxTextWidth = width - 260;
+  const maxTextHeight = height - 460;
+  const fitted = fitShareLines(ctx, text, maxTextWidth, maxTextHeight);
+  ctx.font = `600 ${fitted.size}px ${readFont}`;
+  ctx.fillStyle = ink;
+  let y = 356;
+  for (const line of fitted.lines) {
+    ctx.fillText(line, 152, y);
+    y += fitted.lineHeight;
+  }
+
+  ctx.fillStyle = muted;
+  ctx.font = `500 28px ${uiFont}`;
+  ctx.fillText("Local Bible Reader", 152, height - 150);
+  ctx.fillStyle = accent2;
+  ctx.font = `800 32px ${uiFont}`;
+  ctx.fillText("愿这话成为今日的光", 152, height - 104);
+}
+
+function canvasToBlob(canvas = shareCanvas) {
+  return new Promise((resolve, reject) => {
+    if (!canvas) {
+      reject(new Error("没有可生成的图片"));
+      return;
+    }
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("图片生成失败"));
+    }, "image/png", 0.95);
+  });
+}
+
+function closeSharePanel() {
+  if (!sharePanel) return;
+  sharePanel.hidden = true;
+  if (currentShareImage?.url) URL.revokeObjectURL(currentShareImage.url);
+  currentShareImage = null;
+}
+
+async function openSharePanel(verseNo = state.activeVerse) {
+  const verse = Number(verseNo);
+  const text = verseTextForNumber(verse);
+  const book = currentBook();
+  if (!book || !text) return;
+  const ref = `${book.longName} ${state.chapter}:${verse}`;
+  closeContentPanels();
+  closeVerseMenu();
+  closeSelectionBar();
+  drawShareCanvas(ref, text);
+  const blob = await canvasToBlob();
+  const url = URL.createObjectURL(blob);
+  currentShareImage = { blob, url, ref, text, fileName: shareFileName(ref) };
+  if (sharePanelTitle) sharePanelTitle.textContent = ref;
+  if (shareHint) shareHint.textContent = "已生成经文图片，可分享、复制或保存。";
+  sharePanel.hidden = false;
+  keepReadingChromeVisible(2400);
+}
+
+async function saveShareImage() {
+  if (!currentShareImage) return;
+  const link = document.createElement("a");
+  link.href = currentShareImage.url;
+  link.download = currentShareImage.fileName;
+  link.click();
+  showStatus("经文图片已保存", "success");
+}
+
+async function copyShareImage() {
+  if (!currentShareImage) return;
+  if (navigator.clipboard?.write && window.ClipboardItem) {
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": currentShareImage.blob })]);
+    showStatus("经文图片已复制", "success");
+    return;
+  }
+  await writeClipboard(`${currentShareImage.ref} ${currentShareImage.text}`);
+  showStatus("当前环境不支持复制图片，已复制经文文字", "info");
+}
+
+async function shareImage() {
+  if (!currentShareImage) return;
+  const file = new File([currentShareImage.blob], currentShareImage.fileName, { type: "image/png" });
+  if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+    await navigator.share({ title: currentShareImage.ref, text: currentShareImage.ref, files: [file] });
+    showStatus("已打开系统分享", "success");
+    return;
+  }
+  await saveShareImage();
+}
+
 function selectedVersesFromRange(range) {
   return [...content.querySelectorAll(".verse")]
     .filter((verse) => {
@@ -2226,6 +2409,8 @@ async function runVerseAction(action, verseNo = state.activeVerse) {
     if (editor) editor.hidden = !editor.hidden;
   } else if (action === "copy") {
     await copyVerse(verseNo);
+  } else if (action === "share") {
+    await openSharePanel(verseNo);
   } else if (action === "dictionary") {
     const text = content.querySelector(`.verse[data-verse="${verseNo}"] .verseText`)?.textContent || "";
     dictionaryInput.value = text.match(/[\u4e00-\u9fff]{2,6}/)?.[0] || text.split(/\s+/).find(Boolean) || "";
@@ -3996,6 +4181,10 @@ importDataFile.addEventListener("change", async () => {
 closeSearchBtn.addEventListener("click", closeSearch);
 closeStrongBtn.addEventListener("click", closeStrong);
 closeReleaseNotesBtn.addEventListener("click", closeReleaseNotes);
+closeSharePanelBtn?.addEventListener("click", closeSharePanel);
+shareImageBtn?.addEventListener("click", () => shareImage().catch(setError));
+copyShareImageBtn?.addEventListener("click", () => copyShareImage().catch(setError));
+saveShareImageBtn?.addEventListener("click", () => saveShareImage().catch(setError));
 showReleaseNotesBtn.addEventListener("click", () => openReleaseNotes());
 checkUpdateBtn.addEventListener("click", () => checkForUpdates());
 downloadLatestApkBtn.addEventListener("click", () => downloadLatestApk().catch(setError));
