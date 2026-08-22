@@ -246,8 +246,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.60";
+const APP_VERSION = "1.9.61";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.61",
+    date: "2026-08-23",
+    items: ["搜索结果新增复制、收藏和高亮操作", "点击搜索结果正文仍然跳转到经文", "收藏/高亮搜索结果前会合并已有标注，避免覆盖笔记", "手机端搜索结果操作按钮布局优化", "smoke test 增加搜索结果操作断言"],
+  },
   {
     version: "1.9.60",
     date: "2026-08-23",
