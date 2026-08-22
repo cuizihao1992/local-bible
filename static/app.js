@@ -227,8 +227,13 @@ let currentMyFilter = "all";
 let pendingVoiceConfirm = null;
 let currentShareImage = null;
 const markSavingKeys = new Set();
-const APP_VERSION = "1.9.55";
+const APP_VERSION = "1.9.56";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.56",
+    date: "2026-08-22",
+    items: ["经文菜单新增分享图", "用 Canvas 生成竖版经文 PNG 图片", "支持系统分享、复制图片和保存图片", "图片文字会自动换行、缩小并避免溢出", "smoke test 增加分享图入口、Canvas 和按钮断言"],
+  },
   {
     version: "1.9.55",
     date: "2026-08-21",
