@@ -248,8 +248,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.67";
+const APP_VERSION = "1.9.68";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.68",
+    date: "2026-08-23",
+    items: ["复制笔记会优先使用编辑器里的当前草稿", "未保存的标签和笔记正文也能直接复制", "编辑器草稿为空时仍会提示没有笔记", "没有打开编辑器时继续回退到已保存笔记", "smoke test 增加复制草稿断言"],
+  },
   {
     version: "1.9.67",
     date: "2026-08-23",
