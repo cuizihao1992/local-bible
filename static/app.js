@@ -247,8 +247,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.62";
+const APP_VERSION = "1.9.63";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.63",
+    date: "2026-08-23",
+    items: ["AI 笔记结果新增“存入笔记”按钮", "保存 AI 笔记时会写回对应经文标注", "已有笔记会追加保留，不会被覆盖", "关闭 AI 面板会清理结果来源状态", "AI 结果操作区支持多按钮换行布局"],
+  },
   {
     version: "1.9.62",
     date: "2026-08-23",

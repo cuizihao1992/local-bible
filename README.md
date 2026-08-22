@@ -1,4 +1,4 @@
-# 本地圣经阅读器
+﻿# 本地圣经阅读器
 
 一个本地运行的圣经阅读网页应用。后台使用 Node.js，直接读取 `D:\bibleDownload` 里的 SQLite 圣经数据库；前端提供译本、书卷、章节选择和逐节阅读。
 
@@ -47,7 +47,7 @@ npm run dist:android
 生成文件：
 
 ```text
-dist\android\local-bible-reader-offline-1.9.62-release.apk
+dist\android\local-bible-reader-offline-1.9.63-release.apk
 ```
 
 如需调试包，可以运行：
@@ -115,7 +115,7 @@ npm test
 
 ## 当前状态
 
-当前是 `V1.9.62` Android 轻量 APK + 按需资源包版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
+当前是 `V1.9.63` Android 轻量 APK + 按需资源包版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
 
 ## 数据说明
 
