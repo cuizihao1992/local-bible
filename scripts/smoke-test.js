@@ -309,6 +309,8 @@ assert(appJs.includes('successMessage: "笔记已清空"'), "Inline note clear s
 assert(stylesCss.includes(".noteEditorActions") && stylesCss.includes(".verseTool.danger"), "Inline note clear styles missing");
 assert(appJs.includes('data-action="copy-note"') && appJs.includes("function copyVerseNote"), "Inline note copy action missing");
 assert(appJs.includes("已复制笔记") && appJs.includes("标签：${mark.tags}"), "Inline note copy feedback missing");
+assert(appJs.includes('tool.textContent = "复制中"') && appJs.includes('tool.textContent = "已复制"'), "Inline note copy busy feedback missing");
+assert(appJs.includes("return true;") && appJs.includes("return false;"), "Inline note copy result state missing");
 assert(stylesCss.includes(".selectionBar button:disabled"), "Selection copy disabled style missing");
 assert(stylesCss.includes(".verseMenuBadges") && stylesCss.includes(".selectionBar #highlightSelectionBtn"), "Selection/menu polish styles missing");
 assert(stylesCss.includes("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);"), "Narrow mobile selection bar should use two flexible columns");

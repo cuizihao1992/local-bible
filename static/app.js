@@ -4218,7 +4218,24 @@ content.addEventListener("click", (event) => {
           if (tool.isConnected) tool.disabled = false;
         });
     } else if (action === "copy-note") {
-      copyVerseNote(verseNo).catch(setError);
+      tool.disabled = true;
+      tool.textContent = "复制中";
+      copyVerseNote(verseNo)
+        .then((copied) => {
+          if (!tool.isConnected) return;
+          if (!copied) {
+            tool.textContent = "复制笔记";
+            return;
+          }
+          tool.textContent = "已复制";
+          window.setTimeout(() => {
+            if (tool.isConnected) tool.textContent = "复制笔记";
+          }, 900);
+        })
+        .catch(setError)
+        .finally(() => {
+          if (tool.isConnected) tool.disabled = false;
+        });
     } else if (action === "clear-note") {
       const mark = markForVerse(verseNo);
       tool.disabled = true;
@@ -4565,11 +4582,12 @@ async function copyVerseNote(verseNo) {
   if (mark.note) parts.push(mark.note);
   if (!parts.length) {
     showStatus("这节经文还没有笔记");
-    return;
+    return false;
   }
   const book = currentBook();
   await writeClipboard(`${book.longName} ${state.chapter}:${verseNo}\n${parts.join("\n")}`);
   showStatus("已复制笔记", "success");
+  return true;
 }
 
 document.addEventListener("keydown", (event) => {
