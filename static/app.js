@@ -161,6 +161,10 @@ const selectionBar = document.querySelector("#selectionBar");
 const selectionSummary = document.querySelector("#selectionSummary");
 const copyFormatSelect = document.querySelector("#copyFormatSelect");
 const copySelectionBtn = document.querySelector("#copySelectionBtn");
+const highlightSelectionBtn = document.querySelector("#highlightSelectionBtn");
+const favoriteSelectionBtn = document.querySelector("#favoriteSelectionBtn");
+const noteSelectionBtn = document.querySelector("#noteSelectionBtn");
+const shareSelectionBtn = document.querySelector("#shareSelectionBtn");
 const cancelSelectionBtn = document.querySelector("#cancelSelectionBtn");
 const mobilePrevBtn = document.querySelector("#mobilePrevBtn");
 const mobileMenuBtn = document.querySelector("#mobileMenuBtn");
@@ -195,6 +199,7 @@ let selectedVerseNumbers = [];
 let verseSelectionMode = false;
 let selectionFrame = 0;
 let selectionCopyInProgress = false;
+let selectionActionInProgress = false;
 let lastUpdateInfo = null;
 let bookFilter = "all";
 let bookPickerStep = "chapters";
@@ -1974,7 +1979,15 @@ function updateVerseMarkDom(mark) {
 function openVerseMenu(verseNo, x, y) {
   const mark = markForVerse(verseNo);
   state.activeVerse = Number(verseNo);
-  verseMenuTitle.textContent = `${currentBook().longName} ${state.chapter}:${verseNo}`;
+  const badges = [
+    mark.favorite ? "已收藏" : "",
+    mark.highlighted ? "已高亮" : "",
+    mark.note || mark.tags ? "有笔记" : "",
+  ].filter(Boolean);
+  verseMenuTitle.innerHTML = `
+    <span>${escapeHtml(currentBook().longName)} ${state.chapter}:${verseNo}</span>
+    ${badges.length ? `<span class="verseMenuBadges">${badges.map((badge) => `<em>${escapeHtml(badge)}</em>`).join("")}</span>` : ""}
+  `;
   verseMenu.querySelector('[data-menu-action="favorite"]').textContent = mark.favorite ? "取消收藏" : "收藏";
   verseMenu.querySelector('[data-menu-action="highlight"]').textContent = mark.highlighted ? "取消高亮" : "高亮";
   setVerseMenuMore(false);
@@ -2018,23 +2031,52 @@ function renderVerseSelectionState() {
   document.body.classList.toggle("verseSelectionMode", verseSelectionMode);
 }
 
+function selectedVerseLabel() {
+  if (!selectedVerseNumbers.length) {
+    return "已选择经文";
+  }
+  selectedVerseNumbers = [...new Set(selectedVerseNumbers)].sort((a, b) => a - b);
+  const first = selectedVerseNumbers[0];
+  const last = selectedVerseNumbers[selectedVerseNumbers.length - 1];
+  return selectedVerseNumbers.length === 1
+    ? `${currentBook().longName} ${state.chapter}:${first}`
+    : `${currentBook().longName} ${state.chapter}:${first}-${last} · ${selectedVerseNumbers.length} 节`;
+}
+
+function setSelectionControlsBusy(busy = selectionCopyInProgress || selectionActionInProgress) {
+  copySelectionBtn.textContent = selectionCopyInProgress ? "复制中" : "复制所选";
+  copySelectionBtn.disabled = busy;
+  if (copyFormatSelect) copyFormatSelect.disabled = busy;
+  [highlightSelectionBtn, favoriteSelectionBtn, noteSelectionBtn, shareSelectionBtn].forEach((button) => {
+    if (button) button.disabled = busy;
+  });
+}
+
+function updateSelectionActionLabels() {
+  const marks = selectedVerseNumbers.map((verseNo) => markForVerse(verseNo));
+  const allHighlighted = marks.length > 0 && marks.every((mark) => mark.highlighted);
+  const allFavorite = marks.length > 0 && marks.every((mark) => mark.favorite);
+  if (highlightSelectionBtn) highlightSelectionBtn.textContent = allHighlighted ? "取消高亮" : "高亮";
+  if (favoriteSelectionBtn) favoriteSelectionBtn.textContent = allFavorite ? "取消收藏" : "收藏";
+}
+
+function showSelectionBar({ manual = false } = {}) {
+  selectedVerseNumbers = [...new Set(selectedVerseNumbers)].sort((a, b) => a - b);
+  selectionSummary.textContent = manual && selectedVerseNumbers.length === 1
+    ? `${selectedVerseLabel()} · 点击经文继续选择`
+    : selectedVerseLabel();
+  updateSelectionActionLabels();
+  setSelectionControlsBusy();
+  selectionBar.hidden = false;
+  renderVerseSelectionState();
+}
+
 function updateManualSelectionBar() {
   if (!selectedVerseNumbers.length) {
     closeSelectionBar();
     return;
   }
-  selectedVerseNumbers = [...new Set(selectedVerseNumbers)].sort((a, b) => a - b);
-  const first = selectedVerseNumbers[0];
-  const last = selectedVerseNumbers[selectedVerseNumbers.length - 1];
-  selectionSummary.textContent =
-    selectedVerseNumbers.length === 1
-      ? `${currentBook().longName} ${state.chapter}:${first} · 点击经文继续选择`
-      : `${currentBook().longName} ${state.chapter}:${first}-${last} · ${selectedVerseNumbers.length} 节`;
-  copySelectionBtn.textContent = selectionCopyInProgress ? "复制中" : "复制所选";
-  copySelectionBtn.disabled = selectionCopyInProgress;
-  if (copyFormatSelect) copyFormatSelect.disabled = selectionCopyInProgress;
-  selectionBar.hidden = false;
-  renderVerseSelectionState();
+  showSelectionBar({ manual: true });
 }
 
 function startVerseSelection(verseNo) {
@@ -2057,9 +2099,9 @@ function closeSelectionBar() {
   const wasOpen = !selectionBar.hidden || verseSelectionMode;
   window.getSelection()?.removeAllRanges();
   selectionCopyInProgress = false;
-  copySelectionBtn.disabled = false;
-  if (copyFormatSelect) copyFormatSelect.disabled = false;
+  selectionActionInProgress = false;
   copySelectionBtn.textContent = "复制所选";
+  setSelectionControlsBusy(false);
   selectionBar.hidden = true;
   selectedVerseNumbers = [];
   verseSelectionMode = false;
@@ -2298,11 +2340,16 @@ function closeSharePanel() {
 }
 
 async function openSharePanel(verseNo = state.activeVerse) {
-  const verse = Number(verseNo);
-  const text = verseTextForNumber(verse);
+  const verses = (Array.isArray(verseNo) ? verseNo : [verseNo]).map(Number).filter(Number.isFinite);
   const book = currentBook();
-  if (!book || !text) return;
-  const ref = `${book.longName} ${state.chapter}:${verse}`;
+  const lines = verses
+    .map((verse) => ({ verse, text: verseTextForNumber(verse) }))
+    .filter((item) => item.text);
+  if (!book || !lines.length) return;
+  const first = lines[0].verse;
+  const last = lines[lines.length - 1].verse;
+  const ref = lines.length === 1 ? `${book.longName} ${state.chapter}:${first}` : `${book.longName} ${state.chapter}:${first}-${last}`;
+  const text = lines.map((item) => item.text).join(" ");
   closeContentPanels();
   closeVerseMenu();
   closeSelectionBar();
@@ -2311,7 +2358,7 @@ async function openSharePanel(verseNo = state.activeVerse) {
   const url = URL.createObjectURL(blob);
   currentShareImage = { blob, url, ref, text, fileName: shareFileName(ref) };
   if (sharePanelTitle) sharePanelTitle.textContent = ref;
-  if (shareHint) shareHint.textContent = "已生成经文图片，可分享、复制或保存。";
+  if (shareHint) shareHint.textContent = lines.length === 1 ? "已生成经文图片，可分享、复制或保存。" : `已生成 ${lines.length} 节经文图片，可分享、复制或保存。`;
   sharePanel.hidden = false;
   keepReadingChromeVisible(2400);
 }
@@ -2383,29 +2430,18 @@ function updateSelectionBar() {
     closeSelectionBar();
     return;
   }
-  const first = selectedVerseNumbers[0];
-  const last = selectedVerseNumbers[selectedVerseNumbers.length - 1];
-  selectionSummary.textContent =
-    selectedVerseNumbers.length === 1
-      ? `${currentBook().longName} ${state.chapter}:${first}`
-      : `${currentBook().longName} ${state.chapter}:${first}-${last} · ${selectedVerseNumbers.length} 节`;
-  copySelectionBtn.textContent = selectionCopyInProgress ? "复制中" : "复制所选";
-  copySelectionBtn.disabled = selectionCopyInProgress;
-  if (copyFormatSelect) copyFormatSelect.disabled = selectionCopyInProgress;
-  selectionBar.hidden = false;
+  showSelectionBar();
 }
 
 async function copySelectedVerses() {
   if (!selectedVerseNumbers.length) updateSelectionBar();
   if (!selectedVerseNumbers.length) return;
-  if (selectionCopyInProgress) {
+  if (selectionCopyInProgress || selectionActionInProgress) {
     showStatus("正在复制经文，请稍候");
     return;
   }
   selectionCopyInProgress = true;
-  copySelectionBtn.disabled = true;
-  if (copyFormatSelect) copyFormatSelect.disabled = true;
-  copySelectionBtn.textContent = "复制中";
+  setSelectionControlsBusy();
   try {
     await writeClipboard(formatVerseLines(selectedVerseNumbers, copyFormatSelect?.value || "reference"));
     copySelectionBtn.textContent = "已复制";
@@ -2413,11 +2449,54 @@ async function copySelectedVerses() {
     window.setTimeout(closeSelectionBar, 700);
   } catch (error) {
     selectionCopyInProgress = false;
-    copySelectionBtn.disabled = false;
-    if (copyFormatSelect) copyFormatSelect.disabled = false;
-    copySelectionBtn.textContent = "复制所选";
+    setSelectionControlsBusy();
     throw error;
   }
+}
+
+async function updateSelectedVerseMarks(kind) {
+  if (!selectedVerseNumbers.length) updateSelectionBar();
+  if (!selectedVerseNumbers.length) return;
+  if (selectionCopyInProgress || selectionActionInProgress) {
+    showStatus("正在处理所选经文，请稍候");
+    return;
+  }
+  const key = kind === "favorite" ? "favorite" : "highlighted";
+  const selected = [...selectedVerseNumbers];
+  const shouldEnable = !selected.every((verseNo) => !!markForVerse(verseNo)[key]);
+  const label = key === "favorite" ? "收藏" : "高亮";
+  selectionActionInProgress = true;
+  setSelectionControlsBusy();
+  try {
+    for (const verseNo of selected) {
+      const mark = markForVerse(verseNo);
+      await saveVerseMark({ ...mark, [key]: shouldEnable }, { silent: true });
+    }
+    showStatus(`${shouldEnable ? "已" : "已取消"}${label} ${selected.length} 节经文`, "success");
+    updateSelectionActionLabels();
+  } finally {
+    selectionActionInProgress = false;
+    setSelectionControlsBusy();
+  }
+}
+
+function openSelectedVerseNote() {
+  if (!selectedVerseNumbers.length) updateSelectionBar();
+  if (!selectedVerseNumbers.length) return;
+  const verseNo = selectedVerseNumbers[0];
+  const verse = content.querySelector(`.verse[data-verse="${verseNo}"]`);
+  const editor = verse?.querySelector(`[data-note-editor="${verseNo}"]`);
+  if (!verse || !editor) return;
+  editor.hidden = false;
+  verse.scrollIntoView({ block: "center", behavior: "smooth" });
+  window.setTimeout(() => editor.querySelector("textarea")?.focus(), 180);
+  showStatus(selectedVerseNumbers.length > 1 ? "已打开第一节经文的笔记" : "已打开笔记", "info");
+}
+
+async function shareSelectedVerses() {
+  if (!selectedVerseNumbers.length) updateSelectionBar();
+  if (!selectedVerseNumbers.length) return;
+  await openSharePanel([...selectedVerseNumbers]);
 }
 
 async function runVerseAction(action, verseNo = state.activeVerse) {
@@ -4250,12 +4329,22 @@ verseMenu.addEventListener("click", (event) => {
   closeVerseMenu();
 });
 
-copySelectionBtn.addEventListener("pointerdown", (event) => {
-  event.preventDefault();
+selectionBar.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("button")) event.preventDefault();
 });
 
 copySelectionBtn.addEventListener("click", () => {
   copySelectedVerses().catch(setError);
+});
+highlightSelectionBtn?.addEventListener("click", () => {
+  updateSelectedVerseMarks("highlight").catch(setError);
+});
+favoriteSelectionBtn?.addEventListener("click", () => {
+  updateSelectedVerseMarks("favorite").catch(setError);
+});
+noteSelectionBtn?.addEventListener("click", openSelectedVerseNote);
+shareSelectionBtn?.addEventListener("click", () => {
+  shareSelectedVerses().catch(setError);
 });
 cancelSelectionBtn.addEventListener("click", closeSelectionBar);
 

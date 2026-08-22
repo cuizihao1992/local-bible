@@ -95,6 +95,7 @@ assert(appJs.includes("let chapterLoadToken = 0;"), "Chapter load token missing"
 assert(appJs.includes("let chapterLoading = false;"), "Chapter loading state missing");
 assert(appJs.includes("let referenceJumpInProgress = false;"), "Reference jump busy state missing");
 assert(appJs.includes("let selectionCopyInProgress = false;"), "Selection copy busy state missing");
+assert(appJs.includes("let selectionActionInProgress = false;"), "Selection bulk action busy state missing");
 assert(appJs.includes("chapterLoading = true;") && appJs.includes("chapterLoading = false;"), "Chapter loading lifecycle missing");
 assert(appJs.includes("} finally {\n    if (token === chapterLoadToken) {\n      chapterLoading = false;"), "Chapter loading should recover in current-token finally block");
 assert(appJs.includes("prevBtn.disabled = chapterLoading || atFirstChapter"), "Desktop previous loading disabled state missing");
@@ -124,11 +125,16 @@ assert(appJs.includes("let apkDownloadInProgress = false;"), "APK download busy 
 assert(appJs.includes("let aiCopyInProgress = false;"), "AI result copy busy guard missing");
 assert(indexHtml.includes('id="verseMenuMoreBtn"'), "Verse menu more toggle missing");
 assert(indexHtml.includes('id="verseMenuMore"'), "Verse menu more section missing");
+assert(indexHtml.includes('id="highlightSelectionBtn"') && indexHtml.includes('id="favoriteSelectionBtn"'), "Selection mark action buttons missing");
+assert(indexHtml.includes('id="noteSelectionBtn"') && indexHtml.includes('id="shareSelectionBtn"'), "Selection note/share action buttons missing");
 assert(indexHtml.includes('data-menu-action="share"'), "Verse share image menu action missing");
 assert(indexHtml.includes('id="sharePanel"') && indexHtml.includes('id="shareCanvas"'), "Share image panel/canvas missing");
 assert(indexHtml.includes('id="shareImageBtn"') && indexHtml.includes('id="saveShareImageBtn"') && indexHtml.includes('id="copyShareImageBtn"'), "Share image action buttons missing");
 assert(appJs.includes("function drawShareCanvas") && appJs.includes("function openSharePanel"), "Share image canvas renderer missing");
 assert(appJs.includes("function shareImage") && appJs.includes("function copyShareImage") && appJs.includes("function saveShareImage"), "Share image action handlers missing");
+assert(appJs.includes("function updateSelectedVerseMarks") && appJs.includes("function openSelectedVerseNote"), "Selection mark/note action handlers missing");
+assert(appJs.includes("function shareSelectedVerses") && appJs.includes("await openSharePanel([...selectedVerseNumbers]);"), "Selection share image handler missing");
+assert(appJs.includes("verseMenuTitle.innerHTML") && appJs.includes("verseMenuBadges"), "Verse menu status badges missing");
 assert(appJs.includes('} else if (action === "share")') && appJs.includes("await openSharePanel(verseNo);"), "Verse share action not wired");
 assert(appJs.includes("closeSharePanel();") && appJs.includes("!sharePanel.hidden"), "Share panel should participate in close/back flow");
 assert(stylesCss.includes(".sharePanel") && stylesCss.includes("#shareCanvas") && stylesCss.includes(".shareActions"), "Share image styles missing");
@@ -238,8 +244,8 @@ assert(appJs.includes("资源包正在下载，请稍候"), "Package install dup
 assert(appJs.includes("APK 正在下载，请稍候"), "APK duplicate download feedback missing");
 assert(appJs.includes("data-search-more"), "Search load more button missing");
 assert(appJs.includes("正在复制经文，请稍候"), "Selection duplicate copy feedback missing");
-assert(appJs.includes('copySelectionBtn.textContent = "复制中"') && appJs.includes('copySelectionBtn.textContent = "已复制"'), "Selection copy busy text missing");
-assert(appJs.includes("copyFormatSelect.disabled = selectionCopyInProgress"), "Selection format disabled state missing");
+assert(appJs.includes('copySelectionBtn.textContent = selectionCopyInProgress ? "复制中" : "复制所选"') && appJs.includes('copySelectionBtn.textContent = "已复制"'), "Selection copy busy text missing");
+assert(appJs.includes("copyFormatSelect.disabled = busy"), "Selection format disabled state missing");
 assert(appJs.includes("window.getSelection()?.removeAllRanges();"), "Selection close should clear native selection");
 assert(appJs.includes("function chapterTitleInfo"), "Chapter title info helper missing");
 assert(appJs.includes("function renderNoChapterTitleNotice"), "No-title chapter notice missing");
@@ -271,6 +277,7 @@ assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style 
 assert(stylesCss.includes(".searchMoreBtn"), "Search load more style missing");
 assert(stylesCss.includes(".verseTool:disabled"), "Verse tool disabled style missing");
 assert(stylesCss.includes(".selectionBar button:disabled"), "Selection copy disabled style missing");
+assert(stylesCss.includes(".verseMenuBadges") && stylesCss.includes(".selectionBar #highlightSelectionBtn"), "Selection/menu polish styles missing");
 assert(stylesCss.includes("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);"), "Narrow mobile selection bar should use two flexible columns");
 assert(stylesCss.includes(".selectionBar select {\n    grid-column: 1 / -1;"), "Narrow mobile copy format should span full row");
 assert(stylesCss.includes(".selectionBar button {\n    width: 100%;\n    min-width: 0;"), "Narrow mobile selection buttons should fit available width");
