@@ -248,8 +248,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.65";
+const APP_VERSION = "1.9.66";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.66",
+    date: "2026-08-23",
+    items: ["经文笔记编辑器新增复制笔记", "复制内容包含经文出处、标签和笔记正文", "没有笔记时会提示当前经文暂无笔记", "复制成功后显示轻提示", "smoke test 增加复制笔记入口和反馈断言"],
+  },
   {
     version: "1.9.65",
     date: "2026-08-23",
