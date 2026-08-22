@@ -172,6 +172,11 @@ assert(appJs.includes("const scope = append ? searchState.scope : state.searchSc
 assert(appJs.includes("renderRecentSearches();") && appJs.includes("data-recent-search"), "Recent searches renderer missing");
 assert(appJs.includes("recentSearches?.addEventListener") && appJs.includes("await runSearch(query);"), "Recent search click handler missing");
 assert(stylesCss.includes(".recentSearches") && stylesCss.includes(".recentSearches:empty"), "Recent searches styles missing");
+assert(appJs.includes("let currentSearchResults = [];"), "Search result cache missing");
+assert(appJs.includes('data-search-action="copy"') && appJs.includes('data-search-action="favorite"') && appJs.includes('data-search-action="highlight"'), "Search result action buttons missing");
+assert(appJs.includes("function markForReference") && appJs.includes("/api/user/marks?"), "Search result mark merge fetch missing");
+assert(appJs.includes("function markSearchResult") && appJs.includes("已收藏搜索结果") && appJs.includes("已高亮搜索结果"), "Search result mark actions missing");
+assert(stylesCss.includes(".searchResultActions") && stylesCss.includes(".searchResultMain"), "Search result action styles missing");
 assert(appJs.includes("let searchRequestToken = 0;"), "Search stale request token missing");
 assert(appJs.includes("let dictionaryRequestToken = 0;"), "Dictionary stale request token missing");
 assert(appJs.includes("let strongRequestToken = 0;"), "Strong stale request token missing");

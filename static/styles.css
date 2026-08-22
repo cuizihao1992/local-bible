@@ -1643,20 +1643,61 @@ button:active {
 
 .searchResult {
   display: grid;
-  gap: 5px;
+  gap: 8px;
   width: 100%;
   padding: 13px 16px;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: var(--control);
   color: var(--ink);
-  text-align: left;
-  cursor: pointer;
   font: inherit;
 }
 
-.searchResult:hover,
-.searchResult:focus-visible {
+.searchResultMain {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.searchResultMain:hover,
+.searchResultMain:focus-visible {
+  color: var(--accent-strong);
+  outline: none;
+}
+
+.searchResult:hover {
+  background: var(--soft);
+}
+
+.searchResultActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.searchResultActions button {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+.searchResultActions button:hover,
+.searchResultActions button:focus-visible {
+  border-color: var(--accent);
   background: var(--soft);
   outline: none;
 }
@@ -2783,7 +2824,18 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .searchResultActions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .myResultActions button {
+    width: 100%;
+    min-width: 0;
+    padding: 0 6px;
+  }
+
+  .searchResultActions button {
     width: 100%;
     min-width: 0;
     padding: 0 6px;

@@ -222,6 +222,7 @@ let audioPanelPinned = false;
 let speaking = false;
 let speakingVerse = null;
 let searchState = { query: "", scope: "all", book: 1, results: [], nextOffset: 0, hasMore: false, loading: false };
+let currentSearchResults = [];
 let searchRequestToken = 0;
 let dictionaryRequestToken = 0;
 let strongRequestToken = 0;
@@ -3304,14 +3305,22 @@ function renderSearchResults(data) {
   const count = searchState.results.length;
   const moreText = searchState.hasMore ? "，可继续加载" : "";
   searchSummary.textContent = count ? `已显示 ${count} 条结果${moreText}：${data.query}` : `没有找到：${data.query}`;
+  currentSearchResults = searchState.results;
   searchResults.innerHTML = count
     ? `${searchState.results
         .map(
           (item) => `
-            <button class="searchResult" type="button" data-book="${item.book}" data-chapter="${item.chapter}" data-verse="${item.verse}">
-              <span class="searchRef">${escapeHtml(item.bookName)} ${item.chapter}:${item.verse}</span>
-              <span class="searchText">${highlightText(item.text, data.query)}</span>
-            </button>
+            <article class="searchResult" data-search-key="${escapeHtml(searchResultKey(item))}">
+              <button class="searchResultMain" type="button" data-search-action="open">
+                <span class="searchRef">${escapeHtml(item.bookName)} ${item.chapter}:${item.verse}</span>
+                <span class="searchText">${highlightText(item.text, data.query)}</span>
+              </button>
+              <div class="searchResultActions">
+                <button type="button" data-search-action="copy">复制</button>
+                <button type="button" data-search-action="favorite">收藏</button>
+                <button type="button" data-search-action="highlight">高亮</button>
+              </div>
+            </article>
           `,
         )
         .join("")}
@@ -3321,6 +3330,64 @@ function renderSearchResults(data) {
             : ""
         }`
     : `<div class="empty">换一个关键词，或调整搜索范围。</div>`;
+}
+
+function searchResultKey(item) {
+  return `${item.book}|${item.chapter}|${item.verse}`;
+}
+
+function currentSearchResultFromElement(element) {
+  const result = element.closest(".searchResult");
+  if (!result) return null;
+  return currentSearchResults.find((item) => searchResultKey(item) === result.dataset.searchKey) || null;
+}
+
+async function openSearchResult(item) {
+  if (!item) return;
+  await jumpToReference({
+    book: Number(item.book),
+    chapter: Number(item.chapter),
+    verse: Number(item.verse),
+  });
+}
+
+async function copySearchResult(item) {
+  if (!item) return;
+  await writeClipboard(`${item.bookName} ${item.chapter}:${item.verse} ${item.text || ""}`.trim());
+  showStatus("已复制搜索结果", "success");
+}
+
+async function markForReference(version, book, chapter, verse) {
+  if (version === state.version && Number(book) === state.book && Number(chapter) === state.chapter) {
+    return markForVerse(verse);
+  }
+  const params = new URLSearchParams({ version, book: String(book), chapter: String(chapter) });
+  const data = await api(`/api/user/marks?${params.toString()}`);
+  return (
+    data.marks?.find((mark) => Number(mark.verse) === Number(verse)) || {
+      version,
+      book: Number(book),
+      chapter: Number(chapter),
+      verse: Number(verse),
+      favorite: false,
+      highlighted: false,
+      note: "",
+      tags: "",
+    }
+  );
+}
+
+async function markSearchResult(item, kind) {
+  if (!item) return;
+  const mark = await markForReference(state.version, item.book, item.chapter, item.verse);
+  await saveVerseMark(
+    {
+      ...mark,
+      favorite: mark.favorite || kind === "favorite",
+      highlighted: mark.highlighted || kind === "highlight",
+    },
+    { successMessage: kind === "favorite" ? "已收藏搜索结果" : "已高亮搜索结果" },
+  );
 }
 
 function highlightText(text, query) {
@@ -3335,6 +3402,7 @@ function closeSearch() {
   const wasOpen = !searchPanel.hidden;
   searchRequestToken += 1;
   searchState.loading = false;
+  currentSearchResults = [];
   setSearchBusy(false);
   searchPanel.hidden = true;
   if (wasOpen) keepReadingChromeVisible();
@@ -3945,13 +4013,17 @@ searchResults.addEventListener("click", async (event) => {
     await runSearch(searchState.query, { append: true });
     return;
   }
-  const result = event.target.closest(".searchResult");
-  if (!result) return;
-  await jumpToReference({
-    book: Number(result.dataset.book),
-    chapter: Number(result.dataset.chapter),
-    verse: Number(result.dataset.verse),
-  });
+  const action = event.target.closest("[data-search-action]");
+  if (!action) return;
+  const item = currentSearchResultFromElement(action);
+  if (!item) return;
+  if (action.dataset.searchAction === "open") {
+    await openSearchResult(item);
+  } else if (action.dataset.searchAction === "copy") {
+    await copySearchResult(item);
+  } else if (action.dataset.searchAction === "favorite" || action.dataset.searchAction === "highlight") {
+    await markSearchResult(item, action.dataset.searchAction);
+  }
 });
 
 content.addEventListener("click", (event) => {
