@@ -227,6 +227,18 @@ let currentMyFilter = "all";
 let pendingVoiceConfirm = null;
 let currentShareImage = null;
 const markSavingKeys = new Set();
+const sheetPanels = [
+  readerSettingsPanel,
+  bookPickerPanel,
+  searchPanel,
+  strongPanel,
+  dictionaryPanel,
+  aiResultPanel,
+  voiceConfirmPanel,
+  myPanel,
+  releaseNotesPanel,
+  sharePanel,
+].filter(Boolean);
 const APP_VERSION = "1.9.56";
 const RELEASE_NOTES = [
   {
@@ -920,6 +932,15 @@ function closeSidebar() {
   document.body.classList.remove("sidebarOpen");
   if (wasOpen) keepReadingChromeVisible();
 }
+
+function syncSheetOpen() {
+  document.body.classList.toggle("sheetOpen", sheetPanels.some((panel) => !panel.hidden));
+}
+
+sheetPanels.forEach((panel) => {
+  new MutationObserver(syncSheetOpen).observe(panel, { attributes: true, attributeFilter: ["hidden"] });
+});
+syncSheetOpen();
 
 function showSidebarPanel(name = "reading") {
   document.querySelectorAll("[data-sidebar-target]").forEach((button) => {

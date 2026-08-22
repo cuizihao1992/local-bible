@@ -196,6 +196,8 @@ assert(appJs.includes("myVerseText") && stylesCss.includes(".myVerseText"), "My 
 assert(androidApi.includes("markedVerseText(mark)") && androidApi.includes("select Scripture from Bible where Book=? and Chapter=? and Verse=?"), "Android marks verse text summary missing");
 assert(appJs.includes("function closeContentPanels"), "Shared content panel close helper missing");
 assert((appJs.match(/closeContentPanels\(\);/g) || []).length >= 7, "Content panel mutual-exclusion coverage missing");
+assert(appJs.includes("const sheetPanels = [") && appJs.includes("function syncSheetOpen"), "Sheet open state sync missing");
+assert(appJs.includes('document.body.classList.toggle("sheetOpen"') && appJs.includes("new MutationObserver(syncSheetOpen)"), "Sheet overlay mutation observer missing");
 assert((appJs.match(/keepReadingChromeVisible\(\);/g) || []).length >= 8, "Reading chrome keep-visible coverage missing");
 assert((appJs.match(/token !== .*RequestToken/g) || []).length >= 5, "Stale async result guards missing");
 assert(appJs.includes("searchRequestToken += 1;") && appJs.includes("searchState.loading = false;"), "Search close invalidation missing");
@@ -254,6 +256,13 @@ assert(appJs.includes("closeAiResult();"), "Top panel close flow does not includ
 assert(appJs.includes("overlay.addEventListener(\"click\", () => {\n  handleBackIntent();"), "Overlay does not use back intent close flow");
 assert(indexHtml.includes('role="status" aria-live="polite"'), "Status panel accessibility attributes missing");
 assert(stylesCss.includes(".mobileNav #voiceBtn::before") && stylesCss.includes("border-radius: 999px"), "Voice button indicator CSS missing");
+assert(stylesCss.includes("body.sheetOpen .overlay") && stylesCss.includes("z-index: 11"), "Sheet overlay style missing");
+assert(stylesCss.includes("body.sidebarOpen,\n  body.sheetOpen") && stylesCss.includes("overflow: hidden"), "Mobile sheet/sidebar scroll lock missing");
+assert(stylesCss.includes(".readerSettingsPanel,\n  .bookPickerPanel,\n  .searchPanel") && stylesCss.includes("border-radius: var(--sheet-radius) var(--sheet-radius) 0 0"), "Mobile bottom sheet layout missing");
+assert(stylesCss.includes(".readerSettingsPanel::before") && stylesCss.includes(".releaseNotesPanel::before"), "Bottom sheet drag handle style missing");
+assert(stylesCss.includes(".readerSettingsHeader,\n  .bookPickerHeader,\n  .searchHeader") && stylesCss.includes("position: sticky"), "Mobile sticky sheet header missing");
+assert(stylesCss.includes(".verseMenuMore {\n    grid-column: 1 / -1;"), "Mobile verse menu more grid span missing");
+assert(stylesCss.includes("button:active") && stylesCss.includes("transform: translateY(1px)"), "Button pressed feedback missing");
 assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled style missing");
 assert(stylesCss.includes(".dataButtons button:disabled"), "Data action disabled style missing");
 assert(stylesCss.includes(".aiResultActions button:disabled"), "AI result copy disabled style missing");

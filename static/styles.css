@@ -16,10 +16,32 @@
   --read-font: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
   --reader-page-margin: 18px;
   --mobile-nav-height: 72px;
+  --tap-size: 44px;
+  --sheet-radius: 18px;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+button,
+select,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 48%, transparent);
+  outline-offset: 2px;
 }
 
 body {
@@ -880,6 +902,14 @@ body.speaking .speakToggleBtn {
   font-weight: 800;
 }
 
+button {
+  touch-action: manipulation;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
 .quickForm button.loading {
   opacity: 0.78;
 }
@@ -1546,6 +1576,7 @@ body.speaking .speakToggleBtn {
   border-radius: 8px 8px 0 0;
   color: var(--muted);
   font-size: 14px;
+  font-weight: 900;
 }
 
 .searchResults {
@@ -1583,6 +1614,15 @@ body.speaking .speakToggleBtn {
 .searchResult:focus-visible {
   background: var(--soft);
   outline: none;
+}
+
+.searchResult,
+.myResult,
+.dictionaryResult,
+.strongOccurrence,
+.voiceConfirmChoices button,
+.shareActions button {
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.08s ease;
 }
 
 .searchMoreBtn {
@@ -2326,6 +2366,11 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     min-height: 100dvh;
   }
 
+  body.sidebarOpen,
+  body.sheetOpen {
+    overflow: hidden;
+  }
+
   .sidebar {
     position: fixed;
     top: 0;
@@ -2398,8 +2443,13 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     background: rgba(35, 30, 24, 0.36);
   }
 
-  body.sidebarOpen .overlay {
+  body.sidebarOpen .overlay,
+  body.sheetOpen .overlay {
     display: block;
+  }
+
+  body.sheetOpen .overlay {
+    z-index: 11;
   }
 
   body.sidebarOpen .mobileNav {
@@ -2448,19 +2498,68 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
     font-size: 12px;
   }
 
-  .readerSettingsPanel {
-    top: calc(72px + max(env(safe-area-inset-top), 28px));
-    left: 12px;
-    right: 12px;
-    width: auto;
+  .readerSettingsPanel,
+  .bookPickerPanel,
+  .searchPanel,
+  .strongPanel,
+  .dictionaryResultsPanel,
+  .aiResultPanel,
+  .sharePanel,
+  .voiceConfirmPanel,
+  .myPanel,
+  .releaseNotesPanel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 12;
+    width: 100%;
+    max-height: min(88dvh, calc(100dvh - max(env(safe-area-inset-top), 28px) - 16px));
+    margin: 0;
+    padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    background: var(--panel);
+    border: 0;
+    border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+    box-shadow: 0 -16px 42px rgba(35, 30, 24, 0.18);
+  }
+
+  .readerSettingsPanel::before,
+  .bookPickerPanel::before,
+  .searchPanel::before,
+  .strongPanel::before,
+  .dictionaryResultsPanel::before,
+  .aiResultPanel::before,
+  .sharePanel::before,
+  .voiceConfirmPanel::before,
+  .myPanel::before,
+  .releaseNotesPanel::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 2px auto 10px;
+    border-radius: 999px;
+    background: var(--line);
+  }
+
+  .readerSettingsHeader,
+  .bookPickerHeader,
+  .searchHeader {
+    position: sticky;
+    top: -8px;
+    z-index: 2;
+    margin: -8px -16px 12px;
+    padding: 14px 16px 10px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
   }
 
   .bookPickerPanel {
-    top: calc(72px + max(env(safe-area-inset-top), 28px));
-    left: 10px;
-    right: 10px;
-    width: auto;
-    max-height: calc(100dvh - var(--mobile-nav-height) - 108px - env(safe-area-inset-bottom));
+    max-height: min(92dvh, calc(100dvh - max(env(safe-area-inset-top), 28px) - 8px));
   }
 
   .versePickerPanel .chapterPanelHeader {
@@ -2513,7 +2612,6 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   .searchPanel,
   .strongPanel {
     width: 100%;
-    padding: 0 16px;
   }
 
   .audioPanel {
@@ -2529,20 +2627,10 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
   .dictionaryResultsPanel,
   .aiResultPanel,
   .sharePanel,
-  .voiceConfirmPanel {
-    width: 100%;
-    padding: 0 16px;
-  }
-
-  .myPanel {
-    width: 100%;
-    padding: 0 16px;
-  }
-
+  .voiceConfirmPanel,
+  .myPanel,
   .releaseNotesPanel {
     width: 100%;
-    margin: 0;
-    padding: 0 16px calc(var(--mobile-nav-height) + 32px + env(safe-area-inset-bottom));
   }
 
   .myFilters {
@@ -2627,6 +2715,15 @@ body.verseSelectionMode .verse:not(.selectedVerse) {
 
   .verseMenuTitle {
     grid-column: 1 / -1;
+  }
+
+  .verseMenuMore {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 0;
+    padding-top: 8px;
   }
 
   .verseMenu button {
