@@ -3110,18 +3110,53 @@ function formatCommentaryRef(entry) {
   return `${entry.chapter}:${entry.fromVerse}-${entry.toVerse}`;
 }
 
+function normalizeTypedReference(input) {
+  return String(input || "")
+    .trim()
+    .replace(/[\s　]+/g, "")
+    .replace(/第/g, "")
+    .replace(/章节/g, "章")
+    .replace(/到|至|－|—|～|~/g, "-");
+}
+
+function parseReferenceNumber(value) {
+  const raw = String(value || "");
+  if (/^\d+$/.test(raw)) return Number(raw);
+  if (/^[零〇一二两三四五六七八九十百]+$/.test(raw)) return chineseNumberToInt(raw);
+  return NaN;
+}
+
+function parseReferenceTail(tail) {
+  const number = "([0-9零〇一二两三四五六七八九十百]+)";
+  const chapterOnly = tail.match(new RegExp(`^${number}章?$`));
+  if (chapterOnly) return { chapter: parseReferenceNumber(chapterOnly[1]), verse: null };
+  const chapterVerse =
+    tail.match(new RegExp(`^${number}章${number}节?(?:-[0-9零〇一二两三四五六七八九十百]+节?)?$`)) ||
+    tail.match(new RegExp(`^${number}[:：.．,，]${number}(?:-[0-9零〇一二两三四五六七八九十百]+)?$`));
+  if (chapterVerse) {
+    return {
+      chapter: parseReferenceNumber(chapterVerse[1]),
+      verse: parseReferenceNumber(chapterVerse[2]),
+    };
+  }
+  return null;
+}
+
 function parseReference(input) {
-  const value = input.trim().replace(/\s+/g, "");
-  const match = value.match(/^(.+?)(\d+)[:：.．,，](\d+)$/);
-  if (!match) return null;
-  const [, rawBook, rawChapter, rawVerse] = match;
-  const found = bookAliases().find(([alias]) => rawBook === alias || rawBook.startsWith(alias));
-  if (!found) return null;
-  return {
-    book: found[1].id,
-    chapter: Number(rawChapter),
-    verse: Number(rawVerse),
-  };
+  const value = normalizeTypedReference(input);
+  if (!value) return null;
+  for (const [alias, book] of bookAliases()) {
+    if (!value.startsWith(alias)) continue;
+    const parsed = parseReferenceTail(value.slice(alias.length));
+    if (!parsed || !Number.isFinite(parsed.chapter) || parsed.chapter < 1 || parsed.chapter > book.chapterCount) continue;
+    if (parsed.verse != null && (!Number.isFinite(parsed.verse) || parsed.verse < 1)) continue;
+    return {
+      book: book.id,
+      chapter: parsed.chapter,
+      verse: parsed.verse,
+    };
+  }
+  return null;
 }
 
 async function jumpToReference(ref) {

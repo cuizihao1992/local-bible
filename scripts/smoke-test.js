@@ -142,6 +142,10 @@ assert(appJs.includes("function linkVerseRefs"), "Verse reference link helper mi
 assert(appJs.includes("${linkVerseRefs(text)}"), "AI result should link verse references");
 assert(appJs.includes('${linkVerseRefs(entry.text || "无文本内容")}'), "Commentary text should link verse references");
 assert(appJs.includes("function handleReferenceLinkClick"), "Reference link click handler missing");
+assert(indexHtml.includes("约3:16 / 马太3章 或关键词"), "Quick input reference placeholder missing");
+assert(appJs.includes("function normalizeTypedReference") && appJs.includes("function parseReferenceTail"), "Natural typed reference parser missing");
+assert(appJs.includes("parseReferenceNumber") && appJs.includes("chineseNumberToInt(raw)"), "Chinese typed reference number support missing");
+assert(appJs.includes("parsed.chapter > book.chapterCount"), "Typed reference parser should validate chapter range");
 assert(stylesCss.includes(".refLink"), "Reference link style missing");
 assert(indexHtml.includes('id="speakToggleBtn"'), "Chapter speak toggle missing");
 assert(indexHtml.includes('id="readFontSelect"') && indexHtml.includes('id="pageMarginRange"'), "Reader font and margin settings missing");
