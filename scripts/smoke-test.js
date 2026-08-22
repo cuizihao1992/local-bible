@@ -148,6 +148,9 @@ assert(appJs.includes("${linkVerseRefs(text)}"), "AI result should link verse re
 assert(appJs.includes('data-save-ai-note') && appJs.includes("function saveAiResultAsNote"), "AI note save action missing");
 assert(appJs.includes("AI 笔记已保存") && appJs.includes("currentAiResultMeta = null;"), "AI note save lifecycle missing");
 assert(appJs.includes('${linkVerseRefs(entry.text || "无文本内容")}'), "Commentary text should link verse references");
+assert(appJs.includes("let currentCommentaryEntries = [];"), "Commentary entry cache missing");
+assert(appJs.includes('data-commentary-action="copy"') && appJs.includes('data-commentary-action="save-note"'), "Commentary entry action buttons missing");
+assert(appJs.includes("function saveCommentaryEntryAsNote") && appJs.includes("注释已存入笔记"), "Commentary save-to-note action missing");
 assert(appJs.includes("function handleReferenceLinkClick"), "Reference link click handler missing");
 assert(indexHtml.includes("约3:16 / 马太3章 或关键词"), "Quick input reference placeholder missing");
 assert(appJs.includes("function normalizeTypedReference") && appJs.includes("function parseReferenceTail"), "Natural typed reference parser missing");
@@ -295,6 +298,7 @@ assert(stylesCss.includes(".mobileNav button:disabled"), "Mobile nav disabled st
 assert(stylesCss.includes(".dataButtons button:disabled"), "Data action disabled style missing");
 assert(stylesCss.includes(".aiResultActions button:disabled"), "AI result copy disabled style missing");
 assert(stylesCss.includes(".aiResultActions") && stylesCss.includes("flex-wrap: wrap"), "AI result multi-action layout missing");
+assert(stylesCss.includes(".commentaryActions") && stylesCss.includes(".commentaryActions button:disabled"), "Commentary action styles missing");
 assert(stylesCss.includes(".myFilters button:disabled"), "My panel filter disabled style missing");
 assert(stylesCss.includes(".chapterBtn:disabled"), "Chapter grid disabled style missing");
 assert(stylesCss.includes(".dashboardMiniActions") && stylesCss.includes(".dashboardMiniAction.primary"), "Dashboard progress action styles missing");

@@ -234,6 +234,7 @@ let currentMyMarks = [];
 let pendingVoiceConfirm = null;
 let currentShareImage = null;
 let currentAiResultMeta = null;
+let currentCommentaryEntries = [];
 const markSavingKeys = new Set();
 const sheetPanels = [
   readerSettingsPanel,
@@ -3144,6 +3145,7 @@ async function loadCommentary(snapshot = {}, token = null) {
 
 function renderCommentary(data) {
   if (!data.readable) {
+    currentCommentaryEntries = [];
     commentaryContent.innerHTML = `
       <div class="commentaryBlock">
         <div class="commentaryHeader">
@@ -3158,6 +3160,7 @@ function renderCommentary(data) {
     return;
   }
   if (!data.entries.length) {
+    currentCommentaryEntries = [];
     commentaryContent.innerHTML = `
       <div class="commentaryBlock">
         <div class="commentaryHeader">
@@ -3168,6 +3171,7 @@ function renderCommentary(data) {
     `;
     return;
   }
+  currentCommentaryEntries = data.entries.map((entry, index) => ({ ...entry, key: String(index) }));
   commentaryContent.innerHTML = `
     <div class="commentaryBlock">
       <div class="commentaryHeader">
@@ -3175,7 +3179,7 @@ function renderCommentary(data) {
         <div class="commentaryMeta">${data.entries.length} 条</div>
       </div>
       <div class="commentaryEntries">
-        ${data.entries.map(renderCommentaryEntry).join("")}
+        ${currentCommentaryEntries.map(renderCommentaryEntry).join("")}
       </div>
     </div>
   `;
@@ -3183,12 +3187,57 @@ function renderCommentary(data) {
 
 function renderCommentaryEntry(entry) {
   return `
-    <article class="commentaryEntry" data-chapter="${entry.chapter}" data-from="${entry.fromVerse}" data-to="${entry.toVerse}">
+    <article class="commentaryEntry" data-commentary-key="${escapeHtml(entry.key)}" data-chapter="${entry.chapter}" data-from="${entry.fromVerse}" data-to="${entry.toVerse}">
       <div class="commentaryRef">${escapeHtml(formatCommentaryRef(entry))}</div>
       <div class="commentaryText">${linkVerseRefs(entry.text || "无文本内容")}</div>
       ${entry.hasImages ? `<div class="imageNote">包含图片资料，图片显示将在后续版本处理。</div>` : ""}
+      <div class="commentaryActions">
+        <button type="button" data-commentary-action="copy">复制注释</button>
+        <button type="button" data-commentary-action="save-note">存入笔记</button>
+      </div>
     </article>
   `;
+}
+
+function commentaryEntryFromElement(element) {
+  const entry = element.closest(".commentaryEntry");
+  if (!entry) return null;
+  return currentCommentaryEntries.find((item) => item.key === entry.dataset.commentaryKey) || null;
+}
+
+function commentaryEntryReference(entry) {
+  const verse = Number(entry.fromVerse || 1);
+  return `${currentBook().longName} ${state.chapter}:${verse}`;
+}
+
+async function copyCommentaryEntry(entry) {
+  if (!entry) return;
+  await writeClipboard(`${commentaryEntryReference(entry)}\n${entry.text || ""}`.trim());
+  showStatus("已复制注释", "success");
+}
+
+async function saveCommentaryEntryAsNote(entry, button) {
+  if (!entry) return;
+  const verse = Number(entry.fromVerse || 1);
+  button.disabled = true;
+  button.textContent = "保存中";
+  try {
+    const existing = await markForReference(state.version, state.book, state.chapter, verse);
+    const ref = commentaryEntryReference(entry);
+    const note = existing.note?.trim()
+      ? `${existing.note.trim()}\n\n${ref} · 注释摘录\n${(entry.text || "").trim()}`
+      : `${ref} · 注释摘录\n${(entry.text || "").trim()}`;
+    await saveVerseMark({ ...existing, note }, { successMessage: "注释已存入笔记" });
+    button.textContent = "已保存";
+    window.setTimeout(() => {
+      if (button.isConnected) button.textContent = "存入笔记";
+    }, 1200);
+  } catch (error) {
+    button.textContent = "存入笔记";
+    throw error;
+  } finally {
+    if (button.isConnected) button.disabled = false;
+  }
 }
 
 function formatCommentaryRef(entry) {
@@ -4342,7 +4391,15 @@ aiResultContent.addEventListener("click", (event) => {
 closeMyPanelBtn.addEventListener("click", closeMyPanel);
 
 commentaryContent.addEventListener("click", (event) => {
-  handleReferenceLinkClick(event);
+  if (handleReferenceLinkClick(event)) return;
+  const action = event.target.closest("[data-commentary-action]");
+  if (!action) return;
+  const entry = commentaryEntryFromElement(action);
+  if (action.dataset.commentaryAction === "copy") {
+    copyCommentaryEntry(entry).catch(setError);
+  } else if (action.dataset.commentaryAction === "save-note") {
+    saveCommentaryEntryAsNote(entry, action).catch(setError);
+  }
 });
 
 myPanel.addEventListener("click", async (event) => {
