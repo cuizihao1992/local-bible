@@ -385,11 +385,19 @@ select {
 }
 
 .bookPickerPanel[data-step="verses"] .bookPicker,
-.bookPickerPanel[data-step="verses"] .chapterPanel {
+.bookPickerPanel[data-step="verses"] .chapterPanel,
+.bookPickerPanel[data-step="chapters"] .bookPicker,
+.bookPickerPanel[data-step="books"] .chapterPanel,
+.bookPickerPanel .bookSelectFallback {
   display: none;
 }
 
 .bookPickerHeader {
+  position: sticky;
+  top: -14px;
+  z-index: 3;
+  padding: 10px 0;
+  background: var(--panel);
   display: flex;
   align-items: center;
   justify-content: space-between;

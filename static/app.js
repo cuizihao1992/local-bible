@@ -203,6 +203,8 @@ let selectionActionInProgress = false;
 let lastUpdateInfo = null;
 let bookFilter = "all";
 let bookPickerStep = "chapters";
+let bookPickerOrigin = null;
+let versePickerRequest = 0;
 let versePickerLoading = false;
 let downloadProgressTimer = null;
 let latestApkAsset = null;
@@ -1051,8 +1053,15 @@ function openSidebar(panel = "reading") {
   document.body.classList.add("sidebarOpen");
 }
 
-function toggleBookPicker(show = bookPickerPanel.hidden) {
+function toggleBookPicker(show = bookPickerPanel.hidden, commit = false) {
   const wasOpen = !bookPickerPanel.hidden;
+  if (show && !wasOpen) bookPickerOrigin = { book: state.book, chapter: state.chapter, targetVerse: state.targetVerse };
+  if (!show && wasOpen) {
+    versePickerRequest += 1;
+    versePickerLoading = false;
+    if (!commit && bookPickerOrigin) Object.assign(state, bookPickerOrigin);
+    bookPickerOrigin = null;
+  }
   bookPickerPanel.hidden = !show;
   chapterTitleBtn.setAttribute("aria-expanded", show ? "true" : "false");
   if (show) {
@@ -1061,7 +1070,8 @@ function toggleBookPicker(show = bookPickerPanel.hidden) {
     closeContentPanels();
     closeVerseMenu();
     closeSelectionBar();
-    setBookPickerStep("chapters");
+    bookSearchInput.value = "";
+    setBookPickerStep("books");
     renderBooks();
     renderChapterGrid();
   } else if (wasOpen) {
@@ -1839,9 +1849,11 @@ function rememberCurrentBook() {
 }
 
 function setBookPickerStep(step) {
-  bookPickerStep = step === "verses" ? "verses" : "chapters";
+  bookPickerStep = ["books", "chapters", "verses"].includes(step) ? step : "books";
   if (bookPickerPanel) bookPickerPanel.dataset.step = bookPickerStep;
   if (versePickerPanel) versePickerPanel.hidden = bookPickerStep !== "verses";
+  document.querySelector("#bookPickerHeading").textContent = { books: "选择书卷", chapters: "选择章节", verses: "选择经节" }[bookPickerStep];
+  bookPickerPanel.scrollTop = 0;
 }
 
 function renderChapterGrid() {
@@ -1887,6 +1899,7 @@ function renderVerseGrid(verses) {
 
 async function openVersePicker(chapter) {
   if (versePickerLoading) return;
+  const request = ++versePickerRequest;
   state.chapter = Number(chapter);
   resetVerseInteraction();
   setBookPickerStep("verses");
@@ -1900,20 +1913,22 @@ async function openVersePicker(chapter) {
       chapter: String(state.chapter),
     });
     const data = await api(`/api/chapter?${params.toString()}`);
+    if (request !== versePickerRequest) return;
     renderVerseGrid(data.verses || []);
   } catch (error) {
+    if (request !== versePickerRequest) return;
     if (versePanelMeta) versePanelMeta.textContent = "读取经节失败";
     if (verseGrid) verseGrid.innerHTML = `<div class="bookEmpty">${escapeHtml(error.message || "读取经节失败")}</div>`;
     if (readChapterStartBtn) readChapterStartBtn.disabled = false;
   } finally {
-    versePickerLoading = false;
+    if (request === versePickerRequest) versePickerLoading = false;
   }
 }
 
 async function jumpFromBookPicker(verse = null) {
   resetVerseInteraction(verse);
   closeSidebar();
-  toggleBookPicker(false);
+  toggleBookPicker(false, true);
   await loadChapter({ scrollTop: !verse });
   const book = currentBook();
   if (book) showStatus(`${book.longName} ${state.chapter}${verse ? `:${verse}` : ""}`);
@@ -4127,14 +4142,16 @@ bookFilterTabs.addEventListener("click", (event) => {
 bookGrid.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-book]");
   if (!button) return;
+  const sameBook = state.book === Number(button.dataset.book);
   state.book = Number(button.dataset.book);
-  state.chapter = 1;
+  if (!sameBook) state.chapter = 1;
   resetVerseInteraction();
   setBookPickerStep("chapters");
   renderBooks();
   renderChapterGrid();
-  openVersePicker(1).catch(setError);
 });
+
+document.querySelector("#backToBooksBtn").addEventListener("click", () => setBookPickerStep("books"));
 
 chapterGrid.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-chapter]");
@@ -4144,6 +4161,8 @@ chapterGrid.addEventListener("click", (event) => {
 });
 
 backToChaptersBtn?.addEventListener("click", () => {
+  versePickerRequest += 1;
+  versePickerLoading = false;
   setBookPickerStep("chapters");
   renderChapterGrid();
 });
@@ -4625,6 +4644,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  if (hasBlockingOverlayOpen() || event.target.isContentEditable) return;
   if (event.key === "/") {
     event.preventDefault();
     quickInput.focus();
@@ -4777,7 +4797,7 @@ document.addEventListener("click", (event) => {
   }
   if (
     !bookPickerPanel.hidden &&
-    !bookPickerPanel.contains(event.target) &&
+    !event.composedPath().includes(bookPickerPanel) &&
     !chapterTitleBtn.contains(event.target)
   ) {
     toggleBookPicker(false);

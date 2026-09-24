@@ -13,7 +13,7 @@ async function getText(path) {
   const response = await fetch(`${base}${path}`);
   const text = await response.text();
   if (!response.ok) throw new Error(`${path}: ${response.status}`);
-  return text;
+  return text.replace(/\r\n/g, "\n");
 }
 
 function assert(condition, message) {

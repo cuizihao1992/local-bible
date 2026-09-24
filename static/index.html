@@ -2,7 +2,7 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>本地圣经阅读</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -269,10 +269,10 @@
         </div>
       </section>
 
-      <section id="bookPickerPanel" class="bookPickerPanel" hidden>
+      <section id="bookPickerPanel" class="bookPickerPanel" role="dialog" aria-labelledby="bookPickerHeading" hidden>
         <div class="bookPickerHeader">
           <div>
-            <div class="panelTitle">选择书卷与章节</div>
+            <div id="bookPickerHeading" class="panelTitle">选择书卷</div>
             <div id="bookPickerCurrent" class="panelHint"></div>
           </div>
           <button id="closeBookPickerBtn" class="textBtn" type="button">关闭</button>
@@ -292,6 +292,7 @@
         </div>
         <div class="chapterPanel">
           <div class="chapterPanelHeader">
+            <button id="backToBooksBtn" class="textBtn" type="button">返回书卷</button>
             <div id="chapterPanelTitle" class="panelTitle">章节</div>
             <div id="chapterPanelMeta" class="panelHint"></div>
           </div>
