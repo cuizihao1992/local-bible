@@ -250,8 +250,13 @@ const sheetPanels = [
   releaseNotesPanel,
   sharePanel,
 ].filter(Boolean);
-const APP_VERSION = "1.9.70";
+const APP_VERSION = "1.9.71";
 const RELEASE_NOTES = [
+  {
+    version: "1.9.71",
+    date: "2026-09-24",
+    items: ["书卷、章节、经节分步选择，支持返回上一步", "取消选择恢复原阅读位置，选择当前书卷保留章节", "修复选择面板意外关闭和过期请求覆盖", "面板开启时防止方向键误翻章，优化安全区与固定标题"],
+  },
   {
     version: "1.9.70",
     date: "2026-08-23",

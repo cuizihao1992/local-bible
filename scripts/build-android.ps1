@@ -10,7 +10,7 @@ $javaHome = Join-Path $root ".tools\jdk17"
 $sdkRoot = Join-Path $root ".tools\android-sdk"
 $gradle = Join-Path $root ".tools\gradle-8.10.2\bin\gradle.bat"
 $apkDir = Join-Path $root "dist\android"
-$version = "1.9.70"
+$version = "1.9.71"
 $apkSource = Join-Path $root "android\app\build\outputs\apk\$BuildType\app-$BuildType.apk"
 $apkTarget = Join-Path $apkDir "local-bible-reader-offline-$version-$BuildType.apk"
 
@@ -68,6 +68,7 @@ if ($BuildType -eq "release") {
 
 $task = "assemble" + $BuildType.Substring(0, 1).ToUpperInvariant() + $BuildType.Substring(1)
 & $gradle @gradleArgs $task
+if ($LASTEXITCODE -ne 0) { throw "Gradle build failed: $LASTEXITCODE" }
 
 New-Item -ItemType Directory -Force -Path $apkDir | Out-Null
 Copy-Item -LiteralPath $apkSource -Destination $apkTarget -Force

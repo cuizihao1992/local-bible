@@ -1,7 +1,7 @@
 param(
-  [string]$ApkPath = "dist\android\local-bible-reader-offline-1.9.70-release.apk",
-  [string]$ExpectedVersion = "1.9.70",
-  [int]$ExpectedVersionCode = 74,
+  [string]$ApkPath = "dist\android\local-bible-reader-offline-1.9.71-release.apk",
+  [string]$ExpectedVersion = "1.9.71",
+  [int]$ExpectedVersionCode = 75,
   [int]$ExpectedDbCount = 4
 )
 
@@ -86,6 +86,7 @@ if (Test-Path $apksigner) {
   $env:JAVA_HOME = $javaHome
   $env:PATH = "$javaHome\bin;$env:PATH"
   & $apksigner verify --print-certs $apk | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "APK signature verification failed" }
 }
 
 $size = (Get-Item $apk).Length

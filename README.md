@@ -49,7 +49,7 @@ npm run dist:android
 生成文件：
 
 ```text
-dist\android\local-bible-reader-offline-1.9.70-release.apk
+dist\android\local-bible-reader-offline-1.9.71-release.apk
 ```
 
 如需调试包，可以运行：
@@ -117,7 +117,7 @@ npm test
 
 ## 当前状态
 
-当前是 `V1.9.70` Android 轻量 APK + 按需资源包版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
+当前是 `V1.9.71` Android 轻量 APK + 按需资源包版。版本计划见 [ROADMAP.md](./ROADMAP.md)，优化体检见 [OPTIMIZATION.md](./OPTIMIZATION.md)。
 
 ## 数据说明
 
